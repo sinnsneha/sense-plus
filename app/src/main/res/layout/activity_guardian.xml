@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp">
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Guardian Dashboard" android:textSize="24sp" android:textStyle="bold" android:paddingBottom="20dp"/>
+
+        <TextView android:id="@+id/tvGStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Connecting..." android:textSize="34sp" android:textStyle="bold" android:gravity="center"
+            android:paddingTop="20dp" android:paddingBottom="20dp"/>
+
+        <TextView android:id="@+id/tvGAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Address: —" android:textSize="18sp" android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvGCoords" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Coordinates: —" android:textSize="16sp" android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvGBattery" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Battery: —" android:textSize="16sp" android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvGUpdated" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Last update: —" android:textSize="16sp" android:paddingBottom="24dp"/>
+
+        <Button android:id="@+id/btnOpenMaps" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="64dp" android:text="OPEN IN GOOGLE MAPS" android:textSize="18sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:backgroundTint="#1F4E79"/>
+
+        <Button android:id="@+id/btnStop" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="56dp" android:text="STOP BACKGROUND MONITORING" android:textSize="15sp"
+            android:textColor="#FFFFFF" android:backgroundTint="#555555" android:layout_marginTop="16dp"/>
+
+    </LinearLayout>
+</ScrollView>
