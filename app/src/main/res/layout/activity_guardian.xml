@@ -1,30 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
+    android:orientation="vertical"
+    android:background="@color/bg">
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Guardian Dashboard" android:textSize="24sp" android:textStyle="bold" android:paddingBottom="20dp"/>
-
-        <TextView android:id="@+id/tvGStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Connecting..." android:textSize="34sp" android:textStyle="bold" android:gravity="center"
-            android:paddingTop="20dp" android:paddingBottom="20dp"/>
-
-        <TextView android:id="@+id/tvGAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Address: —" android:textSize="18sp" android:paddingBottom="12dp"/>
-        <TextView android:id="@+id/tvGCoords" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Coordinates: —" android:textSize="16sp" android:paddingBottom="12dp"/>
-        <TextView android:id="@+id/tvGBattery" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Battery: —" android:textSize="16sp" android:paddingBottom="12dp"/>
-        <TextView android:id="@+id/tvGUpdated" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Last update: —" android:textSize="16sp" android:paddingBottom="24dp"/>
-
-        <Button android:id="@+id/btnOpenMaps" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="64dp" android:text="OPEN IN GOOGLE MAPS" android:textSize="18sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#1F4E79"/>
-
-        <Button android:id="@+id/btnStop" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="56dp" android:text="STOP BACKGROUND MONITORING" android:textSize="15sp"
-            android:textColor="#FFFFFF" android:backgroundTint="#555555" android:layout_marginTop="16dp"/>
-
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/header_gradient"
+        android:paddingTop="44dp" android:paddingBottom="26dp"
+        android:paddingStart="24dp" android:paddingEnd="24dp">
+        <ImageView android:layout_width="38dp" android:layout_height="38dp" android:src="@drawable/ic_eye"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Guardian Dashboard" android:textSize="26sp" android:textStyle="bold"
+            android:textColor="@color/white" android:layout_marginTop="8dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Live status of your dependent" android:textSize="14sp" android:textColor="#CFE0F5"/>
     </LinearLayout>
-</ScrollView>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+
+            <!-- Status card -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:gravity="center"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="24dp" android:layout_marginBottom="16dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="CURRENT STATUS" android:textSize="12sp" android:textColor="@color/text_muted"
+                    android:letterSpacing="0.1"/>
+                <TextView android:id="@+id/tvGStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Connecting..." android:textSize="34sp" android:textStyle="bold"
+                    android:gravity="center" android:paddingTop="8dp"/>
+            </LinearLayout>
+
+            <!-- Details card -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="20dp" android:layout_marginBottom="18dp">
+                <TextView android:id="@+id/tvGAddress" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Address: —" android:textSize="16sp" android:textColor="@color/text_dark" android:paddingBottom="6dp"/>
+                <TextView android:id="@+id/tvGCoords" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Coordinates: —" android:textSize="14sp" android:textColor="@color/text_muted" android:paddingBottom="16dp"/>
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E3E8EF"/>
+                <TextView android:id="@+id/tvGBattery" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Battery: —" android:textSize="16sp" android:textColor="@color/text_dark" android:paddingTop="16dp" android:paddingBottom="6dp"/>
+                <TextView android:id="@+id/tvGUpdated" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Last update: —" android:textSize="14sp" android:textColor="@color/text_muted"/>
+            </LinearLayout>
+
+            <Button android:id="@+id/btnOpenMaps" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="64dp" android:text="OPEN IN GOOGLE MAPS" android:textSize="17sp" android:textStyle="bold"
+                android:textColor="@color/white" android:backgroundTint="@color/blue" android:layout_marginBottom="12dp"/>
+
+            <Button android:id="@+id/btnStop" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="52dp" android:text="Stop background monitoring" android:textSize="14sp"
+                android:textColor="@color/white" android:backgroundTint="#90A4AE"/>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

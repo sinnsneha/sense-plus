@@ -1,11 +1,8 @@
 package com.senseplus.sense;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,8 +11,6 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -39,7 +34,7 @@ public class GuardianActivity extends AppCompatActivity {
         @Override public void run() {
             db.collection("sense_users").document("demoUser").get(Source.SERVER)
                     .addOnSuccessListener(doc -> { if (doc != null && doc.exists()) showData(doc); });
-            pollHandler.postDelayed(this, 2000);   // dashboard refresh every 2s
+            pollHandler.postDelayed(this, 2000);
         }
     };
 
@@ -47,6 +42,7 @@ public class GuardianActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guardian);
+        getWindow().setStatusBarColor(Color.parseColor("#0D2B45"));
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         tvGStatus = findViewById(R.id.tvGStatus);
@@ -61,32 +57,22 @@ public class GuardianActivity extends AppCompatActivity {
             if (currentMapsLink != null)
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(currentMapsLink)));
         });
-
-        // Ask for notification permission (Android 13+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS}, 200);
-        }
-
-        // Start the background monitoring service (keeps listening when app is off-screen)
-        ContextCompat.startForegroundService(this, new Intent(this, GuardianService.class));
-
-        // Stop button
         btnStop.setOnClickListener(v -> {
             stopService(new Intent(this, GuardianService.class));
-            btnStop.setText("MONITORING STOPPED");
+            btnStop.setText("Monitoring stopped");
         });
 
         db = FirebaseFirestore.getInstance();
         FirebaseAuth.getInstance().signInAnonymously();
+
+        // keep the background monitoring service running
+        androidx.core.content.ContextCompat.startForegroundService(this, new Intent(this, GuardianService.class));
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        pollHandler.post(pollTask);   // live dashboard polling (reliable on any network)
+        pollHandler.post(pollTask);
     }
 
     @Override
