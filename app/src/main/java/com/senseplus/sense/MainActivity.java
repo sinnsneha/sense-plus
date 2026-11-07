@@ -7,6 +7,9 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Address;
+import android.location.Geocoder;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.VibrationEffect;
@@ -34,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Vibrator vibrator;
     private FallDetector fallDetector;
     private LocationHelper locationHelper;
+    private CloudHelper cloudHelper;
 
     private static final int LOCATION_REQUEST_CODE = 100;
 
@@ -78,6 +82,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 
+        // Connect to the cloud (anonymous sign-in)
+        cloudHelper = new CloudHelper();
+        cloudHelper.connect();
+
         fallDetector = new FallDetector(new FallDetector.Listener() {
             @Override public void onFallDetected() { enterAttention(); }
             @Override public void onStateChanged(String info) {
@@ -85,11 +93,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         });
 
-        locationHelper = new LocationHelper(this, (lat, lon, acc) ->
-                tvLocation.setText(String.format(Locale.US,
-                        "Location: %.5f, %.5f  (±%.0f m)", lat, lon, acc)));
+        locationHelper = new LocationHelper(this, this::handleLocation);
 
-        // Ask for location permission the first time
         if (!hasLocationPermission()) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST_CODE);
@@ -97,6 +102,37 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         setStatusNormal();
         showAvailableSensors();
+    }
+
+    // ---------- Location -> cloud ----------
+
+    private void handleLocation(double lat, double lon, float acc) {
+        String mapsLink = "https://www.google.com/maps?q=" + lat + "," + lon;
+        tvLocation.setText(String.format(Locale.US,
+                "Location: %.5f, %.5f  (±%.0f m)", lat, lon, acc));
+        // Reverse-geocode on a background thread (it needs the network)
+        new Thread(() -> {
+            String address = reverseGeocode(lat, lon);
+            runOnUiThread(() -> cloudHelper.updateLocation(lat, lon, mapsLink, address));
+        }).start();
+    }
+
+    private String reverseGeocode(double lat, double lon) {
+        try {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> list = geocoder.getFromLocation(lat, lon, 1);
+            if (list != null && !list.isEmpty()) {
+                return list.get(0).getAddressLine(0);
+            }
+        } catch (Exception e) {
+            // geocoder needs internet / may be unavailable
+        }
+        return "Address unavailable";
+    }
+
+    private int getBattery() {
+        BatteryManager bm = (BatteryManager) getSystemService(BATTERY_SERVICE);
+        return (bm != null) ? bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) : -1;
     }
 
     private boolean hasLocationPermission() {
@@ -117,7 +153,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
-    // ---------- Three-level safety state machine ----------
+    // ---------- Three-level safety (now also reports to cloud) ----------
 
     private void enterAttention() {
         level = SafetyLevel.ATTENTION;
@@ -125,6 +161,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         tvStatus.setTextColor(Color.parseColor("#E65100"));
         speak("Possible fall detected. Are you okay? Press I am okay, or I will alert your guardian.");
         vibrate(800);
+        cloudHelper.updateStatus("ATTENTION", "Possible fall — awaiting response", getBattery());
 
         if (attentionTimer != null) attentionTimer.cancel();
         attentionTimer = new CountDownTimer(ATTENTION_SECONDS * 1000L, 1000) {
@@ -142,10 +179,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         level = SafetyLevel.EMERGENCY;
         tvStatus.setTextColor(Color.parseColor("#C62828"));
         tvStatus.setText("POSSIBLE EMERGENCY\n" + reason +
-                "\n(Guardian would receive location + time)\nPress I'M OK to cancel");
+                "\n(Guardian notified with location + time)\nPress I'M OK to cancel");
         speak("Possible emergency. Alerting your guardian.");
         vibrate(1200);
-        // Segment 5: send the alert (with tvLocation's coordinates) to the guardian via Firebase.
+        cloudHelper.updateStatus("POSSIBLE EMERGENCY", reason, getBattery());
     }
 
     private void cancelToNormal(String reason) {
@@ -155,6 +192,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (wasActive) {
             tvStatus.setText("Status: all clear (" + reason + ")");
             speak("Okay. Alert canceled.");
+            cloudHelper.updateStatus("NORMAL", "All clear (" + reason + ")", getBattery());
         }
     }
 
@@ -162,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         level = SafetyLevel.NORMAL;
         tvStatus.setTextColor(Color.parseColor("#1F4E79"));
         tvStatus.setText("Status: monitoring (normal)");
+        cloudHelper.updateStatus("NORMAL", "Monitoring", getBattery());
     }
 
     // ---------- Sensors ----------
