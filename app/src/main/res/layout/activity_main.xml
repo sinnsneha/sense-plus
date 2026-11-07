@@ -12,7 +12,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="SENSE+ Sensor Diagnostics"
+            android:text="SENSE+ Safety Monitor"
             android:textSize="22sp"
             android:textStyle="bold"
             android:paddingBottom="12dp"/>
@@ -26,6 +26,30 @@
             android:textStyle="bold"
             android:textColor="#1F4E79"
             android:paddingBottom="16dp"/>
+
+        <Button
+            android:id="@+id/btnHelp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="72dp"
+            android:text="HELP"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#C62828"
+            android:layout_marginBottom="12dp"/>
+
+        <Button
+            android:id="@+id/btnOk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="72dp"
+            android:text="I'M OK"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2E7D32"
+            android:layout_marginBottom="16dp"/>
 
         <TextView android:id="@+id/tvAccel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Accelerometer: waiting..." android:textSize="16sp" android:paddingBottom="12dp"/>
         <TextView android:id="@+id/tvGyro" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Gyroscope: waiting..." android:textSize="16sp" android:paddingBottom="12dp"/>
