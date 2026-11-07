@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getWindow().setStatusBarColor(Color.parseColor("#0D2B45"));
 
         tvStatus = findViewById(R.id.tvStatus);
         btnToggle = findViewById(R.id.btnToggle);
@@ -74,9 +75,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateStatusUi(String status, String info) {
         if (status == null) status = "";
-        int color = Color.parseColor("#1F4E79");
+        int color = Color.parseColor("#1565C0");
         if (status.contains("EMERGENCY")) color = Color.parseColor("#C62828");
         else if (status.contains("ATTENTION")) color = Color.parseColor("#E65100");
+        else if (status.contains("NORMAL")) color = Color.parseColor("#2E7D32");
         tvStatus.setTextColor(color);
         tvStatus.setText("Status: " + (info != null ? info : status));
     }

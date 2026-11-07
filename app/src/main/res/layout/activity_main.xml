@@ -1,42 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:orientation="vertical"
+    android:background="@color/bg">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="SENSE+" android:textSize="34sp" android:textStyle="bold"
-            android:textColor="#1F4E79" android:gravity="center"/>
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="You are protected" android:textSize="16sp" android:gravity="center"
-            android:paddingBottom="24dp"/>
-
-        <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Status: monitoring OFF" android:textSize="22sp" android:textStyle="bold"
-            android:textColor="#555555" android:gravity="center" android:paddingBottom="28dp"/>
-
-        <Button android:id="@+id/btnToggle" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="76dp" android:text="START MONITORING" android:textSize="20sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#1F4E79" android:layout_marginBottom="18dp"/>
-
-        <Button android:id="@+id/btnHelp" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="76dp" android:text="HELP" android:textSize="22sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#C62828" android:layout_marginBottom="18dp"/>
-
-        <Button android:id="@+id/btnOk" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="76dp" android:text="I'M OK" android:textSize="22sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#2E7D32" android:layout_marginBottom="24dp"/>
-
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Monitoring runs in the background. You can lock your phone or close the app and you're still protected."
-            android:textSize="14sp" android:gravity="center" android:textColor="#777777"/>
-
+        android:background="@drawable/header_gradient"
+        android:paddingTop="44dp" android:paddingBottom="26dp"
+        android:paddingStart="24dp" android:paddingEnd="24dp">
+        <ImageView android:layout_width="40dp" android:layout_height="40dp" android:src="@drawable/ic_shield"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="SENSE+" android:textSize="30sp" android:textStyle="bold"
+            android:textColor="@color/white" android:layout_marginTop="8dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="You are protected" android:textSize="14sp" android:textColor="#CFE0F5"/>
     </LinearLayout>
-</ScrollView>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+
+            <!-- Status card -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:gravity="center"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="24dp" android:layout_marginBottom="18dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="MONITORING STATUS" android:textSize="12sp" android:textColor="@color/text_muted" android:letterSpacing="0.1"/>
+                <TextView android:id="@+id/tvStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Status: monitoring OFF" android:textSize="22sp" android:textStyle="bold"
+                    android:textColor="#555555" android:gravity="center" android:paddingTop="8dp"/>
+            </LinearLayout>
+
+            <Button android:id="@+id/btnToggle" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="72dp" android:text="START MONITORING" android:textSize="19sp" android:textStyle="bold"
+                android:textColor="@color/white" android:backgroundTint="@color/blue" android:layout_marginBottom="14dp"/>
+
+            <Button android:id="@+id/btnHelp" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="72dp" android:text="HELP" android:textSize="22sp" android:textStyle="bold"
+                android:textColor="@color/white" android:backgroundTint="@color/red" android:layout_marginBottom="14dp"/>
+
+            <Button android:id="@+id/btnOk" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:minHeight="72dp" android:text="I'M OK" android:textSize="22sp" android:textStyle="bold"
+                android:textColor="@color/white" android:backgroundTint="@color/green" android:layout_marginBottom="20dp"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Monitoring runs in the background. You can lock your phone or close the app and you're still protected."
+                android:textSize="13sp" android:gravity="center" android:textColor="@color/text_muted"/>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
