@@ -38,6 +38,7 @@
         <activity android:name=".GuardianActivity" android:exported="false" />
         <activity android:name=".CommunicationActivity" android:exported="false" />
         <activity android:name=".VisualAssistActivity" android:exported="false" />
+        <activity android:name=".SensorInfoActivity" android:exported="false" />
 
         <service android:name=".GuardianService" android:exported="false"
             android:foregroundServiceType="dataSync" />
