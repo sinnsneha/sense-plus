@@ -29,6 +29,7 @@
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical" android:padding="16dp">
 
+            <!-- User -->
             <LinearLayout android:id="@+id/cardUser" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical"
                 android:background="@drawable/card_white" android:elevation="3dp"
@@ -46,6 +47,7 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Guardian -->
             <LinearLayout android:id="@+id/cardGuardian" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical"
                 android:background="@drawable/card_white" android:elevation="3dp"
@@ -63,6 +65,7 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Communication -->
             <LinearLayout android:id="@+id/cardComm" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical"
                 android:background="@drawable/card_white" android:elevation="3dp"
@@ -80,6 +83,7 @@
                 </LinearLayout>
             </LinearLayout>
 
+            <!-- Visual Assist -->
             <LinearLayout android:id="@+id/cardVisual" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical"
                 android:background="@drawable/card_white" android:elevation="3dp"
@@ -94,6 +98,24 @@
                         android:text="Visual Assist" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:text="Point &amp; hear printed text read out" android:textSize="13sp" android:textColor="@color/text_muted" android:layout_marginTop="2dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Sensor Info -->
+            <LinearLayout android:id="@+id/cardSensor" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="16dp" android:layout_marginBottom="14dp"
+                android:clickable="true" android:focusable="true">
+                <ImageView android:layout_width="56dp" android:layout_height="56dp"
+                    android:background="@drawable/circle" android:backgroundTint="#455A64"
+                    android:src="@drawable/ic_sensor" android:padding="15dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Sensor Info" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Live readings &amp; device sensors" android:textSize="13sp" android:textColor="@color/text_muted" android:layout_marginTop="2dp"/>
                 </LinearLayout>
             </LinearLayout>
 

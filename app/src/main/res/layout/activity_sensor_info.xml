@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:background="@drawable/header_gradient"
+        android:paddingTop="44dp" android:paddingBottom="22dp"
+        android:paddingStart="24dp" android:paddingEnd="24dp">
+        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/ic_sensor"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Sensor Info" android:textSize="24sp" android:textStyle="bold"
+            android:textColor="@color/white" android:layout_marginTop="8dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Live readings from your device" android:textSize="14sp" android:textColor="#CFE0F5"/>
+    </LinearLayout>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:elevation="3dp" android:padding="20dp" android:layout_marginBottom="14dp">
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="LIVE READINGS" android:textSize="12sp" android:textColor="@color/text_muted" android:letterSpacing="0.1"/>
+
+                <TextView android:id="@+id/tvCompass" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Compass: —" android:textSize="22sp" android:textStyle="bold"
+                    android:textColor="@color/blue" android:paddingTop="8dp" android:paddingBottom="12dp"/>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E3E8EF"/>
+
+                <TextView android:id="@+id/tvAccel" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Accelerometer: —" android:textSize="15sp" android:textColor="@color/text_dark" android:paddingTop="14dp" android:paddingBottom="10dp"/>
+                <TextView android:id="@+id/tvGyro" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Gyroscope: —" android:textSize="15sp" android:textColor="@color/text_dark" android:paddingBottom="10dp"/>
+                <TextView android:id="@+id/tvLight" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Light: —" android:textSize="15sp" android:textColor="@color/text_dark" android:paddingBottom="10dp"/>
+                <TextView android:id="@+id/tvProx" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="Proximity: —" android:textSize="15sp" android:textColor="@color/text_dark"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/card_white"
+                android:elevation="3dp" android:padding="20dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="DEVICE SENSORS" android:textSize="12sp" android:textColor="@color/text_muted"
+                    android:letterSpacing="0.1" android:paddingBottom="10dp"/>
+                <TextView android:id="@+id/tvSensorList" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="..." android:textSize="13sp" android:textColor="@color/text_muted"/>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
