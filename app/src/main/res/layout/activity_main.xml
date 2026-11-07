@@ -15,47 +15,23 @@
             android:text="SENSE+ Sensor Diagnostics"
             android:textSize="22sp"
             android:textStyle="bold"
+            android:paddingBottom="12dp"/>
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Status: —"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#1F4E79"
             android:paddingBottom="16dp"/>
 
-        <TextView
-            android:id="@+id/tvAccel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Accelerometer: waiting..."
-            android:textSize="16sp"
-            android:paddingBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvGyro"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Gyroscope: waiting..."
-            android:textSize="16sp"
-            android:paddingBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvLight"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Light: waiting..."
-            android:textSize="16sp"
-            android:paddingBottom="12dp"/>
-
-        <TextView
-            android:id="@+id/tvSensorList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Available sensors..."
-            android:textSize="14sp"
-            android:paddingTop="8dp"/>
-
-        <TextView
-            android:id="@+id/tvProx"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Proximity: waiting..."
-            android:textSize="16sp"
-            android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvAccel" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Accelerometer: waiting..." android:textSize="16sp" android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvGyro" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Gyroscope: waiting..." android:textSize="16sp" android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvLight" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Light: waiting..." android:textSize="16sp" android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvProx" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Proximity: waiting..." android:textSize="16sp" android:paddingBottom="12dp"/>
+        <TextView android:id="@+id/tvSensorList" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Available sensors..." android:textSize="14sp" android:paddingTop="8dp"/>
 
     </LinearLayout>
 </ScrollView>
