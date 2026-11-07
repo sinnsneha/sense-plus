@@ -21,11 +21,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private TextToSpeech tts;
     private Vibrator vibrator;
-
-    private static final float SHAKE_THRESHOLD = 25f;      // gravity alone is ~9.8
-    private static final float FREE_FALL_THRESHOLD = 3f;   // near-weightless = falling
-    private static final long  SHAKE_COOLDOWN_MS = 2000;   // ignore repeats for 2s
-    private long lastShakeTime = 0;
+    private FallDetector fallDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,13 +41,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         lightSensor   = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         proximity     = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
 
-        // The phone's voice
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) tts.setLanguage(Locale.US);
         });
-
-        // The phone's vibration motor
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+
+        // The fall-detection engine calls us back when it sees the full pattern
+        fallDetector = new FallDetector(new FallDetector.Listener() {
+            @Override
+            public void onFallDetected() {
+                tvStatus.setText("Status: FALL DETECTED!");
+                speak("Fall detected");
+                vibrate(800);
+            }
+            @Override
+            public void onStateChanged(String info) {
+                tvStatus.setText("Status: " + info);
+            }
+        });
 
         showAvailableSensors();
     }
@@ -66,7 +73,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onResume() {
         super.onResume();
-        if (accelerometer != null) sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        // Accelerometer faster (GAME) so we catch the brief free-fall; others normal
+        if (accelerometer != null) sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
         if (gyroscope != null)     sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_UI);
         if (lightSensor != null)   sensorManager.registerListener(this, lightSensor, SensorManager.SENSOR_DELAY_UI);
         if (proximity != null)     sensorManager.registerListener(this, proximity, SensorManager.SENSOR_DELAY_UI);
@@ -85,43 +93,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 float x = event.values[0], y = event.values[1], z = event.values[2];
                 tvAccel.setText(String.format(Locale.US,
                         "Accelerometer (m/s²)\nX: %.2f   Y: %.2f   Z: %.2f", x, y, z));
-
-                // Combine all 3 axes into one "total strength" number
                 double magnitude = Math.sqrt(x*x + y*y + z*z);
-                checkForShake(magnitude);
+                fallDetector.process(magnitude);     // feed every reading to the engine
                 break;
-
             case Sensor.TYPE_GYROSCOPE:
                 tvGyro.setText(String.format(Locale.US,
                         "Gyroscope (rad/s)\nX: %.2f   Y: %.2f   Z: %.2f",
                         event.values[0], event.values[1], event.values[2]));
                 break;
-
             case Sensor.TYPE_LIGHT:
                 tvLight.setText(String.format(Locale.US, "Light (lux): %.1f", event.values[0]));
                 break;
-
             case Sensor.TYPE_PROXIMITY:
                 tvProx.setText(String.format(Locale.US, "Proximity (cm): %.1f", event.values[0]));
                 break;
-        }
-    }
-
-    private void checkForShake(double magnitude) {
-        if (magnitude > SHAKE_THRESHOLD) {
-            long now = System.currentTimeMillis();
-            if (now - lastShakeTime > SHAKE_COOLDOWN_MS) {   // debounce: one trigger, not a storm
-                lastShakeTime = now;
-                tvStatus.setText("Status: SHAKE DETECTED!");
-                speak("Shake detected");
-                vibrate(500);
-            }
-        } else if (magnitude < FREE_FALL_THRESHOLD) {
-            tvStatus.setText("Status: FREE FALL!");
-            speak("Free fall");
-            vibrate(500);
-        } else {
-            tvStatus.setText(String.format(Locale.US, "Status: normal (%.1f)", magnitude));
         }
     }
 
