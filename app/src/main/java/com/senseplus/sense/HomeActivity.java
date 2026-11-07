@@ -22,6 +22,7 @@ public class HomeActivity extends AppCompatActivity {
         Button btnUser = findViewById(R.id.btnUser);
         Button btnGuardian = findViewById(R.id.btnGuardian);
         Button btnComm = findViewById(R.id.btnComm);
+        Button btnVisual = findViewById(R.id.btnVisual);
 
         btnUser.setOnClickListener(v ->
                 startActivity(new Intent(this, MainActivity.class)));
@@ -29,7 +30,9 @@ public class HomeActivity extends AppCompatActivity {
         btnComm.setOnClickListener(v ->
                 startActivity(new Intent(this, CommunicationActivity.class)));
 
-        // Guardian access is protected by fingerprint / device PIN
+        btnVisual.setOnClickListener(v ->
+                startActivity(new Intent(this, VisualAssistActivity.class)));
+
         btnGuardian.setOnClickListener(v -> authenticateThenOpenGuardian());
     }
 
@@ -39,7 +42,6 @@ public class HomeActivity extends AppCompatActivity {
 
         BiometricManager bm = BiometricManager.from(this);
         if (bm.canAuthenticate(authenticators) != BiometricManager.BIOMETRIC_SUCCESS) {
-            // No lock set up on this phone — open directly so the demo still works
             Toast.makeText(this, "No lock set up; opening guardian view", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(this, GuardianActivity.class));
             return;

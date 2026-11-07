@@ -7,9 +7,15 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -31,11 +37,13 @@
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".GuardianActivity" android:exported="false" />
         <activity android:name=".CommunicationActivity" android:exported="false" />
+        <activity android:name=".VisualAssistActivity" android:exported="false" />
 
-        <service
-            android:name=".GuardianService"
-            android:exported="false"
+        <service android:name=".GuardianService" android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <service android:name=".UserMonitorService" android:exported="false"
+            android:foregroundServiceType="location|microphone|dataSync" />
 
     </application>
 

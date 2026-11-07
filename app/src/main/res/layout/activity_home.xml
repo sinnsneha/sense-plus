@@ -1,27 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="24dp">
+    android:fillViewport="true">
 
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="SENSE+" android:textSize="40sp" android:textStyle="bold" android:textColor="#1F4E79"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="24dp">
 
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="Choose an option" android:textSize="18sp" android:paddingBottom="36dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="SENSE+" android:textSize="40sp" android:textStyle="bold" android:textColor="#1F4E79"/>
 
-    <Button android:id="@+id/btnUser" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:minHeight="76dp" android:text="I AM THE USER" android:textSize="20sp" android:textStyle="bold"
-        android:textColor="#FFFFFF" android:backgroundTint="#1F4E79" android:layout_marginBottom="18dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Choose an option" android:textSize="18sp" android:paddingBottom="32dp"/>
 
-    <Button android:id="@+id/btnGuardian" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:minHeight="76dp" android:text="I AM THE GUARDIAN" android:textSize="20sp" android:textStyle="bold"
-        android:textColor="#FFFFFF" android:backgroundTint="#2E7D32" android:layout_marginBottom="18dp"/>
+        <Button android:id="@+id/btnUser" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="72dp" android:text="I AM THE USER" android:textSize="20sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:backgroundTint="#1F4E79" android:layout_marginBottom="16dp"/>
 
-    <Button android:id="@+id/btnComm" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:minHeight="76dp" android:text="COMMUNICATION BOARD" android:textSize="20sp" android:textStyle="bold"
-        android:textColor="#FFFFFF" android:backgroundTint="#6A1B9A"/>
+        <Button android:id="@+id/btnGuardian" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="72dp" android:text="I AM THE GUARDIAN" android:textSize="20sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:backgroundTint="#2E7D32" android:layout_marginBottom="16dp"/>
 
-</LinearLayout>
+        <Button android:id="@+id/btnComm" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="72dp" android:text="COMMUNICATION BOARD" android:textSize="20sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:backgroundTint="#6A1B9A" android:layout_marginBottom="16dp"/>
+
+        <Button android:id="@+id/btnVisual" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:minHeight="72dp" android:text="VISUAL ASSIST (READ TEXT)" android:textSize="20sp" android:textStyle="bold"
+            android:textColor="#FFFFFF" android:backgroundTint="#E65100"/>
+
+    </LinearLayout>
+</ScrollView>
