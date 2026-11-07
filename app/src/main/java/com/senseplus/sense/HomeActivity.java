@@ -1,8 +1,8 @@
 package com.senseplus.sense;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,22 +18,15 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        getWindow().setStatusBarColor(Color.parseColor("#0D2B45"));
 
-        Button btnUser = findViewById(R.id.btnUser);
-        Button btnGuardian = findViewById(R.id.btnGuardian);
-        Button btnComm = findViewById(R.id.btnComm);
-        Button btnVisual = findViewById(R.id.btnVisual);
-
-        btnUser.setOnClickListener(v ->
+        findViewById(R.id.cardUser).setOnClickListener(v ->
                 startActivity(new Intent(this, MainActivity.class)));
-
-        btnComm.setOnClickListener(v ->
+        findViewById(R.id.cardComm).setOnClickListener(v ->
                 startActivity(new Intent(this, CommunicationActivity.class)));
-
-        btnVisual.setOnClickListener(v ->
+        findViewById(R.id.cardVisual).setOnClickListener(v ->
                 startActivity(new Intent(this, VisualAssistActivity.class)));
-
-        btnGuardian.setOnClickListener(v -> authenticateThenOpenGuardian());
+        findViewById(R.id.cardGuardian).setOnClickListener(v -> authenticateThenOpenGuardian());
     }
 
     private void authenticateThenOpenGuardian() {
@@ -50,14 +43,11 @@ public class HomeActivity extends AppCompatActivity {
         Executor executor = ContextCompat.getMainExecutor(this);
         BiometricPrompt prompt = new BiometricPrompt(this, executor,
                 new BiometricPrompt.AuthenticationCallback() {
-                    @Override
-                    public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                    @Override public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
                         startActivity(new Intent(HomeActivity.this, GuardianActivity.class));
                     }
-                    @Override
-                    public void onAuthenticationError(int errorCode, CharSequence errString) {
-                        Toast.makeText(HomeActivity.this, "Authentication: " + errString,
-                                Toast.LENGTH_SHORT).show();
+                    @Override public void onAuthenticationError(int errorCode, CharSequence errString) {
+                        Toast.makeText(HomeActivity.this, "Authentication: " + errString, Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -66,7 +56,6 @@ public class HomeActivity extends AppCompatActivity {
                 .setSubtitle("Verify it's you to view the dashboard")
                 .setAllowedAuthenticators(authenticators)
                 .build();
-
         prompt.authenticate(info);
     }
 }

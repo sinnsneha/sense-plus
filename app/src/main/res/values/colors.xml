@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="navy">#0D2B45</color>
+    <color name="blue">#1565C0</color>
+    <color name="bg">#EEF2F7</color>
+    <color name="card">#FFFFFF</color>
+    <color name="text_dark">#1A2B3C</color>
+    <color name="text_muted">#5B6B7B</color>
+    <color name="green">#2E7D32</color>
+    <color name="orange">#E65100</color>
+    <color name="red">#C62828</color>
+    <color name="purple">#6A1B9A</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
 </resources>

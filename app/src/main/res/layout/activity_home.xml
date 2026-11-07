@@ -1,37 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:orientation="vertical"
+    android:background="@color/bg">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center"
-        android:padding="24dp">
+        android:background="@drawable/header_gradient"
+        android:paddingTop="44dp"
+        android:paddingBottom="28dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
+
+        <ImageView android:layout_width="44dp" android:layout_height="44dp" android:src="@drawable/ic_shield"/>
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="SENSE+" android:textSize="40sp" android:textStyle="bold" android:textColor="#1F4E79"/>
+            android:text="SENSE+" android:textSize="34sp" android:textStyle="bold"
+            android:textColor="@color/white" android:layout_marginTop="10dp"/>
 
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Choose an option" android:textSize="18sp" android:paddingBottom="32dp"/>
-
-        <Button android:id="@+id/btnUser" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="72dp" android:text="I AM THE USER" android:textSize="20sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#1F4E79" android:layout_marginBottom="16dp"/>
-
-        <Button android:id="@+id/btnGuardian" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="72dp" android:text="I AM THE GUARDIAN" android:textSize="20sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#2E7D32" android:layout_marginBottom="16dp"/>
-
-        <Button android:id="@+id/btnComm" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="72dp" android:text="COMMUNICATION BOARD" android:textSize="20sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#6A1B9A" android:layout_marginBottom="16dp"/>
-
-        <Button android:id="@+id/btnVisual" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:minHeight="72dp" android:text="VISUAL ASSIST (READ TEXT)" android:textSize="20sp" android:textStyle="bold"
-            android:textColor="#FFFFFF" android:backgroundTint="#E65100"/>
-
+            android:text="Your safety companion" android:textSize="15sp" android:textColor="#CFE0F5"/>
     </LinearLayout>
-</ScrollView>
+
+    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="16dp">
+
+            <LinearLayout android:id="@+id/cardUser" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="16dp" android:layout_marginBottom="14dp"
+                android:clickable="true" android:focusable="true">
+                <ImageView android:layout_width="56dp" android:layout_height="56dp"
+                    android:background="@drawable/circle" android:backgroundTint="@color/blue"
+                    android:src="@drawable/ic_person" android:padding="15dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="I am the User" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Fall detection &amp; safety monitoring" android:textSize="13sp" android:textColor="@color/text_muted" android:layout_marginTop="2dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/cardGuardian" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="16dp" android:layout_marginBottom="14dp"
+                android:clickable="true" android:focusable="true">
+                <ImageView android:layout_width="56dp" android:layout_height="56dp"
+                    android:background="@drawable/circle" android:backgroundTint="@color/green"
+                    android:src="@drawable/ic_eye" android:padding="15dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="I am the Guardian" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Watch over someone you care for" android:textSize="13sp" android:textColor="@color/text_muted" android:layout_marginTop="2dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/cardComm" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="16dp" android:layout_marginBottom="14dp"
+                android:clickable="true" android:focusable="true">
+                <ImageView android:layout_width="56dp" android:layout_height="56dp"
+                    android:background="@drawable/circle" android:backgroundTint="@color/purple"
+                    android:src="@drawable/ic_chat" android:padding="15dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Communication Board" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Tap phrases to speak aloud" android:textSize="13sp" android:textColor="@color/text_muted" android:layout_marginTop="2dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/cardVisual" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:background="@drawable/card_white" android:elevation="3dp"
+                android:padding="16dp" android:layout_marginBottom="14dp"
+                android:clickable="true" android:focusable="true">
+                <ImageView android:layout_width="56dp" android:layout_height="56dp"
+                    android:background="@drawable/circle" android:backgroundTint="@color/orange"
+                    android:src="@drawable/ic_camera" android:padding="15dp"/>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical" android:layout_marginStart="16dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Visual Assist" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/text_dark"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Point &amp; hear printed text read out" android:textSize="13sp" android:textColor="@color/text_muted" android:layout_marginTop="2dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
