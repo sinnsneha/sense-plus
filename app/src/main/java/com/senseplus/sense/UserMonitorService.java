@@ -186,11 +186,20 @@ public class UserMonitorService extends Service implements SensorEventListener {
 
     // ---------- Vosk voice (offline keyword listening) ----------
     private void startVoice() {
-        if (!hasPermission(Manifest.permission.RECORD_AUDIO)) return;
+        if (!hasPermission(Manifest.permission.RECORD_AUDIO)) {
+            broadcast("NORMAL", "VOICE OFF — mic permission denied");
+            speak("Microphone permission is off.");
+            return;
+        }
+        broadcast("NORMAL", "Loading voice model...");
         // Unpack the model from assets/model-en-us into internal storage, then start listening
         StorageService.unpack(this, "model-en-us", "model",
             (model) -> { voskModel = model; startRecognition(); },
-            (exception) -> { /* model missing or failed to load — voice simply stays off */ });
+            (exception) -> {
+                String msg = exception != null ? exception.getMessage() : "unknown";
+                broadcast("NORMAL", "VOICE OFF — model not found (" + msg + ")");
+                speak("Voice model not found.");
+            });
     }
 
     private void startRecognition() {
@@ -201,10 +210,16 @@ public class UserMonitorService extends Service implements SensorEventListener {
                 @Override public void onPartialResult(String hypothesis) { handleVosk(hypothesis); }
                 @Override public void onResult(String hypothesis) { handleVosk(hypothesis); }
                 @Override public void onFinalResult(String hypothesis) { handleVosk(hypothesis); }
-                @Override public void onError(Exception e) { }
+                @Override public void onError(Exception e) {
+                    broadcast("NORMAL", "VOICE ERROR — " + (e != null ? e.getMessage() : ""));
+                }
                 @Override public void onTimeout() { }
             });
-        } catch (Exception ignored) { }
+            broadcast("NORMAL", "Voice ready — say \"help\"");
+            speak("Voice ready.");
+        } catch (Exception e) {
+            broadcast("NORMAL", "VOICE OFF — recognizer failed (" + e.getMessage() + ")");
+        }
     }
 
     private void handleVosk(String json) {
