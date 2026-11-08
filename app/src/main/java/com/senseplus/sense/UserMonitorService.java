@@ -18,16 +18,10 @@ import android.location.Address;
 import android.location.Geocoder;
 import android.os.BatteryManager;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.speech.RecognitionListener;
-import android.speech.RecognizerIntent;
-import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 
@@ -35,7 +29,13 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
-import java.util.ArrayList;
+import org.json.JSONObject;
+import org.vosk.Model;
+import org.vosk.Recognizer;
+import org.vosk.android.RecognitionListener;
+import org.vosk.android.SpeechService;
+import org.vosk.android.StorageService;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -57,7 +57,10 @@ public class UserMonitorService extends Service implements SensorEventListener {
     private Vibrator vibrator;
     private LocationHelper locationHelper;
     private CloudHelper cloudHelper;
-    private SpeechRecognizer speech;
+
+    // Vosk voice (offline, continuous keyword listening)
+    private Model voskModel;
+    private SpeechService speechService;
 
     private enum Level { NORMAL, ATTENTION, EMERGENCY }
     private Level level = Level.NORMAL;
@@ -71,11 +74,9 @@ public class UserMonitorService extends Service implements SensorEventListener {
 
     private boolean started = false;
 
-    // Voice
-    private boolean voiceActive = false;
+    // guard so the mic doesn't act on the phone's own speech
     private boolean ttsSpeaking = false;
     private long lastSpokeEnd = 0;
-    private final Handler main = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate() {
@@ -115,10 +116,10 @@ public class UserMonitorService extends Service implements SensorEventListener {
             started = true;
             if (accelerometer != null)
                 sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
-            try { locationHelper.start(); } catch (Exception ignored) {}
+            try { locationHelper.start(); } catch (Exception ignored) { }
             broadcast("NORMAL", "Monitoring (normal)");
             cloudHelper.updateStatus("NORMAL", "Monitoring", battery());
-            startVoice();   // begin continuous listening (for "help", and later "okay")
+            startVoice();
         }
         String action = intent != null ? intent.getAction() : null;
         if (ACTION_HELP.equals(action)) triggerEmergency("Manual HELP pressed");
@@ -183,75 +184,56 @@ public class UserMonitorService extends Service implements SensorEventListener {
     }
     @Override public void onAccuracyChanged(Sensor sensor, int accuracy) { }
 
-    // ---------- continuous voice (keyword listening) ----------
+    // ---------- Vosk voice (offline keyword listening) ----------
     private void startVoice() {
         if (!hasPermission(Manifest.permission.RECORD_AUDIO)) return;
-        if (!SpeechRecognizer.isRecognitionAvailable(this)) return;
-        voiceActive = true;
-        ensureRecognizer();
-        listenOnce();
+        // Unpack the model from assets/model-en-us into internal storage, then start listening
+        StorageService.unpack(this, "model-en-us", "model",
+            (model) -> { voskModel = model; startRecognition(); },
+            (exception) -> { /* model missing or failed to load — voice simply stays off */ });
     }
 
-    private void ensureRecognizer() {
-        if (speech != null) return;
-        speech = SpeechRecognizer.createSpeechRecognizer(this);
-        speech.setRecognitionListener(new RecognitionListener() {
-            @Override public void onPartialResults(Bundle partial) {
-                handleSpeech(partial.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION));
-            }
-            @Override public void onResults(Bundle results) {
-                handleSpeech(results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION));
-                listenAgain();
-            }
-            @Override public void onError(int error) { listenAgain(); }
-            @Override public void onReadyForSpeech(Bundle params) { }
-            @Override public void onBeginningOfSpeech() { }
-            @Override public void onRmsChanged(float rmsdB) { }
-            @Override public void onBufferReceived(byte[] buffer) { }
-            @Override public void onEndOfSpeech() { }
-            @Override public void onEvent(int eventType, Bundle params) { }
-        });
-    }
-
-    private void listenOnce() {
-        if (!voiceActive) return;
+    private void startRecognition() {
         try {
-            Intent i = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toString());
-            i.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-            speech.startListening(i);
+            Recognizer rec = new Recognizer(voskModel, 16000.0f);
+            speechService = new SpeechService(rec, 16000.0f);
+            speechService.startListening(new RecognitionListener() {
+                @Override public void onPartialResult(String hypothesis) { handleVosk(hypothesis); }
+                @Override public void onResult(String hypothesis) { handleVosk(hypothesis); }
+                @Override public void onFinalResult(String hypothesis) { handleVosk(hypothesis); }
+                @Override public void onError(Exception e) { }
+                @Override public void onTimeout() { }
+            });
         } catch (Exception ignored) { }
     }
 
-    private void listenAgain() {
-        if (!voiceActive) return;
-        try { speech.cancel(); } catch (Exception ignored) { }
-        main.postDelayed(this::listenOnce, 100);   // small gap so it doesn't thrash
-    }
-
-    private void handleSpeech(ArrayList<String> list) {
-        if (list == null) return;
-        // Ignore audio while (or just after) the phone is speaking, so it doesn't hear itself
+    private void handleVosk(String json) {
+        if (json == null) return;
+        // ignore while (or just after) the phone is speaking, so it doesn't hear itself
         if (ttsSpeaking || System.currentTimeMillis() - lastSpokeEnd < 700) return;
 
-        for (String s : list) {
-            String t = s.toLowerCase(Locale.US);
-            if (level == Level.NORMAL) {
-                if (t.contains("help")) { triggerEmergency("Voice command: HELP"); return; }
-            } else {
-                if (t.contains("okay") || t.contains("fine") || t.contains("yes")
-                        || t.contains("alright") || t.contains("i am ok") || t.contains("i'm ok")) {
-                    cancelToNormal("you said you're okay");
-                    return;
-                }
+        String text;
+        try {
+            JSONObject o = new JSONObject(json);
+            text = o.has("partial") ? o.optString("partial") : o.optString("text");
+        } catch (Exception e) { return; }
+        if (text == null || text.trim().isEmpty()) return;
+        text = text.toLowerCase(Locale.US);
+
+        if (level == Level.NORMAL) {
+            if (text.contains("help")) triggerEmergency("Voice command: HELP");
+        } else {
+            if (text.contains("okay") || text.contains("fine") || text.contains("yes") || text.contains("alright")) {
+                cancelToNormal("you said you're okay");
             }
         }
     }
 
     private void stopVoice() {
-        voiceActive = false;
-        try { if (speech != null) speech.cancel(); } catch (Exception ignored) { }
+        if (speechService != null) {
+            try { speechService.stop(); speechService.shutdown(); } catch (Exception ignored) { }
+            speechService = null;
+        }
     }
 
     // ---------- location -> cloud ----------
@@ -294,11 +276,11 @@ public class UserMonitorService extends Service implements SensorEventListener {
     // ---------- notifications ----------
     private void ensureForeground(String text) {
         Notification n = new NotificationCompat.Builder(this, CHANNEL_ONGOING)
-                .setContentTitle("SENSE+ is protecting you")
-                .setContentText(text)
-                .setSmallIcon(android.R.drawable.ic_menu_compass)
-                .setOngoing(true)
-                .build();
+            .setContentTitle("SENSE+ is protecting you")
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setOngoing(true)
+            .build();
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 int types = ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC;
@@ -312,26 +294,25 @@ public class UserMonitorService extends Service implements SensorEventListener {
                 startForeground(ONGOING_ID, n);
             }
         } catch (Exception e) {
-            try { startForeground(ONGOID(), n); } catch (Exception ignored) { }
+            try { startForeground(ONGOING_ID, n); } catch (Exception ignored) { }
         }
     }
-    private int ONGOID() { return ONGOING_ID; }
 
     private void showAlert(String title, String text, boolean emergency) {
         PendingIntent okPi = PendingIntent.getService(this, 1,
-                new Intent(this, UserMonitorService.class).setAction(ACTION_IM_OK),
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            new Intent(this, UserMonitorService.class).setAction(ACTION_IM_OK),
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Notification notif = new NotificationCompat.Builder(this, CHANNEL_ALERT)
-                .setContentTitle((emergency ? "🔴 " : "🟠 ") + title)
-                .setContentText(text)
-                .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setColor(Color.parseColor(emergency ? "#C62828" : "#E65100"))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setCategory(NotificationCompat.CATEGORY_ALARM)
-                .setAutoCancel(true)
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "I'M OK", okPi)
-                .build();
+            .setContentTitle((emergency ? "🔴 " : "🟠 ") + title)
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setColor(Color.parseColor(emergency ? "#C62828" : "#E65100"))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setAutoCancel(true)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "I'M OK", okPi)
+            .build();
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.notify(ALERT_ID, notif);
     }
@@ -344,9 +325,9 @@ public class UserMonitorService extends Service implements SensorEventListener {
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm == null) return;
         nm.createNotificationChannel(new NotificationChannel(
-                CHANNEL_ONGOING, "Monitoring", NotificationManager.IMPORTANCE_LOW));
+            CHANNEL_ONGOING, "Monitoring", NotificationManager.IMPORTANCE_LOW));
         NotificationChannel alert = new NotificationChannel(
-                CHANNEL_ALERT, "Fall alerts", NotificationManager.IMPORTANCE_HIGH);
+            CHANNEL_ALERT, "Fall alerts", NotificationManager.IMPORTANCE_HIGH);
         alert.enableVibration(true);
         alert.setVibrationPattern(new long[]{0, 500, 200, 500});
         nm.createNotificationChannel(alert);
@@ -359,7 +340,7 @@ public class UserMonitorService extends Service implements SensorEventListener {
         if (sensorManager != null) sensorManager.unregisterListener(this);
         if (locationHelper != null) locationHelper.stop();
         stopVoice();
-        if (speech != null) { speech.destroy(); speech = null; }
+        if (voskModel != null) { try { voskModel.close(); } catch (Exception ignored) { } voskModel = null; }
         if (tts != null) { tts.stop(); tts.shutdown(); }
         cancelAlert();
     }
