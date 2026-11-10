@@ -52,4 +52,5 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.4")
     implementation("com.google.mlkit:text-recognition:16.0.0")
     implementation("com.alphacephei:vosk-android:0.3.47")
+    implementation("org.tensorflow:tensorflow-lite-task-audio:0.4.4")
 }

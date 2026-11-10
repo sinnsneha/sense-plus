@@ -26,6 +26,8 @@ public class HomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, CommunicationActivity.class)));
         findViewById(R.id.cardVisual).setOnClickListener(v ->
                 startActivity(new Intent(this, VisualAssistActivity.class)));
+        findViewById(R.id.cardHearing).setOnClickListener(v ->
+                startActivity(new Intent(this, HearingActivity.class)));
         findViewById(R.id.cardSensor).setOnClickListener(v ->
                 startActivity(new Intent(this, SensorInfoActivity.class)));
         findViewById(R.id.cardGuardian).setOnClickListener(v -> authenticateThenOpenGuardian());

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg">
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:background="@drawable/header_gradient"
+        android:paddingTop="44dp" android:paddingBottom="16dp"
+        android:paddingStart="24dp" android:paddingEnd="24dp">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Hearing Assist" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/white"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="See the sounds around you" android:textSize="13sp" android:textColor="#CFE0F5"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+        android:orientation="vertical" android:padding="16dp">
+
+        <!-- Big alert card: turns a colour + shows an icon when a sound is detected -->
+        <LinearLayout
+            android:id="@+id/alertCard"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center"
+            android:background="@drawable/card_white" android:elevation="3dp"
+            android:padding="24dp">
+            <TextView android:id="@+id/tvAlertIcon"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="👂" android:textSize="56sp"/>
+            <TextView android:id="@+id/tvAlertTitle"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Listening for sounds" android:textSize="24sp" android:textStyle="bold"
+                android:textColor="@color/text_dark" android:gravity="center" android:layout_marginTop="6dp"
+                android:accessibilityLiveRegion="assertive"/>
+            <TextView android:id="@+id/tvAlertDetail"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Doorbell · alarms · sirens · horns · baby crying" android:textSize="14sp"
+                android:textColor="@color/text_muted" android:gravity="center" android:layout_marginTop="4dp"/>
+        </LinearLayout>
+
+        <TextView android:id="@+id/tvListening"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Starting…" android:textSize="13sp" android:textColor="@color/text_muted"
+            android:layout_marginTop="10dp"/>
+
+        <TextView android:id="@+id/tvFeedLabel"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="RECENT SOUNDS" android:textSize="12sp" android:textStyle="bold"
+            android:textColor="@color/text_muted" android:layout_marginTop="14dp"/>
+
+        <ScrollView android:id="@+id/feedScroll"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:background="@drawable/card_white" android:elevation="2dp"
+            android:layout_marginTop="6dp" android:padding="14dp">
+            <TextView android:id="@+id/tvFeed"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="No important sounds yet." android:textSize="16sp"
+                android:textColor="@color/text_dark" android:lineSpacingExtra="4dp"/>
+        </ScrollView>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:paddingStart="16dp" android:paddingEnd="16dp"
+        android:paddingBottom="16dp">
+        <Button android:id="@+id/btnSounds"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:minHeight="64dp" android:text="SOUND ALERTS" android:textSize="16sp" android:textStyle="bold"
+            android:textColor="@color/white" android:backgroundTint="@color/blue"/>
+        <Button android:id="@+id/btnCaptions"
+            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:minHeight="64dp" android:text="LIVE CAPTIONS" android:textSize="16sp" android:textStyle="bold"
+            android:textColor="@color/white" android:backgroundTint="@color/purple"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+</LinearLayout>
