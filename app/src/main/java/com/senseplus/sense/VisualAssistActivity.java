@@ -21,24 +21,39 @@ import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.label.ImageLabel;
+import com.google.mlkit.vision.label.ImageLabeler;
+import com.google.mlkit.vision.label.ImageLabeling;
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class VisualAssistActivity extends AppCompatActivity {
 
+    private enum Mode { TEXT, LABELS }
+
     private PreviewView previewView;
     private TextView tvRecognized;
     private TextToSpeech tts;
     private TextRecognizer recognizer;
+    private ImageLabeler labeler;
     private ExecutorService cameraExecutor;
     private static final int CAM_REQ = 300;
+
+    private volatile Mode mode = Mode.TEXT;
+    private final LabelAnnouncer labelAnnouncer = new LabelAnnouncer();
+    private static final long LABEL_INTERVAL_MS = 500;
+    private long lastLabelAnalysisMs = 0;
 
     // Auto-read state
     private String latestClean = "";
@@ -55,12 +70,30 @@ public class VisualAssistActivity extends AppCompatActivity {
         previewView = findViewById(R.id.previewView);
         tvRecognized = findViewById(R.id.tvRecognized);
         Button btnSpeak = findViewById(R.id.btnSpeak);
+        MaterialButtonToggleGroup modeToggle = findViewById(R.id.modeToggle);
 
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) tts.setLanguage(Locale.US);
         });
         recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+        labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS);
         cameraExecutor = Executors.newSingleThreadExecutor();
+
+        modeToggle.check(R.id.btnReadText);
+        modeToggle.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            if (checkedId == R.id.btnReadText) {
+                mode = Mode.TEXT;
+                tvRecognized.setTextSize(16);
+                tvRecognized.setText("(point the camera at text)");
+                speak("Read text");
+            } else {
+                mode = Mode.LABELS;
+                tvRecognized.setTextSize(22);
+                tvRecognized.setText("(point the camera at an object)");
+                speak("What's around me");
+            }
+        });
 
         // Manual re-read (for a sighted helper, or to hear it again)
         btnSpeak.setOnClickListener(v -> {
@@ -84,7 +117,7 @@ public class VisualAssistActivity extends AppCompatActivity {
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startCamera();
         } else {
-            Toast.makeText(this, "Camera permission is needed to read text", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Camera permission is needed for Visual Assist", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -113,11 +146,37 @@ public class VisualAssistActivity extends AppCompatActivity {
     @ExperimentalGetImage
     private void analyze(ImageProxy imageProxy) {
         Image mediaImage = imageProxy.getImage();
-        if (mediaImage == null) { imageProxy.close(); return; }
+        if (mediaImage == null) {
+            imageProxy.close();
+            return;
+        }
 
-        InputImage image = InputImage.fromMediaImage(
-                mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+        if (mode == Mode.LABELS) {
+            long now = System.currentTimeMillis();
+            if (now - lastLabelAnalysisMs < LABEL_INTERVAL_MS) {
+                imageProxy.close();
+                return;
+            }
+            lastLabelAnalysisMs = now;
+        }
 
+        InputImage image;
+        try {
+            image = InputImage.fromMediaImage(
+                    mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+        } catch (Exception e) {
+            imageProxy.close();
+            return;
+        }
+
+        if (mode == Mode.TEXT) {
+            processText(image, imageProxy);
+        } else {
+            processLabels(image, imageProxy);
+        }
+    }
+
+    private void processText(InputImage image, ImageProxy imageProxy) {
         recognizer.process(image)
                 .addOnSuccessListener(result -> {
                     String clean = result.getText().replaceAll("\\s+", " ").trim();
@@ -142,8 +201,48 @@ public class VisualAssistActivity extends AppCompatActivity {
                 .addOnCompleteListener(t -> imageProxy.close());
     }
 
+    private void processLabels(InputImage image, ImageProxy imageProxy) {
+        labeler.process(image)
+                .addOnSuccessListener(labels -> {
+                    List<LabelAnnouncer.Label> detected = new ArrayList<>();
+                    for (ImageLabel label : labels) {
+                        detected.add(new LabelAnnouncer.Label(
+                                label.getText(), label.getConfidence()));
+                    }
+
+                    List<LabelAnnouncer.Label> top = LabelAnnouncer.topLabels(detected);
+                    String screenText = formatLabels(top);
+                    runOnUiThread(() -> {
+                        if (mode == Mode.LABELS) {
+                            tvRecognized.setText(screenText.isEmpty()
+                                    ? "(point the camera at an object)" : screenText);
+                        }
+                    });
+
+                    String sentence = labelAnnouncer.announce(
+                            detected, System.currentTimeMillis());
+                    if (sentence != null) {
+                        runOnUiThread(() -> {
+                            if (mode == Mode.LABELS) speak(sentence);
+                        });
+                    }
+                })
+                .addOnCompleteListener(t -> imageProxy.close());
+    }
+
+    private String formatLabels(List<LabelAnnouncer.Label> labels) {
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < labels.size(); i++) {
+            if (i > 0) out.append('\n');
+            LabelAnnouncer.Label label = labels.get(i);
+            out.append(label.text).append(' ')
+                    .append(Math.round(label.confidence * 100)).append('%');
+        }
+        return out.toString();
+    }
+
     private void speak(String text) {
-        if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "ocr");
+        if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "visual");
     }
 
     @Override
@@ -151,6 +250,7 @@ public class VisualAssistActivity extends AppCompatActivity {
         super.onDestroy();
         if (tts != null) { tts.stop(); tts.shutdown(); }
         if (recognizer != null) recognizer.close();
+        if (labeler != null) labeler.close();
         if (cameraExecutor != null) cameraExecutor.shutdown();
     }
 }
