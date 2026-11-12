@@ -84,4 +84,4 @@ Java · Android SDK · `SensorManager` · Fused Location Provider · CameraX · 
 
 ## Known limitations
 
-Accuracy of OCR and voice depends on lighting and noise; continuous sensing/listening uses more battery; remote monitoring needs an internet connection; only one feature can use the microphone at a time (User monitoring or Hearing Assist); automatic detection supports — it does not replace — professional help.
+Accuracy of OCR and voice depends on lighting and noise; continuous sensing/listening uses more battery; remote monitoring needs an internet connection (an opt-in SMS fallback can text the guardians without one); Hearing Assist and the voice keywords share the one microphone by taking turns — while Hearing Assist is open the voice keywords ("help", the codeword) are paused, and fall detection, location and the heartbeat keep working; after a phone restart or an app update Android does not let the app resume monitoring by itself, so SENSE+ posts a reminder notification and protection comes back when the person taps it (until then nothing is running); automatic detection supports — it does not replace — professional help.

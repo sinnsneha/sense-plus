@@ -77,7 +77,7 @@ Segments 0–12 are done and were tested on a real phone.
 5. Enable USB debugging, accept the "Allow USB debugging" prompt and select the **physical phone** in the device dropdown. The emulator's microphone is not reliable for voice.
 6. Grant **mic, location, notifications and camera** when asked.
 
-**Known limitation while testing:** only one feature can use the microphone at a time. Stop User monitoring before testing Hearing Assist.
+**Microphone sharing (segment 28):** you no longer need to stop User monitoring to test Hearing Assist. While Hearing Assist is open the voice keywords are paused (fall detection, location and the heartbeat keep running); they resume when it closes.
 
 ---
 

@@ -50,6 +50,15 @@ The UI follows the **SENSE+ Pastel Companion** design system in `sense_plus_desi
 14. **No Pip bitmap cache.** Idle breathe and bob animate view properties, so the layers are not redrawn on idle frames; blink, talk, waves and rings redraw only while they run.
 15. **Dialogs** use `MaterialAlertDialogBuilder` (white, 32dp corners, `tangerine_700` buttons at 4.8:1).
 16. **Login** (segment 22) is not in the profile. It is built from the profile's components: a lavender hero with Pip waving, plus role cards showing Pip's guard and guardian looks.
+17. **Buttons are text only (user review, 2026-11-12).** The orange icon-chip CTA read as off-tone and competed with HELP. The changes:
+    - Primary CTAs (`Button.Stadium`) have no leading icon circle.
+    - SENSE GUARD's start/stop is its own `Button.Guard`: a rounded tile in the hero's lavender. "Start monitoring" is deep lavender with white text; while monitoring runs (`setActivated(true)`) it becomes a calm light-lavender "Stop monitoring", so HELP stays the loudest.
+    - HELP is a flat solid-red, letter-spaced tile.
+    - I'M OK is a soft mint tile with no border.
+    - The codeword setting is a lavender text link.
+    - The profile's coloured glows (`glow_tangerine`, `glow_emergency`) are dropped, because they smudged the cream background.
+    - The status line no longer repeats "Status:".
+    - Material's elevation overlay is off; it tinted the white BACK pill peach.
 
 ## Not built yet
 
