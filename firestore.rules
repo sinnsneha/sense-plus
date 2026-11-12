@@ -1,0 +1,61 @@
+rules_version = '2';
+
+// SENSE+ Firestore security rules (segment 23).
+// Paste this whole file into Firebase console → Firestore Database → Rules → Publish,
+// AFTER both phones run an app build that includes segment 23.
+//
+// What it guarantees:
+//  - Only you can read or change your own account (accounts/{uid}).
+//  - A user's live status, location and timeline (users/{uid}) can be read only by that user
+//    and by the guardians that user approved.
+//  - Only the user writes their own data. A linked guardian may change just two fields:
+//    'ack' ("I'm on my way", segment 25) and 'home' (safe zone, segment 27).
+//  - A guardian can ask to link only with a valid, unexpired 6-digit code issued by that user,
+//    and the link only happens when the user taps Approve.
+//  - Everything else, including the old shared sense_users/demoUser document, is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isUid(uid) { return signedIn() && request.auth.uid == uid; }
+    function userDoc(uid) { return get(/databases/$(database)/documents/users/$(uid)); }
+    function codeDoc(code) { return get(/databases/$(database)/documents/pairCodes/$(code)); }
+
+    match /accounts/{uid} {
+      allow read, write: if isUid(uid);
+    }
+
+    match /users/{uid} {
+      allow read: if isUid(uid)
+                  || (signedIn() && request.auth.uid in resource.data.get('guardians', []));
+      allow create, delete: if isUid(uid);
+      // The owner may change anything; a linked guardian may only touch 'ack' and 'home'.
+      allow update: if isUid(uid)
+                    || (signedIn()
+                        && request.auth.uid in resource.data.get('guardians', [])
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ack', 'home']));
+
+      match /events/{eventId} {
+        allow read: if isUid(uid)
+                    || (signedIn() && request.auth.uid in userDoc(uid).data.get('guardians', []));
+        allow create: if isUid(uid);
+      }
+
+      // A guardian may ask to link only with a valid, unexpired code issued by this user.
+      match /linkRequests/{guardianUid} {
+        allow create: if isUid(guardianUid)
+                      && exists(/databases/$(database)/documents/pairCodes/$(request.resource.data.code))
+                      && codeDoc(request.resource.data.code).data.userUid == uid
+                      && codeDoc(request.resource.data.code).data.expiresAt > request.time;
+        allow read, delete: if isUid(uid) || isUid(guardianUid);
+      }
+    }
+
+    // Short-lived codes: anyone signed in may look up ONE code (never list them).
+    match /pairCodes/{code} {
+      allow get: if signedIn() && resource.data.expiresAt > request.time;
+      allow create: if signedIn() && request.resource.data.userUid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userUid == request.auth.uid;
+    }
+  }
+}

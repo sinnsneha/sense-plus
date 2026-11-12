@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Source;
 
 import java.util.TimeZone;
@@ -46,10 +47,12 @@ public class GuardianService extends Service {
     private static final int SIGNIN_ID = 4;
     private static final int BATTERY_ID = 5;
     private static final int CONTACT_ID = 6;
+    private static final int LINK_ID = 7;
 
     private static final int REQUEST_OPEN_DASHBOARD = 20;
     private static final int REQUEST_OPEN_MAP = 21;
     private static final int REQUEST_CALL = 22;
+    private static final int REQUEST_OPEN_LINK = 23;
 
     // Milliseconds: buzz, pause, buzz ... Long pulses so it is felt in a pocket or on a table.
     private static final long[] ALARM_VIBRATION = {0, 1000, 400, 1000, 400, 1000, 400, 1000};
@@ -61,16 +64,39 @@ public class GuardianService extends Service {
     private ConnectivityStatus.State lastContact = null;
     private final BatteryAlertRule batteryRule = new BatteryAlertRule();
 
+    // Refused polls in a row. A few mean the user removed this guardian (segment 23).
+    private int deniedStreak = 0;
+
     private final Handler pollHandler = new Handler(Looper.getMainLooper());
     private final Runnable pollTask = new Runnable() {
         @Override public void run() {
-            db.collection("sense_users").document("demoUser").get(Source.SERVER)
+            final String linked = AccountStore.linkedUid(GuardianService.this);
+            if (linked == null) { // unlinked from another screen while running
+                stopForNoLink();
+                return;
+            }
+            FirestorePaths.userDoc(linked).get(Source.SERVER)
                     .addOnSuccessListener(doc -> {
+                        deniedStreak = 0;
                         if (doc != null && doc.exists()) onPolled(doc);
+                    })
+                    .addOnFailureListener(e -> {
+                        if (isPermissionDenied(e)) {
+                            deniedStreak++;
+                            if (PairingRules.shouldUnlink(deniedStreak)) onUnlinked();
+                        }
+                        // Any other failure is this phone's own network: keep polling.
                     });
-            pollHandler.postDelayed(this, 2000);
+            // Decision 1: 5 s while the user is NORMAL, 2 s during a possible fall/emergency.
+            pollHandler.postDelayed(this, PairingRules.backgroundPollMs(lastStatus));
         }
     };
+
+    private static boolean isPermissionDenied(Exception e) {
+        return e instanceof FirebaseFirestoreException
+                && ((FirebaseFirestoreException) e).getCode()
+                == FirebaseFirestoreException.Code.PERMISSION_DENIED;
+    }
 
     /** Removes the status notification (and so stops a ringing alarm). Called when the dashboard opens. */
     static void dismissAlert(Context context) {
@@ -98,18 +124,69 @@ public class GuardianService extends Service {
             return START_NOT_STICKY;
         }
 
+        if (!AccountStore.isLinked(this)) {
+            // Not linked to anyone yet: nothing to watch. Say so, and stop.
+            startForegroundSafely(linkNotification("Link to a person",
+                    "Link to the person you look after to receive their alerts."));
+            stopForNoLink();
+            return START_NOT_STICKY;
+        }
+
+        String who = AccountStore.linkedName(this);
         Notification ongoing = new NotificationCompat.Builder(this, ONGOING_CHANNEL)
                 .setContentTitle("SENSE+ Guardian")
-                .setContentText("Monitoring for emergencies")
+                .setContentText(who == null || who.trim().isEmpty()
+                        ? "Monitoring for emergencies" : "Watching over " + who.trim())
                 .setSmallIcon(android.R.drawable.ic_menu_mylocation)
                 .setOngoing(true)
                 .build();
 
         startForegroundSafely(ongoing);
 
+        deniedStreak = 0;
         pollHandler.removeCallbacks(pollTask);
         pollHandler.post(pollTask);
         return START_STICKY;
+    }
+
+    /** No linked person: post the "link" notice (tap → LinkActivity) and stop the service. */
+    private void stopForNoLink() {
+        pollHandler.removeCallbacks(pollTask);
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) nm.notify(LINK_ID, linkNotification("Link to a person",
+                "Link to the person you look after to receive their alerts."));
+        stopForeground(STOP_FOREGROUND_REMOVE);
+        stopSelf();
+    }
+
+    /** The user removed this guardian (polls refused several times): forget the link and stop. */
+    private void onUnlinked() {
+        String who = AccountStore.linkedName(this);
+        AccountStore.clearLink(this);
+        pollHandler.removeCallbacks(pollTask);
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) {
+            nm.cancel(ALERT_ID);
+            nm.notify(LINK_ID, linkNotification("No longer linked",
+                    (who == null || who.trim().isEmpty() ? "The person you looked after" : who.trim())
+                            + " removed you as a guardian. Alerts have stopped on this phone."));
+        }
+        stopForeground(STOP_FOREGROUND_REMOVE);
+        stopSelf();
+    }
+
+    private Notification linkNotification(String title, String text) {
+        Intent link = new Intent(this, LinkActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pi = PendingIntent.getActivity(this, REQUEST_OPEN_LINK, link, pendingFlags());
+        return new NotificationCompat.Builder(this, ALERT_CHANNEL)
+                .setContentTitle(title)
+                .setContentText(text)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build();
     }
 
     private void startForegroundSafely(Notification notification) {

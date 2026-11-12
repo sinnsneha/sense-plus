@@ -76,8 +76,11 @@ public class HomeActivity extends AppCompatActivity {
                     && !prefs.getBoolean(ProfileActivity.KEY_PROFILE_DONE, false)) {
                 startActivity(new Intent(this, ProfileActivity.class));
             }
-        } else {
+        } else if (AccountStore.isLinked(this)) {
             ensureGuardianService();
+        } else if (savedInstanceState == null) {
+            // Segment 23: a guardian who is not linked to anyone yet starts by linking.
+            startActivity(new Intent(this, LinkActivity.class));
         }
     }
 
@@ -85,7 +88,13 @@ public class HomeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (role == null) return; // redirected to login in onCreate
-        AccountStore.refresh(this); // background: pick up a role/name change from Firestore
+        // Background: pick up a role/name/link change from Firestore (e.g. a guardian signing in
+        // on a new phone learns its link here), then re-render and start alerts if now linked.
+        AccountStore.refresh(this, () -> {
+            if (isFinishing() || isDestroyed()) return;
+            applyCardVisibility();
+            if (Roles.GUARDIAN.equals(role) && AccountStore.isLinked(this)) ensureGuardianService();
+        });
         applyCardVisibility();
     }
 
@@ -116,6 +125,23 @@ public class HomeActivity extends AppCompatActivity {
 
         // The assistance-mode profile is a user feature only.
         findViewById(R.id.btnEditProfile).setVisibility(guardian ? View.GONE : View.VISIBLE);
+
+        // Segment 23: a guardian's card and link tile say who they look after.
+        if (guardian) {
+            String linkedName = AccountStore.linkedName(this);
+            boolean linked = AccountStore.isLinked(this);
+            String who = linkedName == null || linkedName.trim().isEmpty()
+                    ? getString(R.string.link_the_user) : linkedName.trim();
+            String line = linked ? getString(R.string.link_looking_after, who)
+                    : getString(R.string.link_not_linked);
+            ((TextView) findViewById(R.id.tvGuardianCardSub)).setText(line);
+            View link = findViewById(R.id.cardLink);
+            ((TextView) link.findViewById(R.id.tileSub)).setText(linked ? line
+                    : getString(R.string.home_tile_link_sub));
+            link.setContentDescription(getString(R.string.tile_cd,
+                    getString(R.string.home_tile_link_title),
+                    ((TextView) link.findViewById(R.id.tileSub)).getText()));
+        }
     }
 
     private void setUpCardClicks() {
@@ -132,6 +158,10 @@ public class HomeActivity extends AppCompatActivity {
         findViewById(R.id.cardSensor).setOnClickListener(v ->
                 startActivity(new Intent(this, SensorInfoActivity.class)));
         findViewById(R.id.cardGuardian).setOnClickListener(v -> authenticateThenOpenGuardian());
+        findViewById(R.id.cardGuardians).setOnClickListener(v ->
+                startActivity(new Intent(this, GuardiansActivity.class)));
+        findViewById(R.id.cardLink).setOnClickListener(v ->
+                startActivity(new Intent(this, LinkActivity.class)));
     }
 
     /** Shows or hides each card according to the role and the saved profile. */
@@ -163,6 +193,8 @@ public class HomeActivity extends AppCompatActivity {
         setCardVisible(R.id.cardHearing, ModeMapper.CARD_HEARING, visible);
         setCardVisible(R.id.cardNavigation, ModeMapper.CARD_NAVIGATION, visible);
         setCardVisible(R.id.cardSensor, ModeMapper.CARD_SENSOR, visible);
+        setCardVisible(R.id.cardGuardians, ModeMapper.CARD_GUARDIANS, visible);
+        setCardVisible(R.id.cardLink, ModeMapper.CARD_LINK, visible);
         fitLayoutToVisibleCards(visible);
     }
 
@@ -185,6 +217,11 @@ public class HomeActivity extends AppCompatActivity {
                 R.string.home_tile_hearing_title, R.string.home_tile_hearing_sub);
         styleTile(R.id.cardNavigation, Gradients.Family.CORAL, DuckLooks.Look.NAV,
                 R.string.home_tile_nav_title, R.string.home_tile_nav_sub);
+        // Segment 23: pairing tiles, on the guardian family colour (mint) with Pip's guardian look.
+        styleTile(R.id.cardGuardians, Gradients.Family.MINT, DuckLooks.Look.GUARDIAN,
+                R.string.home_tile_guardians_title, R.string.home_tile_guardians_sub);
+        styleTile(R.id.cardLink, Gradients.Family.MINT, DuckLooks.Look.GUARDIAN,
+                R.string.home_tile_link_title, R.string.home_tile_link_sub);
 
         Ui.pressFeedback(findViewById(R.id.cardUser), findViewById(R.id.cardGuardian),
                 findViewById(R.id.cardSensor), findViewById(R.id.btnAccount),
@@ -226,7 +263,8 @@ public class HomeActivity extends AppCompatActivity {
                 Ui.dp(this, 16));
 
         boolean anyTool = visible.contains(ModeMapper.CARD_COMMUNICATION) || visible.contains(ModeMapper.CARD_VISUAL)
-                || visible.contains(ModeMapper.CARD_HEARING) || visible.contains(ModeMapper.CARD_NAVIGATION);
+                || visible.contains(ModeMapper.CARD_HEARING) || visible.contains(ModeMapper.CARD_NAVIGATION)
+                || visible.contains(ModeMapper.CARD_GUARDIANS) || visible.contains(ModeMapper.CARD_LINK);
         findViewById(R.id.toolsHeader).setVisibility(anyTool ? View.VISIBLE : View.GONE);
         findViewById(R.id.toolGrid).setVisibility(anyTool ? View.VISIBLE : View.GONE);
     }

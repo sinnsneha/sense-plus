@@ -46,6 +46,10 @@
         <activity android:name=".SensorInfoActivity" android:exported="false" />
         <activity android:name=".HearingActivity" android:exported="false" />
         <activity android:name=".ProfileActivity" android:exported="false" />
+        <!-- Segment 23: guardian pairing -->
+        <activity android:name=".GuardiansActivity" android:exported="false" />
+        <activity android:name=".LinkActivity" android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <!-- Debug-only Pip gallery (finishes itself in non-debuggable builds) -->
         <activity android:name=".CharacterGalleryActivity" android:exported="false" />
 

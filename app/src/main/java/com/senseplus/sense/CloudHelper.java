@@ -2,27 +2,42 @@ package com.senseplus.sense;
 
 import android.util.Log;
 
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Writes the signed-in user's live status to their own document, users/{uid} (segment 23).
+ * Before segment 23 every phone shared one document; now only this user and the guardians they
+ * approved can read it (firestore.rules).
+ */
 public class CloudHelper {
 
-    private static final String COLLECTION = "sense_users";
-    private static final String USER_ID = "demoUser";   // shared id so the guardian phone can find it
+    private static final String TAG = "SenseCloud";
 
-    private final FirebaseFirestore db;
+    /** Null when nobody is signed in: every write is then skipped instead of crashing. */
+    private final String uid;
+    private final DocumentReference userDoc;
 
     // Last known location, cached from updateLocation so an event can carry it.
     // Written from the location thread, read from the main thread.
     private volatile Double lastLat;
     private volatile Double lastLon;
 
-    public CloudHelper() {
-        db = FirebaseFirestore.getInstance();
+    public CloudHelper(String uid) {
+        this.uid = uid;
+        this.userDoc = uid != null ? FirestorePaths.userDoc(uid) : null;
+    }
+
+    /** The user's name and phone, so a guardian sees who this is and can call them. */
+    public void updateProfile(String name, String phone) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", name == null ? "" : name);
+        data.put("phone", phone == null ? "" : phone);
+        push(data);
     }
 
     public void updateLocation(double lat, double lon, String mapsLink, String address) {
@@ -47,10 +62,11 @@ public class CloudHelper {
     }
 
     /**
-     * Appends one safety event to sense_users/{userId}/events.
+     * Appends one safety event to users/{uid}/events.
      * lat/lon are the last fix cached by updateLocation, or null if unknown.
      */
     public void logEvent(String type, String detail) {
+        if (uid == null) return;
         Map<String, Object> data = new HashMap<>();
         data.put("type", type);
         data.put("detail", detail);
@@ -59,9 +75,9 @@ public class CloudHelper {
         data.put("time", FieldValue.serverTimestamp());
         data.put("clientTime", System.currentTimeMillis());
 
-        db.collection(COLLECTION).document(USER_ID).collection("events").add(data)
+        FirestorePaths.events(uid).add(data)
                 .addOnFailureListener(e ->
-                        Log.w("SenseCloud", "Failed to log event " + type + ": " + e.getMessage(), e));
+                        Log.w(TAG, "Failed to log event " + type + ": " + e.getMessage(), e));
     }
 
     /** Writes the monitoring flag plus a fresh server-side lastSeen (heartbeat). */
@@ -90,10 +106,12 @@ public class CloudHelper {
         data.put("batteryAt", FieldValue.serverTimestamp());
     }
 
-    // merge = update only these fields, keep the rest of the document
+    // merge = update only these fields, keep the rest of the document (guardians, home, ack…)
     private void push(Map<String, Object> data) {
+        if (userDoc == null) return;
         // Server time, so the guardian compares its own clock with the server's.
         data.put("lastSeen", FieldValue.serverTimestamp());
-        db.collection(COLLECTION).document(USER_ID).set(data, SetOptions.merge());
+        userDoc.set(data, SetOptions.merge())
+                .addOnFailureListener(e -> Log.w(TAG, "Status write failed: " + e.getMessage(), e));
     }
 }

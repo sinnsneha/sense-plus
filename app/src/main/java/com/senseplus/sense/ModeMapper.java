@@ -8,8 +8,8 @@ import java.util.Set;
  * Pure mapping from the account role and the assistance modes a user chose to the
  * Home-screen cards that should be visible. No Android imports, so it is unit-tested.
  *
- * A User never sees the guardian card; a Guardian sees only the guardian card and
- * Sensor Info. Showing everything for a user with no saved profile is the safe default,
+ * A User never sees the guardian card; a Guardian sees only the guardian card,
+ * Sensor Info and "Link to a person". Showing everything for a user with no saved profile is the safe default,
  * so a user is never locked out of a tool.
  */
 public class ModeMapper {
@@ -29,14 +29,17 @@ public class ModeMapper {
     public static final String CARD_HEARING = "hearing";
     public static final String CARD_NAVIGATION = "navigation";
     public static final String CARD_SENSOR = "sensor";
+    /** Segment 23: "My guardians" (user) and "Link to a person" (guardian). */
+    public static final String CARD_GUARDIANS = "guardians";
+    public static final String CARD_LINK = "link";
 
-    /** Safety and Sensor Info are never hidden from a User, whatever the profile says. */
+    /** Safety, Sensor Info and My guardians are never hidden from a User, whatever the profile says. */
     private static final Set<String> USER_ALWAYS = new LinkedHashSet<>(
-            Arrays.asList(CARD_USER, CARD_SENSOR));
+            Arrays.asList(CARD_USER, CARD_SENSOR, CARD_GUARDIANS));
 
-    /** A Guardian only needs the dashboard and the sensor screen. */
+    /** A Guardian needs the dashboard, the sensor screen and the screen that links them to a person. */
     private static final Set<String> GUARDIAN_CARDS = new LinkedHashSet<>(
-            Arrays.asList(CARD_GUARDIAN, CARD_SENSOR));
+            Arrays.asList(CARD_GUARDIAN, CARD_SENSOR, CARD_LINK));
 
     private ModeMapper() { }
 
@@ -45,7 +48,7 @@ public class ModeMapper {
         // The guardian card is deliberately absent: that tool belongs to the guardian role.
         return new LinkedHashSet<>(Arrays.asList(
                 CARD_USER, CARD_COMMUNICATION, CARD_VISUAL,
-                CARD_HEARING, CARD_NAVIGATION, CARD_SENSOR));
+                CARD_HEARING, CARD_NAVIGATION, CARD_SENSOR, CARD_GUARDIANS));
     }
 
     /** @return every card a Guardian can see. */

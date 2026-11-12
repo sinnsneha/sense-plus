@@ -28,7 +28,9 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
@@ -62,16 +64,29 @@ public class GuardianActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
 
+    // Segment 23: the person this guardian is linked to (users/{linkedUid}).
+    private String linkedUid;
+    // Refused reads in a row; a few mean the user removed this guardian.
+    private int deniedStreak = 0;
+    private boolean unlinkHandled = false;
+
     private final Handler pollHandler = new Handler(Looper.getMainLooper());
     private final Runnable pollTask = new Runnable() {
         @Override public void run() {
-            db.collection("sense_users").document("demoUser").get(Source.SERVER)
+            FirestorePaths.userDoc(linkedUid).get(Source.SERVER)
                     .addOnSuccessListener(doc -> {
                         guardianOffline = false;
+                        deniedStreak = 0;
                         if (doc != null && doc.exists()) showData(doc);
                         else renderConnectivity(null, null);
                     })
                     .addOnFailureListener(e -> {
+                        if (isPermissionDenied(e)) {
+                            // Not the network: the rules refused us. Three in a row = removed.
+                            deniedStreak++;
+                            if (PairingRules.shouldUnlink(deniedStreak)) handleUnlinked();
+                            return;
+                        }
                         // The guardian's own connection failed; don't blame the user's phone.
                         guardianOffline = true;
                         showGuardianOffline();
@@ -81,6 +96,33 @@ public class GuardianActivity extends AppCompatActivity {
             pollHandler.postDelayed(this, 2000);
         }
     };
+
+    private static boolean isPermissionDenied(Exception e) {
+        return e instanceof FirebaseFirestoreException
+                && ((FirebaseFirestoreException) e).getCode()
+                == FirebaseFirestoreException.Code.PERMISSION_DENIED;
+    }
+
+    /** The user removed this guardian: stop, forget the link, explain, and offer to link again. */
+    private void handleUnlinked() {
+        if (unlinkHandled || isFinishing()) return;
+        unlinkHandled = true;
+        pollHandler.removeCallbacks(pollTask);
+        String who = AccountStore.linkedName(this);
+        AccountStore.clearLink(this);
+        stopService(new Intent(this, GuardianService.class));
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.link_removed_title)
+                .setMessage(getString(R.string.link_removed_body,
+                        who == null || who.trim().isEmpty() ? getString(R.string.link_someone) : who.trim()))
+                .setCancelable(false)
+                .setPositiveButton(R.string.link_again, (d, w) -> {
+                    startActivity(new Intent(this, LinkActivity.class));
+                    finish();
+                })
+                .setNegativeButton(R.string.link_close, (d, w) -> finish())
+                .show();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +135,14 @@ public class GuardianActivity extends AppCompatActivity {
             Intent login = new Intent(this, LoginActivity.class);
             login.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(login);
+            finish();
+            return;
+        }
+
+        // Segment 23: the dashboard shows one linked person. Not linked yet → link first.
+        linkedUid = AccountStore.linkedUid(this);
+        if (linkedUid == null) {
+            startActivity(new Intent(this, LinkActivity.class));
             finish();
             return;
         }
@@ -299,8 +349,7 @@ public class GuardianActivity extends AppCompatActivity {
     // Every poll reads only the newest event (1 read). The full 20-document query
     // runs only when that document changes, keeping the free read quota usable.
     private void pollEvents() {
-        db.collection("sense_users").document("demoUser")
-                .collection("events")
+        FirestorePaths.events(linkedUid)
                 .orderBy("time", Query.Direction.DESCENDING)
                 .limit(1)
                 .get(Source.SERVER)
@@ -317,8 +366,7 @@ public class GuardianActivity extends AppCompatActivity {
     }
 
     private void loadEvents() {
-        db.collection("sense_users").document("demoUser")
-                .collection("events")
+        FirestorePaths.events(linkedUid)
                 .orderBy("time", Query.Direction.DESCENDING)
                 .limit(20)
                 .get(Source.SERVER)

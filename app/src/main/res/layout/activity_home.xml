@@ -235,6 +235,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
+                            android:id="@+id/tvGuardianCardSub"
                             android:gravity="end"
                             android:text="@string/home_card_guardian_sub"
                             android:textAppearance="@style/TextAppearance.SENSE.BodyS"
@@ -327,6 +328,19 @@
 
             <include
                 android:id="@+id/cardNavigation"
+                layout="@layout/item_tool_tile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!-- Segment 23: My guardians (user) / Link to a person (guardian). -->
+            <include
+                android:id="@+id/cardGuardians"
+                layout="@layout/item_tool_tile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <include
+                android:id="@+id/cardLink"
                 layout="@layout/item_tool_tile"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />

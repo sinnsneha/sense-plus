@@ -126,7 +126,11 @@ public class UserMonitorService extends Service implements SensorEventListener {
             }
         });
 
-        cloudHelper = new CloudHelper();
+        // Segment 23: write to this user's own document. With no signed-in account the helper
+        // skips every write; onStartCommand then stops the service with a sign-in notice.
+        FirebaseUser signedIn = FirebaseAuth.getInstance().getCurrentUser();
+        cloudHelper = new CloudHelper(signedIn != null && !signedIn.isAnonymous()
+                ? signedIn.getUid() : null);
 
         locationHelper = new LocationHelper(this, (lat, lon, acc) -> handleLocation(lat, lon));
 
@@ -167,6 +171,8 @@ public class UserMonitorService extends Service implements SensorEventListener {
                 sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
             try { locationHelper.start(); } catch (Exception ignored) { }
             broadcast("NORMAL", "Monitoring (normal)");
+            // Name and phone first, so a linked guardian sees who this is and can call them.
+            cloudHelper.updateProfile(AccountStore.name(this), AccountStore.phone(this));
             cloudHelper.updateStatus("NORMAL", "Monitoring", battery());
             startHeartbeat();
             startVoice();

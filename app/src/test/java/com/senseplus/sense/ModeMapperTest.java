@@ -38,37 +38,37 @@ public class ModeMapperTest {
 
     @Test
     public void unknownModeIsIgnoredNextToKnownOne() {
-        assertEquals(set("user", "sensor", "hearing"),
+        assertEquals(set("user", "sensor", "guardians", "hearing"),
                 ModeMapper.visibleCards(set("hearing", "telepathy")));
     }
 
     @Test
     public void hearingOnlyAddsHearingToTheAlwaysShownCards() {
-        assertEquals(set("user", "sensor", "hearing"),
+        assertEquals(set("user", "sensor", "guardians", "hearing"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_HEARING)));
     }
 
     @Test
     public void visualAddsVisualAndNavigation() {
-        assertEquals(set("user", "sensor", "visual", "navigation"),
+        assertEquals(set("user", "sensor", "guardians", "visual", "navigation"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_VISUAL)));
     }
 
     @Test
     public void communicationAddsCommunicationOnly() {
-        assertEquals(set("user", "sensor", "communication"),
+        assertEquals(set("user", "sensor", "guardians", "communication"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_COMMUNICATION)));
     }
 
     @Test
     public void mobilityAddsNavigationOnly() {
-        assertEquals(set("user", "sensor", "navigation"),
+        assertEquals(set("user", "sensor", "guardians", "navigation"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_MOBILITY)));
     }
 
     @Test
     public void cognitiveAddsCommunicationAndNavigation() {
-        assertEquals(set("user", "sensor", "communication", "navigation"),
+        assertEquals(set("user", "sensor", "guardians", "communication", "navigation"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_COGNITIVE)));
     }
 
@@ -77,8 +77,8 @@ public class ModeMapperTest {
         Set<String> cards = ModeMapper.visibleCards(
                 set(ModeMapper.MODE_VISUAL, ModeMapper.MODE_COGNITIVE));
         // navigation comes from both modes but must appear once; hearing stays hidden
-        assertEquals(set("user", "sensor", "visual", "communication", "navigation"), cards);
-        assertEquals(5, cards.size());
+        assertEquals(set("user", "sensor", "guardians", "visual", "communication", "navigation"), cards);
+        assertEquals(6, cards.size());
         assertFalse(cards.contains("hearing"));
     }
 
@@ -99,6 +99,8 @@ public class ModeMapperTest {
             assertTrue("sensor hidden for " + modes, cards.contains(ModeMapper.CARD_SENSOR));
             assertFalse("guardian shown to a user for " + modes,
                     cards.contains(ModeMapper.CARD_GUARDIAN));
+            assertTrue("My guardians hidden for " + modes, cards.contains(ModeMapper.CARD_GUARDIANS));
+            assertFalse("link shown to a user for " + modes, cards.contains(ModeMapper.CARD_LINK));
         }
     }
 
@@ -125,17 +127,17 @@ public class ModeMapperTest {
     }
 
     @Test
-    public void guardianRoleIsExactlyGuardianAndSensor() {
-        assertEquals(set("guardian", "sensor"),
+    public void guardianRoleIsExactlyGuardianSensorAndLink() {
+        assertEquals(set("guardian", "sensor", "link"),
                 ModeMapper.visibleCards(Roles.GUARDIAN, Collections.<String>emptySet()));
-        assertEquals(set("guardian", "sensor"),
+        assertEquals(set("guardian", "sensor", "link"),
                 ModeMapper.visibleCards(Roles.GUARDIAN, set(ALL_MODES)));
     }
 
     @Test
     public void userWithNoModesSeesAllCardsExceptGuardian() {
         Set<String> cards = ModeMapper.visibleCards(Roles.USER, Collections.<String>emptySet());
-        assertEquals(set("user", "communication", "visual", "hearing", "navigation", "sensor"),
+        assertEquals(set("user", "communication", "visual", "hearing", "navigation", "sensor", "guardians"),
                 cards);
         assertFalse(cards.contains(ModeMapper.CARD_GUARDIAN));
     }
@@ -150,5 +152,20 @@ public class ModeMapperTest {
         for (Set<String> modes : inputs) {
             assertEquals(ModeMapper.visibleCards(Roles.USER, modes), ModeMapper.visibleCards(modes));
         }
+    }
+
+    // ---------- pairing tiles (segment 23) ----------
+
+    @Test
+    public void guardianNeverSeesMyGuardiansTile() {
+        assertFalse(ModeMapper.visibleCards(Roles.GUARDIAN, set(ALL_MODES))
+                .contains(ModeMapper.CARD_GUARDIANS));
+    }
+
+    @Test
+    public void userAlwaysSeesMyGuardiansButNeverLink() {
+        Set<String> cards = ModeMapper.visibleCards(Roles.USER, set(ModeMapper.MODE_HEARING));
+        assertTrue(cards.contains(ModeMapper.CARD_GUARDIANS));
+        assertFalse(cards.contains(ModeMapper.CARD_LINK));
     }
 }

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segment 23: guardian pairing and per-person data. Kept in its own file so it never
+     collides with edits to strings.xml; Android merges every values/*.xml file. -->
+<resources>
+
+    <!-- Home tiles and hero -->
+    <string name="home_tile_guardians_title">My guardians</string>
+    <string name="home_tile_guardians_sub">Who gets your alerts</string>
+    <string name="home_tile_link_title">Link to a person</string>
+    <string name="home_tile_link_sub">Enter their 6-digit code</string>
+    <string name="link_looking_after">Looking after %1$s</string>
+    <string name="link_not_linked">Not linked yet</string>
+
+    <!-- My guardians (user phone) -->
+    <string name="guardians_title">My guardians</string>
+    <string name="guardians_sub">People who get your alerts and can see where you are.</string>
+    <string name="guardians_section">Your guardians</string>
+    <string name="guardians_none">No guardians yet. Tap Add a guardian and give them the code.</string>
+    <string name="guardians_add">Add a guardian</string>
+    <string name="guardians_code_title">Give this code to your guardian</string>
+    <string name="guardians_code_hint">They type it on their phone under Link to a person. Then you approve them here.</string>
+    <string name="guardians_expires_in">Expires in %1$s</string>
+    <string name="guardians_code_expired">The code has expired. Tap Add a guardian for a new one.</string>
+    <string name="guardians_speak_code">Speak code</string>
+    <string name="guardians_cancel_code">Cancel code</string>
+    <string name="guardians_code_spoken">Your code is %1$s</string>
+    <string name="guardians_code_cd">Pairing code %1$s</string>
+    <string name="guardians_approve_title">Approve %1$s as your guardian?</string>
+    <string name="guardians_approve_body">They will get your alerts and see your location.</string>
+    <string name="guardians_approve_body_phone">They will get your alerts and see your location. Their phone: %1$s</string>
+    <string name="guardians_approve">Approve</string>
+    <string name="guardians_decline">Decline</string>
+    <string name="guardians_now_guardian">%1$s is now your guardian.</string>
+    <string name="guardians_remove">Remove</string>
+    <string name="guardians_remove_title">Remove %1$s?</string>
+    <string name="guardians_remove_body">They will stop getting your alerts and will no longer see your location.</string>
+    <string name="guardians_removed">%1$s removed.</string>
+    <string name="guardians_no_phone">No phone number</string>
+    <string name="guardians_row_cd">%1$s, guardian. %2$s</string>
+    <string name="guardians_unnamed">Your guardian</string>
+    <string name="guardians_error_network">Couldn\'t reach the server. Check the internet and try again.</string>
+    <string name="guardians_error_code">Couldn\'t make a code. Try again.</string>
+
+    <!-- Link to a person (guardian phone) -->
+    <string name="link_title">Link to a person</string>
+    <string name="link_sub">On their phone they open My guardians and tap Add a guardian. Type the code they see.</string>
+    <string name="link_code_hint">6-digit code</string>
+    <string name="link_phone_hint">Your phone number (optional)</string>
+    <string name="link_phone_help">Lets them call you from SENSE+.</string>
+    <string name="link_button">Link</string>
+    <string name="link_error_format">Type the 6 digits of the code.</string>
+    <string name="link_error_code">That code is wrong or has expired.</string>
+    <string name="link_error_network">Couldn\'t reach the server. Check the internet and try again.</string>
+    <string name="link_waiting">Waiting for %1$s to approve on their phone…</string>
+    <string name="link_waiting_sub">Keep this screen open. It continues by itself.</string>
+    <string name="link_cancel">Cancel</string>
+    <string name="link_declined">%1$s declined the request.</string>
+    <string name="link_timeout">No answer after 10 minutes. Ask for a new code and try again.</string>
+    <string name="link_linked_title">You are looking after %1$s</string>
+    <string name="link_linked_sub">You get their alerts on this phone, even when the app is closed.</string>
+    <string name="link_open_dashboard">Open dashboard</string>
+    <string name="link_unlink">Unlink</string>
+    <string name="link_unlink_title">Unlink from %1$s?</string>
+    <string name="link_unlink_body">Alerts will stop on this phone. %1$s can also remove you under My guardians.</string>
+    <string name="link_done">Linked. You will get %1$s\'s alerts.</string>
+    <string name="link_removed_title">No longer linked</string>
+    <string name="link_removed_body">%1$s removed you as a guardian. Alerts have stopped on this phone.</string>
+    <string name="link_someone">The person you looked after</string>
+    <string name="link_the_user">the user</string>
+    <string name="link_again">Link again</string>
+    <string name="link_close">Close</string>
+</resources>

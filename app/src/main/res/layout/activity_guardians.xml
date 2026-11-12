@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segment 23, user phone: "My guardians". Compact lavender hero with Pip in the guardian look →
+     the pairing code card (while a code is active) → the list of approved guardians →
+     "Add a guardian" pinned at the bottom. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/guardiansRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_canvas"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:id="@+id/guardiansHero"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/hero_compact">
+
+                <com.senseplus.sense.ui.DuckView
+                    android:id="@+id/pipGuardians"
+                    android:layout_width="@dimen/pip_card"
+                    android:layout_height="@dimen/pip_card"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="10dp"
+                    app:duckLook="guardian" />
+
+                <LinearLayout
+                    android:id="@+id/topBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/screen_gutter"
+                    android:paddingEnd="@dimen/screen_gutter"
+                    android:paddingBottom="44dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:minHeight="@dimen/top_bar_height">
+
+                        <Button
+                            android:id="@+id/btnBack"
+                            style="@style/Widget.SENSE.Button.PillWhite"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginEnd="150dp"
+                        android:accessibilityHeading="true"
+                        android:text="@string/guardians_title"
+                        android:textAppearance="@style/TextAppearance.SENSE.HeadlineL" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="150dp"
+                        android:text="@string/guardians_sub"
+                        android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                        android:textColor="@color/ink_700" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_gutter"
+                android:paddingTop="8dp"
+                android:paddingEnd="@dimen/screen_gutter"
+                android:paddingBottom="16dp">
+
+                <!-- The active pairing code (hidden when there is none). -->
+                <LinearLayout
+                    android:id="@+id/codeCard"
+                    style="@style/Widget.SENSE.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/guardians_code_title"
+                        android:textAppearance="@style/TextAppearance.SENSE.TitleS" />
+
+                    <TextView
+                        android:id="@+id/tvCode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:letterSpacing="0.1"
+                        android:textAppearance="@style/TextAppearance.SENSE.DisplayNumberBold"
+                        android:textIsSelectable="true" />
+
+                    <TextView
+                        android:id="@+id/tvCountdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textAppearance="@style/TextAppearance.SENSE.BodyS"
+                        android:textColor="@color/ink_700" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/guardians_code_hint"
+                        android:textAppearance="@style/TextAppearance.SENSE.BodyS"
+                        android:textColor="@color/ink_600" />
+
+                    <Button
+                        android:id="@+id/btnSpeakCode"
+                        style="@style/Widget.SENSE.Button.Tonal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/guardians_speak_code" />
+
+                    <Button
+                        android:id="@+id/btnCancelCode"
+                        style="@style/Widget.SENSE.Button.Outline"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/guardians_cancel_code" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvPairStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:textAppearance="@style/TextAppearance.SENSE.BodyS"
+                    android:textColor="@color/ink_700"
+                    android:visibility="gone" />
+
+                <TextView
+                    style="@style/Widget.SENSE.SectionHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="@string/guardians_section" />
+
+                <LinearLayout
+                    android:id="@+id/guardiansContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/tvNoGuardians"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/guardians_none"
+                    android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                    android:textColor="@color/ink_700" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/surface_canvas"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/screen_gutter"
+        android:paddingTop="12dp"
+        android:paddingEnd="@dimen/screen_gutter">
+
+        <Button
+            android:id="@+id/btnAddGuardian"
+            style="@style/Widget.SENSE.Button.Stadium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/guardians_add" />
+    </LinearLayout>
+</LinearLayout>
