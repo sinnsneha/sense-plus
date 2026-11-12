@@ -1,0 +1,2352 @@
+{
+  "meta": {
+    "name": "SENSE+ Pastel Companion Design System",
+    "version": "1.1.0",
+    "date": "2026-11-12",
+    "authorRole": "Senior front-end engineer (Android UI)",
+    "app": {
+      "name": "SENSE+",
+      "summary": "Assistive and safety companion for people with disabilities. A User side (fall detection with a three-level safety system, voice commands, Communication board, Visual Assist OCR, Hearing Assist sound alerts and captions) and a Guardian side (live status, location, battery and alerts).",
+      "repository": "https://github.com/sinnsneha/sense-plus",
+      "package": "com.senseplus.sense",
+      "platform": "Android, Java (NOT Kotlin), XML View layouts (NOT Jetpack Compose)",
+      "minSdk": 26,
+      "targetSdk": 37,
+      "build": "Gradle Kotlin DSL, AGP 9.5.1, Gradle 9.6.0",
+      "existingUiLibs": [
+        "androidx.appcompat",
+        "com.google.android.material (Material 3)",
+        "androidx.constraintlayout",
+        "androidx.camera:camera-view (PreviewView)"
+      ],
+      "currentTheme": "Theme.SENSE -> Base.Theme.SENSE parent Theme.Material3.DayNight.NoActionBar"
+    },
+    "intendedReader": "A Claude Code session that already has the SENSE+ repository open. This file is the single source of truth for the visual redesign.",
+    "referenceImage": "Three phone mockups of a pastel mental-health app: (1) 'Buy Sessions' screen with a large lavender plush blob character, a scalloped orange badge, a wave slider and a big orange cart button; (2) 'Mental Help' screen with a grainy cream-to-orange gradient, a SEARCH pill, and a tilted white question card stacked on ghost cards; (3) 'Hello, Samantha' home with circular icon buttons, an organic orange hero card with a yellow star character, a peeking lavender card, and soft stat tiles (Weekly Mood, Energy 80, Stress 67).",
+    "companionFiles": [
+      "duck_kit.zip (33 duck VectorDrawables + looks.json + previews; unzip res/drawable/* into app/src/main/res/drawable)",
+      "pip_duck_lookbook.png (every section look)",
+      "pip_duck_expressions.png (all expressions)"
+    ],
+    "characterStyleReference": "design/reference/duck_style_reference.jpg — the user's sticker sheet of cute white ducklings. Pip must look like those ducks.",
+    "changelog": {
+      "1.1.0": "Characters changed from a family of pastel blob creatures to ONE mascot, Pip the duckling, in the style of the user's duck sticker sheet. Each section now gets a Pip LOOK (outfit/prop/pose). Ducks are flat sticker art with no grain. Asset kit replaced (duck_kit.zip)."
+    },
+    "goal": "Re-skin every SENSE+ screen in this soft, grainy, pastel style with Pip the duckling as the mascot while keeping all behaviour intact and keeping the app fully accessible for blind, deaf, non-speaking, mobility-impaired and cognitively impaired users."
+  },
+  "howToUseThisProfile": {
+    "readOrder": [
+      "implementationContract (hard rules: what you must and must not change)",
+      "designPrinciples + tokens (colours, type, spacing, radius, shadow, grain, motion)",
+      "characters (Pip the duckling: style, looks, expressions and the section-to-look contract)",
+      "components (reusable building blocks)",
+      "screens (section-by-section specification; implement each screen exactly as specified)",
+      "androidImplementation (files, classes, theme, edge-to-edge, gotchas)",
+      "accessibility, contentAndCopy, qa, workPlan",
+      "referenceAssets (the verified duck drawable kit and look recipes)"
+    ],
+    "conflictResolutionOrder": [
+      "1. Safety semantics (an emergency must always look and sound like an emergency)",
+      "2. Accessibility requirements (contrast, touch size, TalkBack, font scaling, reduced motion)",
+      "3. implementationContract rules (no behaviour changes, preserve view IDs)",
+      "4. The screen spec in this profile",
+      "5. The tokens and component specs in this profile",
+      "6. The reference image's look and feel"
+    ],
+    "whenSomethingIsUnspecified": "Derive it from the nearest component or screen spec and the designPrinciples. Never invent a new colour, font size or radius outside the tokens. Record the decision in DESIGN_NOTES.md at the repo root.",
+    "terminology": {
+      "section": "One functional area of the app, normally one Activity: Home, SENSE GUARD (User), Guardian, Communication, Visual Assist, Hearing Assist, Sensor Info, and the planned Navigation, Profile/Settings, Onboarding.",
+      "character": "Pip, the app's single mascot: a cute white duckling in the style of the user's duck sticker sheet, drawn as layered VectorDrawables.",
+      "look": "Pip dressed for one section: outfit, props and pose that show what the section does (e.g. sound waves for Hearing).",
+      "signature prop": "The prop or pose inside a look that tells you which section it is (e.g. the wing raised to listen plus sound waves for Hearing).",
+      "grain": "Fine monochrome noise speckle drawn over coloured UI surfaces to create the reference's soft, risograph texture. Never drawn on Pip."
+    }
+  },
+  "implementationContract": {
+    "mustDo": [
+      "Implement every section listed in 'screens' so it matches its spec: layout order, components, tokens, character, states and copy. Visual conformance is checked section by section against this file.",
+      "Show Pip in each section's own LOOK exactly as assigned in characters.sectionCharacterContract. The look must visibly represent what the section does (Hearing -> wing raised to listen + sound waves, Visual -> round glasses + book, Communication -> speech bubble, SENSE GUARD -> superhero cape + shield with a heart, Guardian -> parent duck with a duckling, Sensor Info -> antenna headband, Navigation -> bucket hat + satchel).",
+      "Match Pip to the user's duck sticker sheet (design/reference/duck_style_reference.jpg): chubby white duckling, warm dark outline, orange beak and feet, pink blush, tiny curly tuft, flat colours.",
+      "Drive Pip's expression from the section's real state (characters.sectionCharacterContract.stateMapping), e.g. SENSE GUARD: OFF -> sleep look, NORMAL -> idle, ATTENTION -> alert + '?', EMERGENCY -> concerned + '!'.",
+      "Use only tokens defined in this profile (put them in res/values/colors.xml, dimens.xml, styles). No hard-coded hex colours in layouts or Java after the redesign; Java must use ContextCompat.getColor(ctx, R.color.token_name).",
+      "Keep the app 100% usable with TalkBack, at 200% font scale, with animations turned off, and in sunlight (contrast).",
+      "Build and run on the physical test phone after each screen; take a screenshot; tick that screen's acceptance criteria.",
+      "Write Java (not Kotlin) and XML Views (not Compose)."
+    ],
+    "mustNotDo": [
+      "Do not change business logic: fall detection (FallDetector, thresholds, timers), UserMonitorService state machine, voice keyword handling, Firebase/CloudHelper reads and writes, polling intervals, GuardianService notification logic, sound classification thresholds, TTS phrases that the services speak.",
+      "Do not rename, delete or change the type of any view ID that Java code looks up (see preservedViewIds). If a view must change type (e.g. TextView -> ImageView), update the Java in the same change and note it in DESIGN_NOTES.md.",
+      "Do not add heavy UI dependencies (no Lottie, Compose, Glide, image-loading or animation libraries). Everything here is achievable with the Android framework, AndroidX and Material Components already in the project.",
+      "Do not use raster images (PNG/JPG/WebP) for Pip or icons. Pip is the layered VectorDrawable kit; icons are vector drawables. The reference images are for looking at only and must not ship in the APK.",
+      "Do not put grain on Pip, text, icons, white cards, or camera previews.",
+      "Do not let Pip cover text, controls, or a control's touch area.",
+      "Do not use happy, wink or talk expressions or pastel-only styling during ATTENTION or EMERGENCY states.",
+      "Do not use the plain look as a section hero, and do not invent new mascots: every section uses Pip in its own look."
+    ],
+    "allowedPresentationChangesInJava": [
+      "Replace getWindow().setStatusBarColor(...) calls with the edge-to-edge helper (androidImplementation.edgeToEdge).",
+      "Replace hard-coded Color.parseColor(...) values in UI code (MainActivity.updateStatusUi, GuardianActivity.colorFor, HearingActivity.SoundType + showIdleCard, CommunicationActivity button colours) with token colours.",
+      "Change text formatting written into views when the new layout already shows a label (e.g. tvGBattery shows '80%' instead of 'Battery: 80%').",
+      "Swap dynamically created Buttons for inflated styled item layouts (CommunicationActivity phrases).",
+      "Add calls that set character expressions, badge text, level indicator position, selected states and animations.",
+      "Replace setAlpha-based selected styling with setSelected(...) plus selector drawables."
+    ],
+    "preservedViewIds": {
+      "_note": "Source of truth is `findViewById(R.id.` in each Activity. Re-grep before editing a layout. Known IDs at time of writing:",
+      "HomeActivity / activity_home.xml": [
+        "cardUser",
+        "cardGuardian",
+        "cardComm",
+        "cardVisual",
+        "cardHearing",
+        "cardSensor"
+      ],
+      "MainActivity / activity_main.xml": [
+        "tvStatus",
+        "btnToggle",
+        "btnHelp",
+        "btnOk"
+      ],
+      "GuardianActivity / activity_guardian.xml": [
+        "tvGStatus",
+        "tvGAddress",
+        "tvGCoords",
+        "tvGBattery",
+        "tvGUpdated",
+        "btnOpenMaps",
+        "btnStop"
+      ],
+      "CommunicationActivity / activity_communication.xml": [
+        "phraseContainer (Java casts it to LinearLayout today; update the cast if you change its type)"
+      ],
+      "VisualAssistActivity / activity_visual_assist.xml": [
+        "previewView",
+        "tvRecognized",
+        "btnSpeak"
+      ],
+      "HearingActivity / activity_hearing.xml": [
+        "alertCard",
+        "tvAlertIcon",
+        "tvAlertTitle",
+        "tvAlertDetail",
+        "tvListening",
+        "tvFeedLabel",
+        "tvFeed",
+        "feedScroll",
+        "btnSounds",
+        "btnCaptions"
+      ],
+      "SensorInfoActivity / activity_sensor_info.xml": [
+        "tvAccel",
+        "tvGyro",
+        "tvLight",
+        "tvProx",
+        "tvCompass",
+        "tvSensorList"
+      ]
+    },
+    "dynamicStyleHooks": {
+      "MainActivity.updateStatusUi(status, info)": "Single place that must apply StatusStyle (hero background, Pip look/expression/effect, badge copy, level indicator, tvStatus colour). stopMonitoring() applies StatusStyle.OFF.",
+      "GuardianActivity.colorFor(status) / render()": "Apply StatusStyle to the status hero card, Pip (guardian look) expression/effect and text colours.",
+      "HearingActivity.onSoundDetected / showIdleCard / updateModeButtons": "Apply SoundStyle (urgent vs soft), Pip (hearing look) expression + soundTypeBadge, segmented control selected state.",
+      "CommunicationActivity phrase creation loop": "Inflate item_phrase.xml; HELP phrase uses the emergency style.",
+      "VisualAssistActivity text callback": "Pip (visual look): new text -> alert (1.5 s) then idle; reading aloud -> talk."
+    },
+    "definitionOfDone": [
+      "Every screen in 'screens' with status 'existing' is implemented and passes its acceptanceCriteria.",
+      "Pip renders in every existing section's look, matches the duck reference style, animates (idle breathe + blink) and switches expressions from real state.",
+      "qa.globalChecklist passes (build, TalkBack, 200% font, reduced motion, contrast, no behaviour regressions in the testing checklist).",
+      "DESIGN_NOTES.md lists every deviation from this profile with a reason."
+    ]
+  },
+  "referenceAnalysis": {
+    "overallMood": "Soft, warm, tactile and friendly. Pastel lavender and tangerine/peach dominate, with butter yellow accents. Colour surfaces have fine grain like risograph paper or felt. Plush 3D-ish blob characters with tiny faces give emotional warmth. Lots of white space, big rounded shapes, and few but confident type sizes.",
+    "screen1_buySessions": {
+      "elements": [
+        "White pill button with arrow + 'BACK' in small bold caps; screen title right-aligned in bold.",
+        "Top ~55% is a lavender hero area with a giant purple plush blob creature (bunny-like lumps on top) cropped by the right edge; tiny face with dot eyes, small smile and pink blush.",
+        "Scalloped (flower/cookie-edged) orange badge with a small medallion on top, holding short centred text.",
+        "Hero area ends in a soft wave; below it a pill slider track with a lavender-to-orange gradient and a grip thumb.",
+        "Number row (3 4 5 6 7 8 9) with the selected value large, orange, with a dot above and a caption ('Days') below.",
+        "Bottom: 'Total' label and a huge bold '59$'; a large orange stadium button with a cart icon on the right."
+      ],
+      "mapsTo": "SENSE GUARD (User) screen: lavender hero with a big Pip in the guard look, scalloped status badge, wave + safety-level indicator (Normal/Attention/Emergency instead of days), big primary action."
+    },
+    "screen2_mentalHelp": {
+      "elements": [
+        "Full-bleed grainy gradient: pale cream-yellow top-left through peach to saturated orange on the right, fading to white near the bottom.",
+        "White pill SEARCH button left, white circular settings button right.",
+        "Centred large title and subtitle.",
+        "A white card tilted a few degrees, with two translucent ghost cards stacked behind/above it (deck effect). Card: author row with avatar and role, big centred question text, a meta row ('23 Minutes' —— '1.2K Users'), then two small circular action buttons.",
+        "Bottom navigation with three line icons, the active one orange, on a white bar with a gentle centre bump."
+      ],
+      "mapsTo": "Hearing Assist: grainy peach gradient background, Pip (hearing look) above a tilted alert card deck whose main card shows the detected sound."
+    },
+    "screen3_home": {
+      "elements": [
+        "Small avatar + 'Hello,' + large bold name. Two white circular icon buttons on the right (notification with red dot, calendar).",
+        "Horizontal carousel: an organic-shaped orange gradient card ('Self Care' white chip, 'Keep your head up.' in white, round arrow button) with a grainy yellow star character cropped at the bottom-left; the next lavender card peeks in from the right edge.",
+        "Section heading 'Your week at a glance'.",
+        "Soft cream tiles: 'Weekly Mood' with a grainy pastel semicircle chart, 'Calm' and a 'TOP MOOD' chip; 'Energy' and 'Stress' tiles with a small arrow chip and big LIGHT-weight numbers (80, 67); tiny status dots (green/red).",
+        "Bottom: a floating circular hamburger button sitting in a notch of the bottom bar."
+      ],
+      "mapsTo": "Home: greeting, hero carousel for SENSE GUARD and Guardian, tool tiles for the assist sections. Guardian dashboard: stat tiles with big light numbers."
+    },
+    "traitsToKeep": [
+      "Grainy pastel gradients on coloured surfaces; crisp white cards on top.",
+      "A big character bleeding off an edge for depth and charm (in SENSE+ this is Pip, in the duck sticker style).",
+      "Pill and circular white controls with very soft shadows.",
+      "Organic shapes: scallops, waves, slightly asymmetric card edges, tilted card decks.",
+      "Big numbers in LIGHT weight; titles in BOLD; tiny caps labels with wide letter spacing.",
+      "Warm (tangerine/peach/butter) versus cool (lavender) colour pairing."
+    ],
+    "traitsToAdaptForAccessibility": [
+      "White text on light orange in the reference fails contrast; SENSE+ uses ink text on pastel and vivid fills, and white text only on 700+ shades or emergency red.",
+      "Reference caps labels are about 10sp; SENSE+ minimum is 12sp, body minimum 16sp.",
+      "Reference icon buttons are about 40dp; SENSE+ minimum touch target is 48dp (primary actions 64dp+).",
+      "Pastel is never the only signal for alerts: urgent states use saturated colour, text, icon, motion and vibration together."
+    ]
+  },
+  "designPrinciples": [
+    {
+      "name": "Soft but legible",
+      "rule": "Pastel atmosphere, but every piece of text and every control meets WCAG 2.2 AA."
+    },
+    {
+      "name": "One hero per screen",
+      "rule": "Each screen has exactly one dominant visual (usually the section character on a gradient). Everything else is calm white cards."
+    },
+    {
+      "name": "Pip tells you where you are",
+      "rule": "A user who cannot read well should recognise the section from Pip's look and the section colour alone."
+    },
+    {
+      "name": "Emotion follows state",
+      "rule": "Pip reacts to real app state and never contradicts it (no smiling during an emergency)."
+    },
+    {
+      "name": "Big targets, few choices",
+      "rule": "Primary actions are large (64dp+), secondary actions are clearly secondary, and no screen has more than one primary action."
+    },
+    {
+      "name": "Emergency overrides aesthetics",
+      "rule": "ATTENTION and EMERGENCY use saturated, high-contrast styling, motion and haptics, no matter how pastel the rest is."
+    },
+    {
+      "name": "Texture on colour only",
+      "rule": "Grain on coloured UI surfaces only; Pip (flat sticker art), text, icons and white cards stay clean."
+    },
+    {
+      "name": "Sticker clarity",
+      "rule": "Pip is flat sticker art with one warm outline, like the duck reference; UI surfaces carry the softness (gradients, grain, soft shadows)."
+    },
+    {
+      "name": "Calm motion",
+      "rule": "Slow, gentle, purposeful motion; everything still works and still makes sense with animations off."
+    }
+  ],
+  "tokens": {
+    "color": {
+      "_naming": "In colors.xml use snake_case: tangerine_500, lavender_100, ink_900, surface_canvas, status_emergency_solid, etc.",
+      "_usageRules": [
+        "50/100: large surface tints (tiles, hero backgrounds, list highlights).",
+        "200-400: character bodies, gradient stops, decorative shapes, selected fills behind ink text.",
+        "500: vivid accents (icons on white at >=3:1 for 500+ except butter/mint, gradient ends, active indicators). Never body text.",
+        "700: icons and LARGE text (>= 24sp regular or >= 19sp bold) on white or tints; white text on 700 fills is allowed.",
+        "800/900: small text on the family's 50/100 tint (>= 4.5:1).",
+        "Text on any pastel or vivid fill (200-500) is ink_900. White text only on 700+ fills, emergency/urgent solids, or dark gradients verified at >= 4.5:1 under the text."
+      ],
+      "palettes": {
+        "tangerine": {
+          "50": "#FFF4EC",
+          "100": "#FFE6D3",
+          "200": "#FFD0AD",
+          "300": "#FFB67F",
+          "400": "#FF9F5A",
+          "500": "#F7893B",
+          "600": "#E36F1E",
+          "700": "#B85512",
+          "800": "#8A3E0D",
+          "900": "#5C2908"
+        },
+        "lavender": {
+          "50": "#F6F2FE",
+          "100": "#ECE5FC",
+          "200": "#DCD1F8",
+          "300": "#C6B6F1",
+          "400": "#AE9AE6",
+          "500": "#957ED8",
+          "600": "#7B63C2",
+          "700": "#614CA0",
+          "800": "#47377A",
+          "900": "#2F2452"
+        },
+        "butter": {
+          "50": "#FFFBEA",
+          "100": "#FFF3C6",
+          "200": "#FFE89A",
+          "300": "#FFDB6B",
+          "400": "#FFCD45",
+          "500": "#F5B820",
+          "600": "#D99A0B",
+          "700": "#A87406",
+          "800": "#8A5A00",
+          "900": "#4D3503"
+        },
+        "blush": {
+          "50": "#FFF2F5",
+          "100": "#FFE2EA",
+          "200": "#FFC9D7",
+          "300": "#FFAAC0",
+          "400": "#FF8DA9",
+          "500": "#F26F93",
+          "600": "#D85479",
+          "700": "#B03E5E",
+          "800": "#832C45",
+          "900": "#561C2D"
+        },
+        "mint": {
+          "50": "#EFFBF5",
+          "100": "#D9F5E7",
+          "200": "#B6EBD2",
+          "300": "#8EDDB8",
+          "400": "#65CB9C",
+          "500": "#3FB37F",
+          "600": "#2B9467",
+          "700": "#1F7451",
+          "800": "#17553C",
+          "900": "#0E3727"
+        },
+        "sky": {
+          "50": "#EEF7FF",
+          "100": "#D9EDFF",
+          "200": "#B8DCFF",
+          "300": "#8FC6FB",
+          "400": "#66AEF2",
+          "500": "#4495E3",
+          "600": "#2F79C4",
+          "700": "#245E9C",
+          "800": "#1B4573",
+          "900": "#122E4C"
+        },
+        "coral": {
+          "50": "#FFF1EE",
+          "100": "#FFDFD8",
+          "200": "#FFC2B6",
+          "300": "#FFA08E",
+          "400": "#FF8169",
+          "500": "#F2634A",
+          "600": "#D24A33",
+          "700": "#A83826",
+          "800": "#7C291C",
+          "900": "#511A12"
+        }
+      },
+      "neutrals": {
+        "ink_900": {
+          "hex": "#2B2633",
+          "use": "Headings, primary text, text on pastel/vivid fills",
+          "contrastOnWhite": 14.71
+        },
+        "ink_800": {
+          "hex": "#3A3442",
+          "use": "Strong body text, tile labels"
+        },
+        "ink_700": {
+          "hex": "#4D4656",
+          "use": "Body text on tinted backgrounds",
+          "contrastOnWhite": 9.03
+        },
+        "ink_600": {
+          "hex": "#625B6B",
+          "use": "Secondary text",
+          "contrastOnWhite": 6.51
+        },
+        "ink_500": {
+          "hex": "#6E6777",
+          "use": "Captions, caps labels, inactive labels (lowest allowed text colour)",
+          "contrastOnWhite": 5.43,
+          "contrastOnCream": 4.95
+        },
+        "ink_400": {
+          "hex": "#9C96A4",
+          "use": "Disabled text and decorative only — NEVER informative text (2.87:1)"
+        },
+        "ink_300": {
+          "hex": "#C4BFCB",
+          "use": "Dividers, disabled outlines"
+        },
+        "ink_200": {
+          "hex": "#E3E0E8",
+          "use": "Hairline borders, track backgrounds"
+        },
+        "ink_100": {
+          "hex": "#F1EFF4",
+          "use": "Pressed state on white, skeletons"
+        },
+        "ink_50": {
+          "hex": "#F8F7FA",
+          "use": "Subtle fills"
+        },
+        "white": {
+          "hex": "#FFFFFF"
+        }
+      },
+      "surfaces": {
+        "surface_canvas": {
+          "hex": "#FFFCFA",
+          "use": "Window/app background (warm white)"
+        },
+        "surface_card": {
+          "hex": "#FFFFFF",
+          "use": "Cards, sheets, pill buttons, circular buttons"
+        },
+        "surface_cream": {
+          "hex": "#FBF3EE",
+          "use": "Stat tiles (reference Energy/Stress tiles)"
+        },
+        "surface_scrim": {
+          "hex": "#802B2633",
+          "use": "Behind bottom sheets/dialogs"
+        },
+        "surface_glass": {
+          "hex": "#B3FFFFFF",
+          "use": "Translucent white chips and arrow buttons on gradients"
+        },
+        "surface_ghostCard1": {
+          "hex": "#8CFFFFFF",
+          "use": "First ghost card in a card deck"
+        },
+        "surface_ghostCard2": {
+          "hex": "#4DFFFFFF",
+          "use": "Second ghost card in a card deck"
+        }
+      },
+      "semantic": {
+        "status_normal_solid": {
+          "hex": "#1F7451",
+          "onColor": "#FFFFFF",
+          "contrast": 5.71
+        },
+        "status_normal_tint": {
+          "hex": "#D9F5E7",
+          "text": "#1F7451",
+          "contrast": 4.94
+        },
+        "status_normal_accent": {
+          "hex": "#3FB37F",
+          "use": "Live dots, icons, track segment"
+        },
+        "status_attention_solid": {
+          "hex": "#F59E0B",
+          "onColor": "#2B2633",
+          "contrast": 6.85
+        },
+        "status_attention_tint": {
+          "hex": "#FFE9C7",
+          "text": "#8A4B00",
+          "contrast": 5.74
+        },
+        "status_emergency_solid": {
+          "hex": "#D92D20",
+          "onColor": "#FFFFFF",
+          "contrast": 4.83
+        },
+        "status_emergency_deep": {
+          "hex": "#B42318",
+          "onColor": "#FFFFFF",
+          "contrast": 6.57
+        },
+        "status_emergency_tint": {
+          "hex": "#FFE3E1",
+          "text": "#A61B1B",
+          "contrast": 6.2
+        },
+        "status_off_tint": {
+          "hex": "#F1EFF4",
+          "text": "#625B6B"
+        },
+        "focus_ring": {
+          "hex": "#614CA0",
+          "use": "Keyboard/switch-access focus outline (3dp)"
+        },
+        "live_dot_on": {
+          "hex": "#3FB37F"
+        },
+        "live_dot_error": {
+          "hex": "#D92D20"
+        }
+      },
+      "sectionAccents": {
+        "_rule": "Each section owns one palette family. Its character, hero gradient, tile tint and selected states use that family.",
+        "home": {
+          "family": "lavender",
+          "secondary": "tangerine"
+        },
+        "senseGuard": {
+          "family": "tangerine",
+          "heroBackground": "lavender (complementary, as in reference screen 1)"
+        },
+        "guardian": {
+          "family": "lavender"
+        },
+        "communication": {
+          "family": "mint"
+        },
+        "visualAssist": {
+          "family": "butter"
+        },
+        "hearingAssist": {
+          "family": "blush",
+          "secondary": "tangerine (sound waves, peach gradient)"
+        },
+        "sensorInfo": {
+          "family": "sky"
+        },
+        "navigation_planned": {
+          "family": "coral"
+        },
+        "profileSettings_planned": {
+          "family": "lavender (50-200 only) + cream"
+        },
+        "cognitive_planned": {
+          "family": "butter + lavender"
+        }
+      },
+      "soundTypes": {
+        "_rule": "Urgent sounds (flash=true in HearingActivity.SoundType) use the solid style: card background = solid, all text white (>= 4.5:1). Non-urgent sounds keep a white card with a tinted icon tile and ink text.",
+        "FIRE_ALARM": {
+          "urgent": true,
+          "solid": "#B42318",
+          "icon": "ic_sound_fire",
+          "iconTileTint": "#FFE3E1"
+        },
+        "SIREN": {
+          "urgent": true,
+          "solid": "#C2410C",
+          "icon": "ic_sound_siren",
+          "iconTileTint": "#FFDFD8"
+        },
+        "HORN": {
+          "urgent": true,
+          "solid": "#B54708",
+          "icon": "ic_sound_horn",
+          "iconTileTint": "#FFE9C7"
+        },
+        "ALARM": {
+          "urgent": true,
+          "solid": "#7B63C2",
+          "icon": "ic_sound_alarm",
+          "iconTileTint": "#ECE5FC"
+        },
+        "DOORBELL": {
+          "urgent": true,
+          "solid": "#245E9C",
+          "icon": "ic_sound_doorbell",
+          "iconTileTint": "#D9EDFF"
+        },
+        "PHONE": {
+          "urgent": false,
+          "tint": "#D9F5E7",
+          "iconColor": "#1F7451",
+          "icon": "ic_sound_phone"
+        },
+        "BABY": {
+          "urgent": false,
+          "tint": "#FFE2EA",
+          "iconColor": "#B03E5E",
+          "icon": "ic_sound_baby"
+        },
+        "GLASS": {
+          "urgent": false,
+          "tint": "#FFF3C6",
+          "iconColor": "#8A5A00",
+          "icon": "ic_sound_glass"
+        },
+        "SHOUT": {
+          "urgent": false,
+          "tint": "#FFDFD8",
+          "iconColor": "#A83826",
+          "icon": "ic_sound_shout"
+        },
+        "DOG": {
+          "urgent": false,
+          "tint": "#ECE5FC",
+          "iconColor": "#614CA0",
+          "icon": "ic_sound_dog"
+        }
+      },
+      "gradients": {
+        "_implementation": "Linear gradients: <shape><gradient android:angle .../></shape> XML. Multi-blob 'mesh' gradients: HeroBackgroundDrawable (Java) layering 2-3 RadialGradient shaders over a base colour, then grain. Coordinates are fractions of the drawable bounds.",
+        "grad_hero_lavender": {
+          "base": "#E6DDF6",
+          "blobs": [
+            {
+              "center": [
+                0.15,
+                0.1
+              ],
+              "radius": 1.1,
+              "color": "#F6F2FE",
+              "alpha": 1.0
+            },
+            {
+              "center": [
+                0.85,
+                0.55
+              ],
+              "radius": 0.75,
+              "color": "#C6B6F1",
+              "alpha": 0.9
+            },
+            {
+              "center": [
+                0.95,
+                0.95
+              ],
+              "radius": 0.6,
+              "color": "#FFE6D3",
+              "alpha": 0.55
+            }
+          ],
+          "grain": 0.8,
+          "use": "SENSE GUARD normal, Guardian, Home avatar"
+        },
+        "grad_hero_peachSunrise": {
+          "base": "#FFE6D3",
+          "blobs": [
+            {
+              "center": [
+                0.05,
+                0.02
+              ],
+              "radius": 0.95,
+              "color": "#FFF4D9",
+              "alpha": 1.0
+            },
+            {
+              "center": [
+                0.55,
+                0.35
+              ],
+              "radius": 0.8,
+              "color": "#FFC9A3",
+              "alpha": 0.9
+            },
+            {
+              "center": [
+                1.0,
+                0.22
+              ],
+              "radius": 0.7,
+              "color": "#FF9F5A",
+              "alpha": 0.85
+            },
+            {
+              "center": [
+                0.1,
+                0.45
+              ],
+              "radius": 0.55,
+              "color": "#FFC9D7",
+              "alpha": 0.6
+            }
+          ],
+          "fadeToCanvas": {
+            "from": 0.48,
+            "to": 0.62
+          },
+          "grain": 0.8,
+          "use": "Hearing Assist background (reference screen 2)"
+        },
+        "grad_hero_butter": {
+          "base": "#FFF3C6",
+          "blobs": [
+            {
+              "center": [
+                0.1,
+                0.1
+              ],
+              "radius": 1.0,
+              "color": "#FFFBEA",
+              "alpha": 1.0
+            },
+            {
+              "center": [
+                0.9,
+                0.7
+              ],
+              "radius": 0.7,
+              "color": "#FFDB6B",
+              "alpha": 0.8
+            }
+          ],
+          "grain": 0.8,
+          "use": "SENSE GUARD attention, Visual Assist header"
+        },
+        "grad_hero_mint": {
+          "base": "#D9F5E7",
+          "blobs": [
+            {
+              "center": [
+                0.1,
+                0.1
+              ],
+              "radius": 1.0,
+              "color": "#EFFBF5",
+              "alpha": 1.0
+            },
+            {
+              "center": [
+                0.9,
+                0.8
+              ],
+              "radius": 0.7,
+              "color": "#8EDDB8",
+              "alpha": 0.7
+            }
+          ],
+          "grain": 0.8,
+          "use": "Communication header, Guardian normal card"
+        },
+        "grad_hero_sky": {
+          "base": "#D9EDFF",
+          "blobs": [
+            {
+              "center": [
+                0.1,
+                0.1
+              ],
+              "radius": 1.0,
+              "color": "#EEF7FF",
+              "alpha": 1.0
+            },
+            {
+              "center": [
+                0.9,
+                0.8
+              ],
+              "radius": 0.7,
+              "color": "#8FC6FB",
+              "alpha": 0.7
+            }
+          ],
+          "grain": 0.8,
+          "use": "Sensor Info header"
+        },
+        "grad_hero_emergency": {
+          "base": "#D92D20",
+          "blobs": [
+            {
+              "center": [
+                0.85,
+                0.35
+              ],
+              "radius": 0.55,
+              "color": "#FF7A6B",
+              "alpha": 0.7
+            }
+          ],
+          "grain": 0.5,
+          "rule": "Lighter blob only behind the character, never behind text. Text sits on the #D92D20 base (white 4.83:1).",
+          "use": "SENSE GUARD emergency, Guardian emergency card"
+        },
+        "grad_hero_off": {
+          "base": "#F1EFF4",
+          "blobs": [
+            {
+              "center": [
+                0.2,
+                0.1
+              ],
+              "radius": 1.0,
+              "color": "#F8F7FA",
+              "alpha": 1.0
+            },
+            {
+              "center": [
+                0.9,
+                0.8
+              ],
+              "radius": 0.7,
+              "color": "#DCD1F8",
+              "alpha": 0.6
+            }
+          ],
+          "grain": 0.6,
+          "use": "SENSE GUARD monitoring off"
+        },
+        "grad_card_tangerine": {
+          "type": "linear",
+          "angle": 135,
+          "stops": [
+            "#FFC48C",
+            "#FFA866",
+            "#F7893B"
+          ],
+          "textColor": "#2B2633",
+          "grain": 0.8,
+          "use": "Home SENSE GUARD hero card"
+        },
+        "grad_card_lavender": {
+          "type": "linear",
+          "angle": 135,
+          "stops": [
+            "#ECE5FC",
+            "#C6B6F1",
+            "#AE9AE6"
+          ],
+          "textColor": "#2B2633",
+          "grain": 0.8,
+          "use": "Home Guardian hero card"
+        },
+        "grad_tile_family": {
+          "type": "linear",
+          "angle": 135,
+          "stops": [
+            "{family}_50",
+            "{family}_100"
+          ],
+          "extraBlob": {
+            "center": [
+              0.95,
+              0.95
+            ],
+            "radius": 0.7,
+            "color": "{family}_200",
+            "alpha": 0.6
+          },
+          "grain": 0.55,
+          "use": "Home tool tiles"
+        },
+        "grad_cta_tangerine": {
+          "type": "linear",
+          "angle": 135,
+          "stops": [
+            "#FFA866",
+            "#F7893B",
+            "#EE7A2E"
+          ],
+          "textColor": "#2B2633",
+          "minTextContrast": 4.6,
+          "use": "Primary stadium buttons"
+        },
+        "grad_segment_sounds": {
+          "type": "linear",
+          "angle": 0,
+          "stops": [
+            "#FFAAC0",
+            "#FFB67F"
+          ],
+          "textColor": "#2B2633"
+        },
+        "grad_segment_captions": {
+          "type": "linear",
+          "angle": 0,
+          "stops": [
+            "#DCD1F8",
+            "#C6B6F1"
+          ],
+          "textColor": "#2B2633"
+        },
+        "grad_track_safety": {
+          "type": "linear",
+          "angle": 0,
+          "stops": [
+            "#8EDDB8",
+            "#FFDB6B",
+            "#FF8169"
+          ],
+          "use": "SENSE GUARD level track"
+        }
+      }
+    },
+    "typography": {
+      "fontFamily": {
+        "primary": "Lexend (Google Fonts, SIL Open Font License). Chosen because it is geometric and soft like the reference AND designed for reading proficiency, which suits cognitive and low-vision users.",
+        "alternate": "Outfit (closest match to the reference) if Lexend is rejected.",
+        "fallback": "sans-serif (Roboto) with the same sizes and weights.",
+        "files": [
+          "res/font/lexend_light.ttf (300)",
+          "res/font/lexend_regular.ttf (400)",
+          "res/font/lexend_medium.ttf (500)",
+          "res/font/lexend_semibold.ttf (600)",
+          "res/font/lexend_bold.ttf (700)",
+          "res/font/lexend_extrabold.ttf (800)"
+        ],
+        "howToGet": "Download the family zip from fonts.google.com/specimen/Lexend and copy the STATIC instances (static/ folder) into app/src/main/res/font, renaming to lowercase_with_underscores. If the session cannot download, ask the user to drop the files in and use the fallback until then.",
+        "referencingRule": "Reference the weight file directly (android:fontFamily=\"@font/lexend_semibold\") instead of relying on android:textFontWeight, which only works on API 28+ (minSdk is 26)."
+      },
+      "scale": {
+        "_note": "Final sizes already include a +15% accessibility uplift over the reference. All sizes in sp. Never set text sizes in dp. referencePx = approximate size in the mockup.",
+        "display_number": {
+          "size": 56,
+          "font": "lexend_light",
+          "lineHeight": 60,
+          "letterSpacing": -0.02,
+          "fontFeature": "tnum",
+          "use": "Big stat numbers (Battery 80, distance)",
+          "referencePx": 30
+        },
+        "display_numberBold": {
+          "size": 52,
+          "font": "lexend_extrabold",
+          "lineHeight": 56,
+          "letterSpacing": -0.02,
+          "use": "Single hero number (rare)",
+          "referencePx": 40
+        },
+        "headline_l": {
+          "size": 28,
+          "font": "lexend_bold",
+          "lineHeight": 34,
+          "letterSpacing": -0.01,
+          "use": "Greeting name, screen titles on hero",
+          "referencePx": 22
+        },
+        "headline_m": {
+          "size": 24,
+          "font": "lexend_bold",
+          "lineHeight": 30,
+          "letterSpacing": -0.01,
+          "use": "Alert titles, status titles",
+          "referencePx": 19
+        },
+        "title_l": {
+          "size": 22,
+          "font": "lexend_semibold",
+          "lineHeight": 28,
+          "use": "Hero card titles, recognised text",
+          "referencePx": 17
+        },
+        "title_m": {
+          "size": 18,
+          "font": "lexend_semibold",
+          "lineHeight": 24,
+          "use": "Tile titles, top-bar titles, section headers",
+          "referencePx": 15
+        },
+        "title_s": {
+          "size": 16,
+          "font": "lexend_semibold",
+          "lineHeight": 22,
+          "use": "Card labels, list titles"
+        },
+        "body_l": {
+          "size": 17,
+          "font": "lexend_regular",
+          "lineHeight": 26,
+          "use": "Main body text"
+        },
+        "body_m": {
+          "size": 16,
+          "font": "lexend_regular",
+          "lineHeight": 24,
+          "use": "Default body (minimum size for meaningful text)"
+        },
+        "body_s": {
+          "size": 14,
+          "font": "lexend_regular",
+          "lineHeight": 20,
+          "use": "Secondary info only (never instructions)"
+        },
+        "label_caps": {
+          "size": 12,
+          "font": "lexend_bold",
+          "lineHeight": 16,
+          "letterSpacing": 0.08,
+          "textAllCaps": true,
+          "use": "BACK, chips, tile labels in caps",
+          "referencePx": 9
+        },
+        "label_button": {
+          "size": 18,
+          "font": "lexend_bold",
+          "lineHeight": 22,
+          "letterSpacing": 0.02,
+          "use": "Primary and emergency button labels"
+        },
+        "label_buttonSmall": {
+          "size": 15,
+          "font": "lexend_semibold",
+          "lineHeight": 20,
+          "use": "Secondary buttons, segmented control"
+        },
+        "caption": {
+          "size": 13,
+          "font": "lexend_regular",
+          "lineHeight": 18,
+          "use": "Timestamps, meta rows, helper text"
+        },
+        "caption_caps": {
+          "size": 12,
+          "font": "lexend_semibold",
+          "lineHeight": 16,
+          "letterSpacing": 0.06,
+          "textAllCaps": true,
+          "use": "Section micro-labels (RECENT SOUNDS)"
+        }
+      },
+      "androidStyles": "Create TextAppearance.SENSE.<Name> styles for every scale entry in res/values/styles_text.xml and reference them with android:textAppearance. Use includeFontPadding=false on display/headline styles for tight vertical rhythm, and keep it true for body text.",
+      "rules": [
+        "Max 2 weights per card (e.g. semibold title + regular body).",
+        "Big numbers use LIGHT weight; never bold large numbers except display_numberBold.",
+        "Left-align body text; centre only short titles (<= 3 lines) on cards and heroes.",
+        "Line length 30-60 characters on cards.",
+        "Use real sentence case in copy; caps only through label_caps/caption_caps styles."
+      ]
+    },
+    "spacing": {
+      "_base": "4dp grid",
+      "space_1": 4,
+      "space_2": 8,
+      "space_3": 12,
+      "space_4": 16,
+      "space_5": 20,
+      "space_6": 24,
+      "space_7": 28,
+      "space_8": 32,
+      "space_10": 40,
+      "space_12": 48,
+      "space_16": 64,
+      "screenGutter": 20,
+      "cardPadding": 20,
+      "cardPaddingLarge": 24,
+      "gapBetweenCards": 14,
+      "gapBetweenSections": 28,
+      "topBarHeight": 56,
+      "topBarTopPadding": "statusBarInset + 12dp",
+      "bottomSafePadding": "navigationBarInset + 20dp"
+    },
+    "radius": {
+      "radius_xs": 8,
+      "radius_sm": 12,
+      "radius_md": 16,
+      "radius_lg": 20,
+      "radius_xl": 24,
+      "radius_2xl": 28,
+      "radius_3xl": 32,
+      "radius_hero": 36,
+      "radius_pill": "height/2 (use 999dp in shape XML)",
+      "usage": {
+        "chips, arrow chips, pill buttons, segmented control, stadium CTA": "radius_pill",
+        "stat tiles, list cards, phrase cards": "radius_xl (24)",
+        "tool tiles, alert card, text card": "radius_2xl (28)",
+        "camera card, deck cards": "radius_3xl (32)",
+        "hero carousel cards (organic)": "radius_hero (36) with wobble edges",
+        "icon tiles": "radius_lg (20) or circle"
+      }
+    },
+    "elevation": {
+      "_android": "Use elevation + outline shadow colours (android:outlineSpotShadowColor / outlineAmbientShadowColor, API 28+, ignored on 26-27). Set theme attrs android:spotShadowAlpha=0.14 and android:ambientShadowAlpha=0.06 for the soft look. White cards need a non-transparent background for the outline shadow to render.",
+      "shadow_none": {
+        "elevation": 0
+      },
+      "shadow_xs": {
+        "elevation": 2,
+        "spotColor": "#2B2633",
+        "use": "Chips on white, segmented track"
+      },
+      "shadow_sm": {
+        "elevation": 4,
+        "spotColor": "#2B2633",
+        "use": "Pill and circular buttons, tiles"
+      },
+      "shadow_md": {
+        "elevation": 8,
+        "spotColor": "#47377A",
+        "use": "Cards on gradients, camera card"
+      },
+      "shadow_lg": {
+        "elevation": 14,
+        "spotColor": "#47377A",
+        "use": "Main deck card, bottom sheets"
+      },
+      "glow_tangerine": {
+        "elevation": 12,
+        "spotColor": "#E36F1E",
+        "ambientColor": "#F7893B",
+        "fallbackApi26_27": "bg_glow_tangerine.xml: oval radial gradient #66F7893B -> #00F7893B, 24dp larger than the button, offset 8dp down, placed behind it",
+        "use": "Primary stadium CTA"
+      },
+      "glow_emergency": {
+        "elevation": 12,
+        "spotColor": "#D92D20",
+        "use": "HELP button"
+      }
+    },
+    "grain": {
+      "description": "Fine speckle noise reproducing the UI reference's grainy gradients. Used on coloured surfaces only.",
+      "texture": {
+        "tileSizePx": 128,
+        "seed": 7,
+        "format": "ARGB_8888, generated once at runtime and cached statically",
+        "distribution": [
+          {
+            "probability": 0.2,
+            "color": "#FFFFFF",
+            "alphaRange": [
+              0.1,
+              0.22
+            ]
+          },
+          {
+            "probability": 0.2,
+            "color": "#28143C",
+            "alphaRange": [
+              0.05,
+              0.12
+            ]
+          },
+          {
+            "probability": 0.6,
+            "color": "transparent"
+          }
+        ],
+        "scale": "1 texel = 1 device pixel (do not scale with density, grain must stay fine)"
+      },
+      "intensity": {
+        "_meaning": "Multiplier applied as paint alpha (1.0 = 255)",
+        "pip": 0.0,
+        "hero": 0.8,
+        "tile": 0.55,
+        "chip_on_gradient": 0.0,
+        "whiteCard": 0.0,
+        "text_icons_camera": 0.0
+      },
+      "drawing": {
+        "onShapes": "Draw the shape with its gradient Paint, then draw the SAME path again with a Paint whose shader is BitmapShader(noise, REPEAT, REPEAT). This clips grain to the shape without saveLayer.",
+        "onPip": "Never. Pip is flat sticker art."
+      }
+    },
+    "motion": {
+      "durations_ms": {
+        "instant": 90,
+        "fast": 150,
+        "base": 240,
+        "slow": 360,
+        "gentle": 600,
+        "countUp": 600,
+        "idleBreath": 3200,
+        "idleBob": 2400,
+        "blinkMin": 3000,
+        "blinkMax": 6000,
+        "blinkClose": 120,
+        "pulsePeriod": 1200
+      },
+      "easing": {
+        "standard": "PathInterpolator(0.2f, 0f, 0f, 1f)",
+        "decelerate": "PathInterpolator(0.05f, 0.7f, 0.1f, 1f)",
+        "accelerate": "PathInterpolator(0.3f, 0f, 0.8f, 0.15f)",
+        "playfulPop": "OvershootInterpolator(1.4f)",
+        "idle": "AccelerateDecelerateInterpolator (reverse, infinite)"
+      },
+      "patterns": {
+        "pressFeedback": "Scale to 0.96 over 90ms on ACTION_DOWN, back to 1.0 with playfulPop over 240ms on release. Elevation drops by 2dp while pressed. Plus HapticFeedbackConstants.VIRTUAL_KEY.",
+        "screenEnter": "Hero fades in (240ms); character scales 0.92 -> 1.0 with playfulPop (360ms); cards slide up 16dp + fade, staggered 40ms each, decelerate.",
+        "characterIdle": "Pip breathe: scaleX/scaleY 1.0 -> 1.025 (3200ms, reverse, infinite, pivot at bottom centre). Bob: translationY 0 -> -3dp (2400ms, reverse, infinite). Blink: swap to duck_face_sleeping for 120ms at random 3-6s intervals.",
+        "characterReact": "When Pip's expression or look changes: squash 1.0 -> 0.94 (scaleY) / 1.04 (scaleX) over 90ms, then playfulPop back to 1.0 over 360ms, swapping layers at the squash peak.",
+        "soundWaves": "duck_hearing_waves alpha 0.35 <-> 1.0 (1200ms, reverse, infinite) while listening; on detection hold at 1.0 for 2s.",
+        "alertPop": "Alert card: scale 0.9 -> 1.04 -> 1.0 (playfulPop, 360ms) + rotation -2.5° -> -4° -> -2.5°.",
+        "pulseRing": "Two concentric rings expand 1.0 -> 1.6 and fade 0.5 -> 0 over pulsePeriod, offset half a period. Period >= 800ms (photosensitivity rule: never more than 3 flashes per second).",
+        "stateCrossfade": "Background colours animate with ValueAnimator.ofArgb over 360ms; hero gradients crossfade with TransitionDrawable(360ms).",
+        "numberCountUp": "Stat numbers count from previous to new value over 600ms (decelerate) only when the change is > 0.",
+        "levelIndicator": "Thumb translationX animates to the active level over 360ms (standard)."
+      },
+      "reducedMotion": {
+        "detect": "!ValueAnimator.areAnimatorsEnabled() (API 26+) — true when the user turned animations off.",
+        "behaviour": "No idle loops, no pulse rings (show a static 2dp ring instead), no count-up, no card tilt animation (keep static tilt), state changes are instant. Blink is disabled. Information must never depend on motion."
+      }
+    },
+    "iconography": {
+      "style": "Material Symbols Rounded, weight 400, grade 0, optical size 24. Outline for inactive, FILL=1 for active/selected.",
+      "size": {
+        "default": 24,
+        "inCircleButton": 24,
+        "inStadiumCta": 24,
+        "inIconTile": 32,
+        "inArrowChip": 16
+      },
+      "colour": "ink_800 on white; ink_900 on pastel fills; white on solid status colours; section 700 shade for accent icons.",
+      "source": "Android Studio > New > Vector Asset > Clip Art (Material Icons Rounded), or Material Symbols SVGs imported as vectors. Name them ic_<name>.xml.",
+      "required": [
+        "ic_arrow_back",
+        "ic_arrow_forward",
+        "ic_shield_heart",
+        "ic_visibility",
+        "ic_chat_bubble",
+        "ic_photo_camera",
+        "ic_hearing",
+        "ic_sensors",
+        "ic_explore",
+        "ic_person",
+        "ic_settings",
+        "ic_play_arrow",
+        "ic_stop",
+        "ic_volume_up",
+        "ic_map",
+        "ic_battery",
+        "ic_schedule",
+        "ic_location_on",
+        "ic_check_circle",
+        "ic_warning",
+        "ic_emergency",
+        "ic_mic",
+        "ic_closed_caption",
+        "ic_sound_fire",
+        "ic_sound_siren",
+        "ic_sound_horn",
+        "ic_sound_alarm",
+        "ic_sound_doorbell",
+        "ic_sound_phone",
+        "ic_sound_baby",
+        "ic_sound_glass",
+        "ic_sound_shout",
+        "ic_sound_dog",
+        "ic_water_drop",
+        "ic_restroom",
+        "ic_thumb_up",
+        "ic_thumb_down",
+        "ic_pill"
+      ]
+    },
+    "touchTargets": {
+      "minimum": 48,
+      "primaryAction": 64,
+      "emergencyAction": 80,
+      "spacingBetweenTargets": 8,
+      "rule": "If the visual is smaller than 48dp (e.g. arrow chip), extend the touch area with padding or TouchDelegate."
+    },
+    "layout": {
+      "gutters": 20,
+      "maxContentWidth": 560,
+      "grid": "2 columns on phones with 14dp gap; 3 columns when width >= 600dp.",
+      "verticalRhythm": "Top bar -> hero -> section header -> content, separated by gapBetweenSections (28dp).",
+      "heroHeights": {
+        "full": "46% of screen height, min 300dp, max 420dp",
+        "compact": "180dp",
+        "card": "196dp"
+      }
+    }
+  },
+  "characters": {
+    "mascot": "Pip",
+    "summary": "SENSE+ has ONE mascot: Pip, a chubby white baby duckling drawn in the hand-drawn kawaii sticker style of the user's duck reference sheet. Every section shows Pip in that section's own LOOK (outfit + props + pose), and Pip's face reacts to the section's real state. Name is a suggestion; renaming it is only a copy change.",
+    "styleReferenceImage": {
+      "path": "design/reference/duck_style_reference.jpg",
+      "authority": "This image is the style authority for Pip. If this text and the image disagree about how Pip LOOKS, follow the image. This profile still decides structure, section mapping, accessibility and implementation.",
+      "whatItShows": "A sticker sheet of 11 chubby white ducklings on a cream background, each doing something different, with small doodles around them (hearts, sparkles, music note, Z's, motion lines, water splashes, grass and flowers).",
+      "posesAndHowWeUseThem": [
+        {
+          "pose": "Waving one wing, open happy beak, floating pink heart, motion marks",
+          "use": "home look (built)"
+        },
+        {
+          "pose": "Hugging a big pink heart, winking",
+          "use": "optional 'thanks' look (e.g. Communication 'Thank you' phrase art, Guardian empty state)"
+        },
+        {
+          "pose": "Yellow bucket hat and a yellow cross-body satchel",
+          "use": "nav look for the planned Navigation section (built)"
+        },
+        {
+          "pose": "Eating a cookie, crumbs falling",
+          "use": "optional reward look (onboarding finished)"
+        },
+        {
+          "pose": "Reading a blue book, music note floating",
+          "use": "visual look, with round glasses added so it reads as 'seeing' (built)"
+        },
+        {
+          "pose": "Splashing in water with a rubber-duck bag",
+          "use": "optional big-celebration look"
+        },
+        {
+          "pose": "Sleeping in bed with a blue polka-dot nightcap and blanket, 'Z z z'",
+          "use": "sleep look = feature switched off (built as nightcap + Z's; the full bed scene is optional for the SENSE GUARD OFF hero)"
+        },
+        {
+          "pose": "Holding a flower, wearing an orange bow tie",
+          "use": "profile look for the planned Profile/Settings section"
+        },
+        {
+          "pose": "Drinking boba tea",
+          "use": "optional phrase art for 'I need water / a drink'"
+        },
+        {
+          "pose": "Wearing a green dinosaur costume, sparkles",
+          "use": "optional fun/onboarding Easter egg"
+        },
+        {
+          "pose": "Seen from behind, walking away",
+          "use": "optional 'goodbye' (after stopping monitoring)"
+        }
+      ]
+    },
+    "styleGuide": {
+      "rendering": "Flat vector sticker art: solid fills, one warm dark outline, flat cel-shading shapes. NO gradients and NO grain on Pip (grain stays on UI surfaces only).",
+      "silhouette": "One continuous outline for head and body (no neck line). Big round head about 120 units wide on the 240-unit canvas; round sitting body about 150 units wide at the bottom; a small soft tail bump at the lower right; a tiny two-bump curly tuft on top of the head. Whole duck about 206 units tall x 158 units wide, standing on y=222.",
+      "proportions": "Chibi: the head is about half of the total height. The face sits in the lower half of the head. Eyes are tiny and far apart; the beak is wide and flat.",
+      "outline": {
+        "colour": "#3B312D (warm dark brown; never pure black)",
+        "widths": {
+          "silhouette, wings, feet, big props": 4.5,
+          "beak, face details, small props": 3.0,
+          "fine details (beak smile line, page lines)": 2.4
+        },
+        "style": "round caps and round joins; constant width; wings are drawn with an OPEN outline stroke on their outer edge only, so they look like flaps on the body"
+      },
+      "colours": {
+        "body": "#FFFFFF",
+        "bodyShade": "#EEEAF0 flat crescent in the lower right of the body, clipped to the silhouette; #F4F1F5 faint band on the right side of the head",
+        "beakAndFeet": "#F5A142",
+        "mouthInside": "#E0662F",
+        "tongue": "#FF8E9E",
+        "eyes": "#2B2523 with a white 1.5-unit shine at the upper right",
+        "blush": "#FFB3BA at 85% opacity, flat oval 19 x 12 units, no outline",
+        "groundShadow": "#2B2633 at 10% opacity, flat ellipse 140 x 16 units under the feet (works on any background, including red)",
+        "propPalette": {
+          "heart": "#F49A9A",
+          "sparkle": "#F2C94C",
+          "Z letters": "#5B8FC9",
+          "sound waves": "#6BB6E8",
+          "sweat drop": "#9FD0F2",
+          "cape": "#F7893B",
+          "shield": "#C6B6F1 / #DCD1F8",
+          "bucket hat & satchel": "#F5C04A / #E3A529",
+          "book": "#6E9BD6",
+          "nightcap": "#A9CBEB with white dots",
+          "antenna band": "#4495E3",
+          "speech-bubble dots": "#3FB37F"
+        }
+      },
+      "faceLayout": {
+        "_units": "240-unit canvas, same for every look so faces never move between looks",
+        "eyes": "centres (100,94) and (140,94), 9 x 11",
+        "beak": "centred at (120,106), 34 wide x 18 tall, rounded flat bill with a smile line",
+        "blush": "centres (80,109) and (160,109)"
+      },
+      "wings": "Small rounded flaps. Poses: down (resting at the sides), wave (left wing raised + two motion marks), listen (right wing raised beside the head), hold (both wings in front, drawn OVER the held prop).",
+      "feet": "Two orange rounded webbed feet poking forward at the bottom, each with two toe bumps, outlined.",
+      "doodles": "Small decorations around Pip, drawn flat (hearts, sparkles, music notes, Z's, motion marks, '?' and '!' bubbles). They are separate layers so they can animate or be hidden at small sizes.",
+      "personality": "Gentle, helpful, a little shy and always kind. Never scary, never sarcastic, never mocking.",
+      "donts": [
+        "No realistic or adult duck features (no long neck, no coloured head feathers, no teeth).",
+        "No sketchy or broken lines; no pure black.",
+        "No gradients, grain, glows or drop shadows on Pip (only the flat ground ellipse).",
+        "Do not move or resize the face between looks; all looks share duck_base.",
+        "No text inside props except the '?' and '!' glyph bubbles.",
+        "Never show happy, wink or talk expressions during ATTENTION or EMERGENCY."
+      ]
+    },
+    "expressions": {
+      "_files": "Each expression is one VectorDrawable on the same 240-unit canvas: duck_face_<name>.xml",
+      "idle": "Dot eyes with shine, closed beak with a small smile line. Default.",
+      "happy": "Closed '^ ^' eyes, open beak with tongue. Success, greeting, all clear.",
+      "wink": "One dot eye, one '>' wink, open beak. Celebrations and tips.",
+      "talk": "Dot eyes, open beak. Alternate with idle every 150ms while text-to-speech is speaking.",
+      "alert": "Slightly bigger eyes, small open beak. Attention, something detected, listening hard.",
+      "concerned": "Small eyes, worried brows, downturned beak line, sweat drop. Emergency, errors, missing permission.",
+      "sleeping": "Closed '‿ ‿' eyes, closed beak. Feature off or paused. Also used as the 120ms blink frame."
+    },
+    "looks": {
+      "_recipe": "Ordered layer lists (bottom to top). FACE = the current expression's face drawable. FX = the current effect layer (question/exclaim/sparkles), if any. PARENT[...] = layers drawn with the parent transform (translate 40,33; scale 0.84; in canvas units). The same data is in duck_kit/looks.json.",
+      "home": {
+        "layers": [
+          "duck_fx_heart",
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_wave",
+          "FACE"
+        ],
+        "default": "happy",
+        "means": "Hello! Waving with a floating heart."
+      },
+      "guard": {
+        "layers": [
+          "duck_guard_cape",
+          "duck_shadow",
+          "duck_base",
+          "duck_guard_shield",
+          "duck_pose_hold",
+          "duck_guard_knot",
+          "FACE",
+          "FX"
+        ],
+        "default": "idle",
+        "means": "Little superhero: orange cape and a lavender shield with a heart = protection + care."
+      },
+      "guardian": {
+        "layers": [
+          "duck_guardian_shadow",
+          "PARENT[duck_base, duck_pose_down, FACE]",
+          "duck_guardian_duckling",
+          "duck_guardian_heart",
+          "FX"
+        ],
+        "default": "happy",
+        "means": "A parent duck watching over a small duckling = the guardian looking after someone."
+      },
+      "comm": {
+        "layers": [
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_wave",
+          "FACE",
+          "duck_comm_bubble"
+        ],
+        "default": "happy",
+        "means": "Waving with a speech bubble = speaks for the user."
+      },
+      "visual": {
+        "layers": [
+          "duck_fx_note",
+          "duck_shadow",
+          "duck_base",
+          "duck_visual_book",
+          "duck_pose_hold",
+          "FACE",
+          "duck_visual_glasses"
+        ],
+        "default": "happy",
+        "means": "Round glasses + reading a book = sees and reads text aloud."
+      },
+      "hearing": {
+        "layers": [
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_listen",
+          "FACE",
+          "duck_hearing_waves",
+          "FX"
+        ],
+        "default": "idle",
+        "means": "Wing raised beside the head + sound waves = listens for the user."
+      },
+      "sensor": {
+        "layers": [
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_down",
+          "FACE",
+          "duck_sensor_antenna"
+        ],
+        "default": "alert",
+        "means": "Antenna headband with a signal = senses things."
+      },
+      "nav": {
+        "layers": [
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_down",
+          "duck_nav_satchel",
+          "FACE",
+          "duck_nav_hat"
+        ],
+        "default": "idle",
+        "means": "Explorer bucket hat + satchel (straight from the reference) = finds the way."
+      },
+      "sleep": {
+        "layers": [
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_down",
+          "FACE",
+          "duck_sleep_cap",
+          "duck_fx_zzz"
+        ],
+        "default": "sleeping",
+        "means": "Nightcap + Z's = switched off."
+      },
+      "celebrate": {
+        "layers": [
+          "duck_fx_sparkles",
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_down",
+          "FACE"
+        ],
+        "default": "wink",
+        "means": "All clear / success."
+      },
+      "plain": {
+        "layers": [
+          "duck_shadow",
+          "duck_base",
+          "duck_pose_down",
+          "FACE"
+        ],
+        "default": "idle",
+        "means": "Neutral fallback, e.g. the debug gallery."
+      },
+      "profile_planned": {
+        "layers": "plain + a bow-tie layer (orange, like the reference) + a held flower in the wave pose",
+        "default": "happy",
+        "means": "Dressed up = your profile and preferences."
+      },
+      "cognitive_planned": {
+        "layers": "hold pose + a small notebook with a pencil",
+        "default": "idle",
+        "means": "Helps you remember."
+      }
+    },
+    "sectionCharacterContract": {
+      "_rule": "Mandatory. Every section's hero is Pip in THAT section's look. The look must show what the section does through its outfit/prop/pose, and Pip's expression must follow the section's real state. A reviewer must be able to tell which section a screenshot is from by looking at Pip alone. Never use the plain look as a section hero.",
+      "home": "home look",
+      "senseGuard": "guard look (sleep look while monitoring is OFF)",
+      "guardian": "guardian look",
+      "communication": "comm look",
+      "visualAssist": "visual look",
+      "hearingAssist": "hearing look",
+      "sensorInfo": "sensor look",
+      "navigation_planned": "nav look",
+      "profileSettings_planned": "profile look",
+      "cognitiveMode_planned": "cognitive look",
+      "successAndEmptyStates_global": "celebrate look",
+      "stateMapping": {
+        "senseGuard": {
+          "OFF": "sleep look",
+          "NORMAL": "idle",
+          "ATTENTION": "alert + duck_fx_question",
+          "EMERGENCY": "concerned + duck_fx_exclaim + white pulse rings (code-drawn)",
+          "ALL_CLEAR": "happy for 2s, then idle"
+        },
+        "guardian": {
+          "NORMAL": "parent happy",
+          "ATTENTION": "parent alert + duck_fx_question",
+          "EMERGENCY": "parent concerned + duck_fx_exclaim + pulse rings",
+          "NO_DATA": "parent sleeping (duckling unchanged)"
+        },
+        "hearingAssist": {
+          "listening": "idle, waves pulsing",
+          "sound detected": "alert, waves at full opacity, + soundTypeBadge chip next to Pip",
+          "captions, speech arriving": "alert",
+          "mic denied / model missing": "concerned, waves hidden",
+          "paused": "sleeping"
+        },
+        "communication": {
+          "idle": "happy",
+          "speaking": "talk/idle alternating every 150ms, bubble pulses",
+          "after speaking": "happy 1s",
+          "HELP tapped": "alert"
+        },
+        "visualAssist": {
+          "scanning": "idle",
+          "text found": "alert 1.5s",
+          "reading aloud": "talk",
+          "no camera permission": "concerned"
+        },
+        "sensorInfo": {
+          "reading": "alert",
+          "sensor missing": "concerned"
+        },
+        "navigation_planned": {
+          "navigating": "idle",
+          "arrived": "happy",
+          "no GPS": "concerned"
+        }
+      },
+      "processForNewSections": [
+        "Design a new LOOK for Pip, not a new character.",
+        "1. Write the section's job in one sentence.",
+        "2. Choose ONE outfit, prop or pose that shows that job (use the reference sheet's poses first).",
+        "3. Colour the prop from the section's palette family; keep Pip white with the standard outline.",
+        "4. Draw the prop as separate layer(s) on the 240-unit canvas, aligned to duck_base, with the outline style above.",
+        "5. Add the recipe to looks.json and DuckLooks.java, and its state mapping here.",
+        "6. Check it in the debug gallery against characters.qaChecklist."
+      ]
+    },
+    "placementRules": {
+      "canvas": "Every look is a square 240-unit canvas; DuckView keeps the aspect ratio and anchors to the bottom centre.",
+      "backdrop": "Pip is white. On white cards, always place a family_100 circle or soft blob behind Pip (part of the layout, not the duck). On tinted or gradient surfaces no backdrop is needed.",
+      "hero": "220-260dp. May be cropped up to 15% by the right or bottom edge, but never the face or the look's prop.",
+      "card": "130-160dp, bottom-left or bottom-right, clipped by the card.",
+      "tile": "88-104dp, bottom-right, not cropped.",
+      "peek": "110-130dp overlapping a card edge (Visual Assist camera card, Hearing deck).",
+      "avatar": "Head only: draw the look into a 44dp circle, scaled so the top 55% of the canvas fills it.",
+      "smallSizes": "Below 64dp hide optional doodle layers (notes, sparkles, hearts) so Pip stays readable. Minimum 40dp.",
+      "mirroring": "Allowed (scaleX -1) so Pip faces the content, but draw '?'/'!' bubbles un-mirrored.",
+      "count": "One hero Pip per screen plus at most two small ones (tiles/cards).",
+      "clearance": "Pip never overlaps text or touch targets; keep 8dp clearance."
+    },
+    "implementation": {
+      "assets": "duck_kit.zip -> res/drawable/duck_*.xml: 33 VectorDrawables, all 240 x 240 viewport, perfectly aligned. Uses only paths, strokes, fills with alpha, groups with translate/scale and clip-path: all supported from API 21.",
+      "classes": {
+        "ui/DuckView.java": {
+          "extends": "android.view.View",
+          "xmlAttrs": "app:duckLook (enum: home|guard|guardian|comm|visual|hearing|sensor|nav|sleep|celebrate|plain), app:duckExpression (enum: idle|happy|wink|talk|alert|concerned|sleeping), app:idleMotion (boolean, default true)",
+          "publicApi": [
+            "void setLook(DuckLooks.Look look)",
+            "void setExpression(Expression e, boolean animate)",
+            "void setEffect(Effect e) // NONE, QUESTION, EXCLAIM, SPARKLES",
+            "void setPulseRings(boolean on)",
+            "void setLayerVisible(String drawableName, boolean visible)",
+            "void setLayerAlpha(String drawableName, float alpha)",
+            "void setIdleMotionEnabled(boolean enabled)"
+          ],
+          "draw": "k = min(w, h) / 240f. Translate so the canvas is bottom-centred. For each layer: drawable.setBounds(0, 0, 240k, 240k); drawable.draw(canvas). For PARENT layers: canvas.save(); canvas.translate(40k, 33k); canvas.scale(0.84f, 0.84f); draw; canvas.restore(). Resolve drawables once per look/expression change (ContextCompat.getDrawable(...).mutate()), never in onDraw.",
+          "animation": "Idle breathe/bob on the whole canvas (pivot bottom centre). Blink: swap FACE to duck_face_sleeping for 120ms every 3-6s when the expression has open eyes. Talk: alternate duck_face_talk and duck_face_idle every 150ms. Hearing waves: alpha 0.35 <-> 1.0 over 1200ms. React: squash and pop on expression change. Pulse rings: drawn in code behind the duck. Pause everything when not visible; disable loops when animations are off.",
+          "performance": "For views >= 200dp, cache the drawn stack in a bitmap per (look, expression, effect) and redraw the cached bitmap while idle-animating; invalidate the cache on change.",
+          "accessibility": "setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO). Whatever Pip shows must also be stated in text nearby."
+        },
+        "ui/DuckLooks.java": "enum Look with the ordered layer lists from looks.json (drawable resource ids), the PARENT transform, and each look's default expression."
+      },
+      "debugGallery": "CharacterGalleryActivity (debuggable builds only, opened by long-pressing the Home greeting): every look x expression at 240dp, 96dp and 48dp, on white-with-backdrop and on its section gradient."
+    },
+    "qaChecklist": [
+      "Each section shows Pip in its own look (sectionCharacterContract); the plain look is never a hero.",
+      "Matches the reference sheet's style: white chubby duckling, warm dark outline, orange beak and feet, pink blush, tiny tuft, flat colours.",
+      "The look's prop is readable at 48dp.",
+      "Expression follows the real state; no happy/wink/talk during ATTENTION or EMERGENCY.",
+      "Idle breathe/bob/blink run, and stop when animations are off.",
+      "White Pip is never placed directly on white without a tinted backdrop.",
+      "Pip is not focusable by TalkBack and never covers text or controls."
+    ]
+  },
+  "components": {
+    "topBar": {
+      "anatomy": "Left: pillBackButton (or circleIconButton). Right: screen title (title_m, ink_900, right-aligned) or 1-2 circleIconButtons.",
+      "height": 56,
+      "padding": "top = statusBarInset + 12dp, horizontal = 20dp",
+      "onGradient": "Buttons stay white; title ink_900 (white only on emergency backgrounds).",
+      "a11y": "Title has accessibilityHeading=true. Back button contentDescription 'Back'."
+    },
+    "pillBackButton": {
+      "shape": "Pill, height 48, horizontal padding 16, white (surface_card), shadow_sm.",
+      "content": "ic_arrow_back 20dp + 8dp gap + 'BACK' in label_caps, ink_900.",
+      "states": {
+        "pressed": "ink_100 background + pressFeedback",
+        "focused": "3dp focus_ring outline"
+      },
+      "android": "MaterialButton style Widget.SENSE.Button.PillWhite (cornerRadius 24dp, backgroundTint white, iconTint ink_900, insetTop/Bottom 0) OR LinearLayout with bg_pill_white.xml. On click: finish()."
+    },
+    "circleIconButton": {
+      "shape": "Circle 48dp, white, shadow_sm.",
+      "icon": "24dp ink_800.",
+      "badge": "Optional 10dp dot (status_emergency_solid) with a 2dp white ring at the top-right.",
+      "android": "ImageButton with bg_circle_white.xml, contentDescription required."
+    },
+    "chip": {
+      "shape": "Pill, height 28 (touch area extended to 48 if interactive), padding 12/0.",
+      "variants": {
+        "onGradient": "surface_card bg, ink_900 text",
+        "onWhite": "family_100 bg, family_800 text",
+        "status": "status tint bg + status text"
+      },
+      "text": "label_caps.",
+      "example": "'Safety', 'Guardian', 'Live', 'TOP SOUND'"
+    },
+    "arrowChip": {
+      "shape": "Pill 32x22, ink_100 on light tiles / surface_glass on gradients.",
+      "icon": "ic_arrow_forward 16dp ink_800.",
+      "use": "Top-right of stat/tool tiles (reference 'Energy ->'). Decorative when the whole tile is clickable (importantForAccessibility=no)."
+    },
+    "heroSheet": {
+      "use": "Top hero area of section screens (SENSE GUARD full height; Communication/Sensor Info compact).",
+      "background": "HeroBackgroundDrawable with the section gradient + grain 0.8.",
+      "bottomEdge": "Wave: from (0, h-28dp) cubic to (w, h-20dp) with control points (0.25w, h-4dp) and (0.55w, h-52dp). The wave is the drawable's clip path; content below sits on surface_canvas.",
+      "content": "topBar at the top; Pip per characters.placementRules.hero; optional badge/title.",
+      "edgeToEdge": "Extends under the status bar; topBar padding absorbs the inset."
+    },
+    "organicCard": {
+      "use": "Home hero carousel cards (reference 'Keep your head up').",
+      "size": "300 x 196dp (width = min(300dp, screenWidth - 72dp) so the next card peeks).",
+      "shape": "OrganicShapeDrawable: rounded rect radius_hero (36dp) with a gentle wobble — top edge 6dp higher at the left than the right (cubic), bottom edge bulges 6dp downward around 70% width. Clip children to the card: setClipToOutline(true) with a ViewOutlineProvider. Path outlines only clip on API 33+ (Outline.setPath); on API 26-32 use outline.setRoundRect(radius_hero) — the wobble is then drawn by the background only, which is visually fine.",
+      "fill": "grad_card_tangerine / grad_card_lavender + grain 0.8.",
+      "content": "chip (top-right, 16dp inset), title_l ink_900 right-aligned (max 2 lines), body_s ink_800 subtitle, circle arrow button 44dp bottom-right (surface_glass, ic_arrow_forward ink_900). Pip bottom-left per characters.placementRules.card.",
+      "interaction": "Whole card clickable, pressFeedback, contentDescription '<title>. <subtitle>'."
+    },
+    "toolTile": {
+      "use": "Home grid tiles for assist sections.",
+      "size": "Width (screen - 40 - 14)/2, height 172dp.",
+      "shape": "radius_2xl (28), grad_tile_family + grain 0.55, shadow_xs.",
+      "content": "title_m ink_900 top-left (16dp inset), body_s ink_700 subtitle (2 lines max), arrowChip top-right, Pip in the section look bottom-right (96dp, not cropped).",
+      "a11y": "contentDescription '<title>. <subtitle>'; Pip decorative."
+    },
+    "statTile": {
+      "use": "Guardian 'At a glance', Sensor Info readings (reference Energy/Stress).",
+      "shape": "radius_xl (24), surface_cream, no shadow, padding 18.",
+      "content": "Row: label (title_s ink_800) + arrowChip (if tappable) ; value: display_number ink_800 (light) + unit in title_m ink_600 baseline-aligned; optional status dot 8dp bottom-left.",
+      "compactVariant": "For multi-line sensor values: value uses body_l with fontFeatureSettings 'tnum', ink_800."
+    },
+    "stadiumCta": {
+      "use": "THE primary action of a screen (START/STOP MONITORING, READ ALOUD).",
+      "size": "Full width minus gutters, height 64dp (72dp on SENSE GUARD).",
+      "shape": "radius_pill, grad_cta_tangerine (or section gradient), glow_tangerine.",
+      "content": "Leading 40dp white circle with a 24dp ink_900 icon, 12dp gap, label_button ink_900.",
+      "states": {
+        "pressed": "pressFeedback, gradient darkens by an 8% ink overlay",
+        "disabled": "ink_100 fill, ink_400 label and icon, no glow"
+      },
+      "android": "MaterialButton with app:backgroundTint=\"@null\" and android:background=\"@drawable/bg_cta_tangerine\" (Material ignores android:background unless backgroundTint is null), or a FrameLayout with a TextView if the icon circle cannot be achieved."
+    },
+    "emergencyButton": {
+      "use": "HELP on SENSE GUARD; HELP phrase on Communication.",
+      "size": "Height 80dp minimum.",
+      "shape": "radius_xl (24), solid status_emergency_solid, glow_emergency.",
+      "content": "ic_emergency 28dp white + 'HELP' label_button at 22sp white.",
+      "rule": "Never pastel, never grain, always the largest button on the screen."
+    },
+    "tonalButton": {
+      "use": "Positive secondary action (I'M OK).",
+      "shape": "radius_xl, status_normal_tint fill, 2dp status_normal_solid stroke.",
+      "content": "ic_check_circle + label_button ink_900."
+    },
+    "outlineButton": {
+      "use": "Low-emphasis actions (Stop guardian monitoring).",
+      "shape": "Pill, height 56, 2dp ink_300 stroke, transparent fill.",
+      "content": "label_buttonSmall ink_800."
+    },
+    "segmentedControl": {
+      "use": "Hearing Assist mode switch (btnSounds / btnCaptions).",
+      "track": "Pill, height 64, surface_card, shadow_xs, 6dp inner padding.",
+      "segment": "Pill, equal weight; selected = segment gradient (grad_segment_sounds / grad_segment_captions) with ink_900 label + leading icon (ic_hearing / ic_closed_caption); unselected = transparent with ink_600 label.",
+      "android": "Two MaterialButtons (backgroundTint null) using selector drawables keyed on state_selected; Java calls setSelected() instead of setAlpha().",
+      "a11y": "Each segment is a button; selected one gets stateDescription 'Selected' (ViewCompat.setStateDescription)."
+    },
+    "cardDeck": {
+      "use": "Hearing Assist alert card (reference screen 2).",
+      "structure": "FrameLayout (clipChildren=false, clipToPadding=false) containing ghostCard2, ghostCard1, then the main card.",
+      "main": "White, radius_3xl, shadow_lg, rotation -2.5°, padding 24, min height 220dp.",
+      "ghostCard1": "Same size, surface_ghostCard1, rotation +3°, translationY -14dp, scale 0.95, no shadow.",
+      "ghostCard2": "Same size, surface_ghostCard2, rotation -1°, translationY -26dp, scale 0.90, no shadow.",
+      "a11y": "Ghost cards are decorative (importantForAccessibility=no). Rotation is static; at 200% font scale reduce the main card rotation to 0° to protect readability."
+    },
+    "scallopBadge": {
+      "use": "SENSE GUARD hero status badge (reference 'Get your mental health in order').",
+      "shape": "ScallopBadgeDrawable: circle with 12 rounded bumps (outer radius R, bump depth 0.08R), diameter 136dp, gradient tangerine_300 -> tangerine_500 + grain 0.8, shadow_md with glow_tangerine colours.",
+      "medallion": "40dp circle on the top edge (overlapping 50%), butter_300 -> butter_500 gradient, 22dp ink_900 icon (shield/question/emergency/zz by state).",
+      "text": "title_s ink_900 centred, max 3 lines, 18dp inner padding. On EMERGENCY the badge turns white with status_emergency_deep text."
+    },
+    "waveLevelIndicator": {
+      "use": "SENSE GUARD level indicator (reference wave slider + number row).",
+      "track": "Pill 18dp tall, grad_track_safety, with a white grip thumb (28 x 34dp pill with two 2dp ink_300 lines) positioned over the active level.",
+      "labels": "Three labels evenly spaced under the track: 'Normal', 'Attention', 'Emergency'. Active: headline_m in its status colour (normal #1F7451, attention #8A4B00, emergency #A61B1B) with an 8dp dot above it and a caption 'now' below; inactive: title_s ink_500.",
+      "a11y": "Whole indicator is one node: contentDescription 'Safety level: <Active>', live region polite."
+    },
+    "statusCard": {
+      "use": "Text status (tvStatus on SENSE GUARD).",
+      "shape": "White, radius_xl, shadow_sm, padding 20.",
+      "content": "caption_caps 'STATUS' ink_500; tvStatus title_l in the status text colour; accessibilityLiveRegion polite."
+    },
+    "listRow": {
+      "use": "Sound history, sensor list, future event history.",
+      "layout": "Min height 56; leading 40dp icon tile (family tint + family_700 icon), title_s ink_900, caption ink_500 trailing time; 1dp ink_200 divider inset 68dp."
+    },
+    "sectionHeader": {
+      "content": "title_m ink_800 (accessibilityHeading=true) + optional caption ink_500; optional trailing text button.",
+      "spacing": "28dp above, 12dp below."
+    },
+    "liveDot": {
+      "size": "8dp",
+      "colour": "live_dot_on (pulsing alpha 1 -> 0.4, 1200ms) / live_dot_error (static)"
+    },
+    "pulseRing": {
+      "use": "Emergency emphasis around Pip or the HELP button.",
+      "spec": "See motion.patterns.pulseRing."
+    },
+    "snackbar": {
+      "use": "'All clear', 'Saved'",
+      "style": "Material Snackbar, surface ink_900 background, white body_m text, a 32dp Pip head (celebrate look) at the start, radius_lg, margin 16dp."
+    },
+    "bottomSheet": {
+      "style": "radius_3xl top corners, surface_card, 4dp x 40dp ink_300 handle, scrim surface_scrim."
+    },
+    "softDonut_future": {
+      "use": "Guardian 'Safety this week' once event history exists (reference Weekly Mood).",
+      "spec": "Semicircle of blended pastel segments (mint/butter/coral share of NORMAL/ATTENTION/EMERGENCY events) with 0.6 grain, centre label in headline_m and a status chip."
+    },
+    "bottomAppBar_optional": {
+      "use": "Only if a global menu is added later.",
+      "spec": "Material BottomAppBar with a centre FloatingActionButton in a cradle (fabCradleRoundedCornerRadius 20dp, fabCradleMargin 6dp), FAB 56dp white with a menu icon, opening a bottom sheet listing all sections. Purely navigational."
+    }
+  },
+  "screens": [
+    {
+      "id": "home",
+      "activity": "HomeActivity",
+      "layout": "activity_home.xml",
+      "status": "existing",
+      "referenceInspiration": "Screen 3 (Hello, Samantha)",
+      "character": "Pip: home look (avatar head), guard + guardian looks (hero cards), comm/visual/hearing looks (tiles). The Sensor Info utility button uses ic_sensors (too small for Pip).",
+      "background": "surface_canvas",
+      "structure": [
+        {
+          "block": "topBar (custom)",
+          "spec": "Left: 44dp avatar circle (lavender_100) with Pip's head (home look, happy) + column ['Hello,' body_m ink_500, name headline_l ink_900]. Name comes from SharedPreferences key 'profile_name' (planned profile feature), fallback 'Friend'. Right: cardSensor becomes a 48dp circleIconButton showing ic_sensors (Sensor Info is a diagnostic screen, so it moves to a utility slot; KEEP the id cardSensor on this button)."
+        },
+        {
+          "block": "hero carousel",
+          "spec": "HorizontalScrollView, paddingStart 20dp, paddingEnd 56dp, clipToPadding=false, 14dp between cards. Card 1 = cardUser: organicCard, grad_card_tangerine, chip 'Safety', title 'Keep me safe', subtitle 'Fall detection & HELP', Pip guard look (idle) 150dp bottom-left. Card 2 = cardGuardian: organicCard, grad_card_lavender, chip 'Guardian', title 'Watch over someone', subtitle 'Location, battery & alerts', Pip guardian look 150dp bottom-left. Card 2 peeks in from the right edge."
+        },
+        {
+          "block": "sectionHeader",
+          "spec": "'Your assist tools' + caption 'Tap a tool to start'."
+        },
+        {
+          "block": "tool grid",
+          "spec": "2 columns, 14dp gaps: cardComm (mint, 'Talk for me', 'Tap phrases to speak aloud', Pip comm look), cardVisual (butter, 'Visual Assist', 'Hear printed text read out', Pip visual look), cardHearing (blush, 'Hearing Assist', 'Sound alerts & live captions', Pip hearing look), and a future Navigation tile (coral, Pip nav look) — leave the 4th cell out until Navigation exists, or let Hearing span both columns."
+        },
+        {
+          "block": "bottom padding",
+          "spec": "navigationBarInset + 24dp."
+        }
+      ],
+      "states": {
+        "default": "as above"
+      },
+      "motion": "screenEnter stagger: topBar -> carousel -> header -> tiles.",
+      "a11y": "Traversal order: greeting -> Sensor Info button -> card 1 -> card 2 -> header -> tiles. Guardian card contentDescription mentions 'requires fingerprint or screen lock'.",
+      "acceptanceCriteria": [
+        "All six ids still exist and open the same screens (biometric gate still runs for cardGuardian).",
+        "Carousel scrolls horizontally with the second card visibly peeking.",
+        "Each card/tile shows Pip in its section's look and the section colour family.",
+        "Greeting shows 'Hello,' + name or 'Friend'.",
+        "No text below 4.5:1 contrast; every tile is >= 48dp tall and fully tappable."
+      ]
+    },
+    {
+      "id": "senseGuard",
+      "activity": "MainActivity",
+      "layout": "activity_main.xml",
+      "status": "existing",
+      "referenceInspiration": "Screen 1 (Buy Sessions)",
+      "character": "Pip — guard look (hero, 260dp); sleep look while monitoring is OFF",
+      "structure": [
+        {
+          "block": "heroSheet (full)",
+          "spec": "Height 46% of the screen. Background by StatusStyle: NORMAL grad_hero_lavender, ATTENTION grad_hero_butter, EMERGENCY grad_hero_emergency, OFF grad_hero_off. topBar: pillBackButton + title 'SENSE GUARD' (white on EMERGENCY). Pip DuckView 260dp anchored bottom-right, cropped at most 15% by the right edge (never the face or shield). scallopBadge (new id tvStatusBadge) at left-middle, 24dp from the left edge."
+        },
+        {
+          "block": "waveLevelIndicator",
+          "spec": "Directly under the wave, 20dp gutters. New id levelIndicator (custom view) or three TextViews tvLevelNormal/tvLevelAttention/tvLevelEmergency."
+        },
+        {
+          "block": "statusCard",
+          "spec": "Contains tvStatus (existing id). Java still sets the text; colour comes from StatusStyle."
+        },
+        {
+          "block": "action row",
+          "spec": "btnHelp (emergencyButton, weight 1.4) + 12dp + btnOk (tonalButton 'I'M OK', weight 1), both 80dp tall."
+        },
+        {
+          "block": "primary action",
+          "spec": "btnToggle as stadiumCta (72dp) with ic_play_arrow / ic_stop. Java still sets 'START MONITORING' / 'STOP MONITORING'."
+        }
+      ],
+      "states": {
+        "OFF (monitoring not started)": {
+          "hero": "grad_hero_off",
+          "pip": "sleep look (nightcap + Z's)",
+          "badge": "Monitoring is off",
+          "level": "no active level (all inactive)",
+          "tvStatus": "ink_600"
+        },
+        "NORMAL": {
+          "hero": "grad_hero_lavender",
+          "pip": "guard look, idle",
+          "badge": "You're protected",
+          "level": "Normal",
+          "tvStatus": "status_normal_solid"
+        },
+        "ATTENTION": {
+          "hero": "grad_hero_butter",
+          "pip": "guard look, alert + duck_fx_question",
+          "badge": "Are you okay?",
+          "level": "Attention",
+          "tvStatus": "#8A4B00",
+          "extra": "Badge gently pulses (scale 1 -> 1.04, 1200ms) unless reduced motion."
+        },
+        "EMERGENCY": {
+          "hero": "grad_hero_emergency",
+          "pip": "guard look, concerned + duck_fx_exclaim + white pulse rings",
+          "badge": "Getting help (white badge, emergency text)",
+          "level": "Emergency",
+          "tvStatus": "status_emergency_deep",
+          "extra": "Top bar title and back button icon switch to white/high-contrast."
+        },
+        "ALL_CLEAR (status text contains 'All clear')": {
+          "pip": "happy for 2s then idle",
+          "snackbar": "'All clear' snackbar with Pip's head (celebrate look)"
+        }
+      },
+      "javaHooks": "MainActivity.updateStatusUi(status, info) -> StatusStyle.from(status).applyTo(views). stopMonitoring() -> StatusStyle.OFF. Mapping keys: status contains 'EMERGENCY' -> EMERGENCY, 'ATTENTION' -> ATTENTION, 'NORMAL' -> NORMAL (info containing 'All clear' -> ALL_CLEAR flourish). Initial state on onCreate = OFF.",
+      "a11y": "tvStatus is a polite live region; levelIndicator announces 'Safety level: X'; HELP button contentDescription 'HELP. Alerts your guardian now.'; Pip decorative.",
+      "acceptanceCriteria": [
+        "Starting monitoring changes OFF -> NORMAL visuals (Pip switches from the sleep look to the guard look with the react animation).",
+        "Dropping the phone onto a bed produces ATTENTION visuals within the existing broadcast timing; 'I'm okay' or movement returns to NORMAL with the happy flourish.",
+        "HELP produces EMERGENCY visuals; I'M OK returns to NORMAL.",
+        "HELP is the largest button on screen and always solid red.",
+        "No logic changes in UserMonitorService/FallDetector (git diff shows none)."
+      ]
+    },
+    {
+      "id": "guardian",
+      "activity": "GuardianActivity",
+      "layout": "activity_guardian.xml",
+      "status": "existing",
+      "referenceInspiration": "Screen 3 tiles + organic card",
+      "character": "Pip — guardian look (status card, 150dp); Pip nav look mini (location tile, 80dp)",
+      "structure": [
+        {
+          "block": "topBar",
+          "spec": "pillBackButton + title 'Guardian'."
+        },
+        {
+          "block": "status hero card",
+          "spec": "Full-width organicCard (180dp). Background by StatusStyle (NORMAL grad_hero_mint, ATTENTION grad_hero_butter, EMERGENCY grad_hero_emergency, no data grad_hero_off). Pip (guardian look) bottom-left. Right side: chip 'LIVE' with liveDot, tvGStatus (headline_m, 2 lines), caption under it."
+        },
+        {
+          "block": "sectionHeader",
+          "spec": "'At a glance'."
+        },
+        {
+          "block": "stat tiles row",
+          "spec": "2 statTiles: 'Battery' -> tvGBattery as display_number ('80%'; Java writes the value only); 'Last update' -> tvGUpdated as title_l time ('14:32'; Java writes the time only)."
+        },
+        {
+          "block": "location tile",
+          "spec": "Full-width white card radius_xl: label 'Location' + tvGAddress (body_l ink_900, 3 lines max) + tvGCoords (caption ink_500, tnum) + btnOpenMaps as a tangerine pill (ic_map + 'Open in Maps', 56dp, ink_900 label)."
+        },
+        {
+          "block": "event history (planned Priority 3)",
+          "spec": "listRow per event: icon tile coloured by level, title (event), caption (time). Empty state: Pip celebrate look + 'No alerts yet'."
+        },
+        {
+          "block": "btnStop",
+          "spec": "outlineButton 'Stop monitoring' at the bottom; Java's 'Monitoring stopped' text keeps working."
+        }
+      ],
+      "states": {
+        "NORMAL": "Pip parent happy",
+        "ATTENTION": "Pip parent alert + '?'",
+        "EMERGENCY": "Pip parent concerned + '!' + pulse rings, card solid red with white text",
+        "NO_DATA": "Pip parent sleeping, 'Waiting for the user's phone…'"
+      },
+      "javaHooks": "Replace colorFor() with StatusStyle; render() applies card background, Pip expression/effect and text colours; adjust strings written to tvGBattery/tvGUpdated.",
+      "acceptanceCriteria": [
+        "Status card colour and Pip's expression change within one poll (~2s) of the user's phone changing state.",
+        "All 7 ids still bound; Open in Maps still works.",
+        "Emergency card text is white on #D92D20 or darker (>= 4.5:1)."
+      ]
+    },
+    {
+      "id": "communication",
+      "activity": "CommunicationActivity",
+      "layout": "activity_communication.xml + new item_phrase.xml",
+      "status": "existing",
+      "referenceInspiration": "Screen 1 hero + screen 3 tiles",
+      "character": "Pip — comm look (header, 170dp)",
+      "structure": [
+        {
+          "block": "heroSheet (compact 200dp)",
+          "spec": "grad_hero_mint; topBar (pill back + nothing on the right); title 'Talk for me' headline_l ink_900; subtitle 'Tap a phrase — I'll say it out loud' body_m ink_700; Pip comm look bottom-right (keep the speech bubble fully visible)."
+        },
+        {
+          "block": "phrase grid",
+          "spec": "phraseContainer becomes a GridLayout (columnCount 2, 14dp spacing) — update the Java cast/LayoutParams (GridLayout.spec(UNDEFINED, 1f)). HELP phrase first, spanning 2 columns, emergencyButton style (88dp). Other phrases: item_phrase.xml white cards radius_xl, min height 104dp, shadow_sm, padding 16: 36dp icon tile (cycling mint/butter/blush/sky/lavender tints, family_700 icon picked per phrase meaning) above the phrase in title_m ink_900 (max 3 lines)."
+        },
+        {
+          "block": "custom phrases (planned Priority 5)",
+          "spec": "Last tile: dashed 2dp ink_300 outline '+ Add phrase'."
+        }
+      ],
+      "states": {
+        "idle": "Pip happy",
+        "speaking": "Pip talk/idle alternating every 150ms + speech bubble pulse; tapped card shows a 3-dot speaking indicator",
+        "afterSpeak": "Pip happy 1s",
+        "HELP tapped": "Pip alert"
+      },
+      "javaHooks": "Inflate item_phrase.xml instead of new Button(); keep speak(phrase). Optional: UtteranceProgressListener to drive talking state (main thread via runOnUiThread).",
+      "acceptanceCriteria": [
+        "Every phrase still speaks on tap.",
+        "Phrase cards are >= 104dp tall and readable at 200% font scale (cards grow; text never clipped).",
+        "HELP is solid red and first."
+      ]
+    },
+    {
+      "id": "visualAssist",
+      "activity": "VisualAssistActivity",
+      "layout": "activity_visual_assist.xml",
+      "status": "existing",
+      "referenceInspiration": "Screen 2 card + screen 1 CTA",
+      "character": "Pip — visual look (peeking, 120dp)",
+      "background": "butter_50",
+      "structure": [
+        {
+          "block": "topBar",
+          "spec": "pillBackButton + title 'Visual Assist'."
+        },
+        {
+          "block": "camera card",
+          "spec": "previewView inside a FrameLayout card: margin 20dp, radius_3xl, 6dp white border, shadow_md, height ~52% of the screen. Set app:implementationMode=\"compatible\" on PreviewView so rounded clipping works (the default PERFORMANCE mode uses a SurfaceView that ignores outlines), then clipToOutline=true with a rounded ViewOutlineProvider. Decorative white focus brackets (4dp stroke, 28dp arms) inset 24dp."
+        },
+        {
+          "block": "Pip (visual look)",
+          "spec": "Overlaps the camera card's top-right corner (peek placement); keep the glasses and book visible."
+        },
+        {
+          "block": "text card",
+          "spec": "White radius_2xl card, padding 22: caption_caps 'I CAN SEE' ink_500 + tvRecognized title_l ink_900 (max 5 lines, ellipsize end; placeholder ink_500 'Point the camera at some text')."
+        },
+        {
+          "block": "btnSpeak",
+          "spec": "stadiumCta 64dp, gradient butter_300 -> tangerine_400, ic_volume_up, 'READ ALOUD'."
+        }
+      ],
+      "states": {
+        "scanning": "Pip idle",
+        "textFound": "Pip alert 1.5s",
+        "reading": "Pip talk",
+        "noPermission": "Pip concerned + message"
+      },
+      "acceptanceCriteria": [
+        "Camera preview has rounded corners on the test phone.",
+        "OCR auto-read still works.",
+        "Pip never covers the recognised text or the button."
+      ]
+    },
+    {
+      "id": "hearingAssist",
+      "activity": "HearingActivity",
+      "layout": "activity_hearing.xml",
+      "status": "existing",
+      "referenceInspiration": "Screen 2 (Mental Help)",
+      "character": "Pip — hearing look (170dp above the deck)",
+      "structure": [
+        {
+          "block": "background",
+          "spec": "Full-bleed HeroBackgroundDrawable grad_hero_peachSunrise (grain 0.8) covering the top ~62% and fading into surface_canvas; draws under the status bar."
+        },
+        {
+          "block": "topBar",
+          "spec": "circleIconButton (back) left; centred title 'Hearing Assist' headline_l ink_900 + subtitle 'See the sounds around you' body_m ink_700."
+        },
+        {
+          "block": "Pip (hearing look)",
+          "spec": "Centred, 170dp, bottom 25% hidden behind ghostCard2 (draw order: Pip, then the deck); the raised wing and waves stay visible."
+        },
+        {
+          "block": "cardDeck",
+          "spec": "Main card = alertCard (existing id). Content: icon tile 72dp circle (sound colour) holding tvAlertIcon — recommended: migrate tvAlertIcon to an ImageView with the ic_sound_* vectors (SoundType gains iconRes); if kept as TextView emoji, set 36sp. tvAlertTitle headline_m centred; tvAlertDetail body_m centred; meta row (new tvAlertMeta, caption ink_500): '⏱ 14:32  ——  72% sure'."
+        },
+        {
+          "block": "tvListening",
+          "spec": "Chip under the deck: surface_glass, liveDot + caption ink_700."
+        },
+        {
+          "block": "feed",
+          "spec": "tvFeedLabel caption_caps ink_500; feedScroll white radius_xl card (shadow_xs, padding 16) holding tvFeed (body_m ink_800, line spacing 4dp; captions mode 26sp)."
+        },
+        {
+          "block": "segmentedControl",
+          "spec": "btnSounds ('Sound alerts', ic_hearing) + btnCaptions ('Live captions', ic_closed_caption) at the bottom, above the navigation-bar inset."
+        }
+      ],
+      "states": {
+        "listening (idle)": "White main card, ic_hearing icon tile, title 'Listening for sounds', Pip idle with pulsing sound waves.",
+        "urgent sound (FIRE_ALARM, SIREN, HORN, ALARM, DOORBELL)": "Main card background = soundTypes.<TYPE>.solid, all text white, icon tile white with the coloured icon, alertPop + pulse rings around the card, Pip alert with waves at full opacity + soundTypeBadge (44dp white circle with the sound's icon at Pip's top-right). Card resets after 6s (existing timer).",
+        "soft sound (PHONE, BABY, GLASS, SHOUT, DOG)": "Card stays white, icon tile = soundTypes.<TYPE>.tint with iconColor, ink text, alertPop only, Pip alert + soundTypeBadge.",
+        "captions mode": "alertCard GONE (existing Java) and the ghost cards GONE too; feed card expands; Pip alert while speech arrives.",
+        "mic denied / model missing": "Pip concerned (waves hidden), tvListening shows the existing message styled in status_emergency_tint."
+      },
+      "javaHooks": "SoundType colours -> token colours from tokens.color.soundTypes; onSoundDetected applies SoundStyle + Pip reaction; showIdleCard resets styles; updateModeButtons uses setSelected and hides ghost cards in captions mode.",
+      "acceptanceCriteria": [
+        "A doorbell/siren video near the phone produces the urgent style, distinct vibration and flashlight (existing) plus Pip reacting.",
+        "Captions are readable at 26sp in the expanded feed card.",
+        "Urgent card text contrast >= 4.5:1 for every urgent type.",
+        "Pulse rings never flash faster than 3 times per second."
+      ]
+    },
+    {
+      "id": "sensorInfo",
+      "activity": "SensorInfoActivity",
+      "layout": "activity_sensor_info.xml",
+      "status": "existing",
+      "referenceInspiration": "Screen 3 stat tiles",
+      "character": "Pip — sensor look (header, 150dp)",
+      "structure": [
+        {
+          "block": "heroSheet (compact 190dp)",
+          "spec": "grad_hero_sky; pill back; title 'Sensor Info' headline_l; subtitle 'Live readings from your phone'; Pip sensor look bottom-right."
+        },
+        {
+          "block": "stat tiles",
+          "spec": "2-column statTiles (compact variant): Accelerometer (tvAccel), Gyroscope (tvGyro), Light (tvLight), Proximity (tvProx); Compass full width (tvCompass) with a decorative compass glyph. Values keep Java formatting; style body_l tnum ink_800."
+        },
+        {
+          "block": "sensor list",
+          "spec": "sectionHeader 'Your phone's sensors' + white card with tvSensorList (body_m, line spacing 6dp)."
+        }
+      ],
+      "acceptanceCriteria": [
+        "All six ids bound and updating live.",
+        "Numbers do not jitter in width (tabular figures)."
+      ]
+    },
+    {
+      "id": "navigation",
+      "status": "planned (PLAN.md Priority 2)",
+      "character": "Pip — nav look (yellow bucket hat + satchel, from the reference)",
+      "spec": "heroSheet with grad coral; big compass dial (240dp circle, coral_100 -> white radial, 8dp coral_300 ring, rotating arrow pointing to the saved place); distance as display_number + unit; stadiumCta 'Save this place as Home'; outlineButton 'Speak directions'. Pip alert when off-route, happy on arrival, concerned when there's no GPS."
+    },
+    {
+      "id": "profileSettings",
+      "status": "planned (PLAN.md Priorities 4 & 6)",
+      "character": "Pip — profile look (orange bow tie + flower, from the reference)",
+      "spec": "White screen with a compact lavender hero; form fields (56dp, radius_lg, ink_200 outline, focused 2dp lavender_600, labels title_s); private codeword field with a show/hide toggle; assistance-mode chooser as selectable cards showing Pip in each section's look (visual, hearing, comm, nav, cognitive)."
+    },
+    {
+      "id": "onboarding",
+      "status": "planned",
+      "character": "Pip in every look",
+      "spec": "3 slides (welcome: Pip home look; 'Choose what helps you': mode cards showing Pip's looks; 'Link a guardian': Pip guardian look); dots indicator; stadiumCta 'Continue'; finish with Pip celebrate look."
+    }
+  ],
+  "androidImplementation": {
+    "theme": {
+      "change": "Base.Theme.SENSE parent -> Theme.Material3.Light.NoActionBar (v1 is light-only; DayNight would flip system colours under our explicit pastel tokens). Document this in DESIGN_NOTES.md; dark mode is future work (values-night tokens).",
+      "items": {
+        "colorPrimary": "@color/tangerine_500",
+        "colorOnPrimary": "@color/ink_900",
+        "colorSecondary": "@color/lavender_500",
+        "colorOnSecondary": "@color/ink_900",
+        "colorSurface": "@color/white",
+        "colorOnSurface": "@color/ink_900",
+        "android:colorBackground": "@color/surface_canvas",
+        "android:windowBackground": "@color/surface_canvas",
+        "colorError": "@color/status_emergency_solid",
+        "android:fontFamily / fontFamily": "@font/lexend_regular",
+        "materialButtonStyle": "@style/Widget.SENSE.Button (cornerRadius 999dp, minHeight 56dp, textAppearance label_button, textAllCaps false, insetTop/insetBottom 0)",
+        "shapeAppearanceCornerSmall/Medium/Large": "12dp / 24dp / 32dp rounded",
+        "android:spotShadowAlpha": "0.14",
+        "android:ambientShadowAlpha": "0.06",
+        "android:windowLightStatusBar": "true",
+        "android:windowLightNavigationBar": "true (API 27+)"
+      }
+    },
+    "edgeToEdge": {
+      "why": "targetSdk 37 means edge-to-edge is enforced on Android 15+ (the test phone): Window.setStatusBarColor is deprecated and has no effect, and content draws behind the system bars. The current layouts fake this with paddingTop=44dp.",
+      "how": [
+        "In every Activity.onCreate before setContentView: EdgeToEdge.enable(this) (androidx.activity).",
+        "Delete getWindow().setStatusBarColor(...) calls.",
+        "Light icons on light screens: WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView()).setAppearanceLightStatusBars(true) — set false while a screen shows an emergency (dark red) hero.",
+        "Insets: ViewCompat.setOnApplyWindowInsetsListener(topBar, (v, insets) -> { Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()); v.setPadding(v.getPaddingLeft(), bars.top + dp(12), v.getPaddingRight(), v.getPaddingBottom()); return insets; }) and the same for bottom content with bars.bottom.",
+        "Put this in ui/Ui.java: Ui.applyEdgeToEdge(Activity a, View top, View bottom, boolean lightIcons)."
+      ]
+    },
+    "materialButtonGotcha": "Under a Material 3 theme every <Button> inflates as MaterialButton. A custom android:background is only used if app:backgroundTint=\"@null\"; otherwise the tint overrides it. Prefer MaterialButton attributes (cornerRadius, backgroundTint, strokeColor/Width, icon, iconTint, iconGravity) and fall back to backgroundTint=@null + drawable only for gradients.",
+    "resourceFiles": {
+      "res/values/colors.xml": "All palette families, neutrals, surfaces, semantic and sound colours (snake_case names).",
+      "res/values/dimens.xml": "space_*, radius_*, touch targets, hero heights, Pip sizes (pip_hero 260dp, pip_card 150dp, pip_tile 96dp, pip_peek 120dp, pip_avatar 44dp).",
+      "res/values/styles_text.xml": "TextAppearance.SENSE.* for each typography.scale entry.",
+      "res/values/styles_widgets.xml": "Widget.SENSE.Button, .Button.PillWhite, .Button.Stadium, .Button.Emergency, .Button.Tonal, .Button.Outline, .Button.Segment, .Chip, .Card.",
+      "res/values/attrs.xml": "DuckView attrs (duckLook enum, duckExpression enum, idleMotion boolean).",
+      "res/font/": "lexend_*.ttf static files.",
+      "res/drawable/": "bg_pill_white, bg_circle_white, bg_card_white_r24, bg_card_white_r28, bg_card_white_r32, bg_tile_cream_r24, bg_chip_white, bg_chip_glass, bg_arrow_chip, bg_cta_tangerine, bg_glow_tangerine, bg_emergency, bg_tonal_mint, bg_outline_pill, bg_segment_track, sel_segment_sounds, sel_segment_captions, bg_icon_tile_circle, bg_focus_ring; ic_*; duck_*.xml (from duck_kit.zip)",
+      "res/layout/": "Redesigned activity_*.xml, new item_phrase.xml, view_top_bar.xml (included via <include>), view_card_deck.xml."
+    },
+    "javaClasses_package_com.senseplus.sense.ui": {
+      "Ui.java": "dp(), edge-to-edge/insets helper, isReducedMotion(), pressFeedback(View) touch listener, setHeading(View).",
+      "GrainTexture.java": "Shared noise tile + Paint factory (tokens.grain).",
+      "HeroBackgroundDrawable.java": "Base colour + up to 4 RadialGradient blobs (fractions of bounds) + optional fade-to-canvas + optional wave bottom edge + grain. Rebuild shaders in onBoundsChange only.",
+      "OrganicShapeDrawable.java": "Rounded-rect-with-wobble path (radius_hero, wobble 6dp) filled with a LinearGradient + grain; exposes getPath() for outline clipping.",
+      "ScallopBadgeDrawable.java": "12-bump scallop path (for i in 0..23 alternate radii R and R*(1-0.08) joined with quadTo for soft bumps) + gradient + grain.",
+      "DuckView.java / DuckLooks.java": "See characters.implementation.",
+      "PulseRingView.java": "Draws expanding rings behind a target view; respects reduced motion.",
+      "WaveLevelIndicatorView.java": "Track + thumb + three labels drawn or composed; setLevel(Level, animate).",
+      "StatusStyle.java": "enum OFF, NORMAL, ATTENTION, EMERGENCY {heroGradient, textColor, badgeCopy, badgeIcon, expression, accessory, lightStatusBarIcons}; static from(String status).",
+      "SoundStyle.java": "Maps HearingActivity.SoundType -> urgent/soft styling tokens + icon."
+    },
+    "performance": [
+      "Build gradients, paths and bitmaps in onSizeChanged/onBoundsChange, never in onDraw.",
+      "One shared grain tile (128x128 ARGB = 64 KB).",
+      "Pip cache bitmaps are sized to the view (a 260dp hero at xxhdpi is about 780x780 = 2.4 MB); release them in onDetachedFromWindow.",
+      "Pause idle animations when views are not visible (onVisibilityAggregated).",
+      "Avoid stacking full-screen backgrounds (remove windowBackground behind full-bleed heroes, or let the hero be the window background) to limit overdraw.",
+      "Use setLayerType(LAYER_TYPE_HARDWARE) only while a view is running a transform animation, then reset to NONE."
+    ],
+    "testDevice": "Samsung Galaxy A55 (Android 15+, One UI). Also check one small-screen emulator (360 x 640dp) and font scale 2.0."
+  },
+  "accessibility": {
+    "standard": "WCAG 2.2 AA + Android accessibility guidelines. This is an assistive app; accessibility failures are functional bugs.",
+    "contrast": {
+      "normalText": ">= 4.5:1",
+      "largeText (>= 24sp regular or >= 19sp bold)": ">= 3:1",
+      "uiComponentsAndIcons": ">= 3:1 against adjacent colours",
+      "verified": "Token pairs in tokens.color list measured ratios; any new pair must be checked (e.g. Accessibility Scanner app)."
+    },
+    "touch": "48dp minimum, 64dp primary, 80dp emergency, 8dp spacing.",
+    "screenReader": [
+      "Pip, ghost cards, grain, decorative chips: importantForAccessibility=no.",
+      "Screen titles and section headers: accessibilityHeading=true (ViewCompat.setAccessibilityHeading for API 26-27).",
+      "Status texts (tvStatus, tvGStatus, tvListening, alert title): accessibilityLiveRegion polite (assertive for EMERGENCY and urgent sounds).",
+      "Clickable cards: one focusable node with a merged contentDescription; inner views not focusable.",
+      "Segmented control: stateDescription 'Selected'."
+    ],
+    "fontScaling": "All text in sp, no fixed heights on text containers (use minHeight), test at font scale 2.0 + display size largest: nothing clipped, tiles grow, deck rotation becomes 0°.",
+    "colourIndependence": "Every colour-coded state is also expressed in text and icon (and haptics where it already exists).",
+    "motion": "Respect animations-off (tokens.motion.reducedMotion). No information conveyed only by motion.",
+    "photosensitivity": "No element flashes more than 3 times per second; pulse periods >= 800ms; the existing torch blink (about 2 per second) is within limits — do not speed it up.",
+    "cognitive": "Plain language, one primary action per screen, consistent placement of Back and the primary button. Pip gives emotional context but never replaces words."
+  },
+  "contentAndCopy": {
+    "voice": "Warm, calm, short, second person. Plain words. Never alarming beyond 'Possible emergency'. No emoji in UI text (characters carry the emotion); emoji stays only in system notifications that already use it.",
+    "strings": {
+      "home_greeting": "Hello,",
+      "home_name_fallback": "Friend",
+      "home_card_guard_title": "Keep me safe",
+      "home_card_guard_sub": "Fall detection & HELP",
+      "home_card_guardian_title": "Watch over someone",
+      "home_card_guardian_sub": "Location, battery & alerts",
+      "home_tools_header": "Your assist tools",
+      "home_tools_caption": "Tap a tool to start",
+      "guard_badge_off": "Monitoring is off",
+      "guard_badge_normal": "You're protected",
+      "guard_badge_attention": "Are you okay?",
+      "guard_badge_emergency": "Getting help",
+      "level_normal": "Normal",
+      "level_attention": "Attention",
+      "level_emergency": "Emergency",
+      "level_now": "now",
+      "comm_title": "Talk for me",
+      "comm_sub": "Tap a phrase — I'll say it out loud",
+      "visual_label": "I can see",
+      "visual_placeholder": "Point the camera at some text",
+      "hearing_title": "Hearing Assist",
+      "hearing_sub": "See the sounds around you",
+      "hearing_idle_title": "Listening for sounds",
+      "sensor_title": "Sensor Info",
+      "sensor_sub": "Live readings from your phone",
+      "guardian_title": "Guardian",
+      "guardian_glance": "At a glance",
+      "guardian_waiting": "Waiting for the user's phone…",
+      "all_clear": "All clear — you're okay"
+    },
+    "rule": "Move all user-visible strings touched by the redesign into res/values/strings.xml."
+  },
+  "qa": {
+    "perScreen": "Each screen's acceptanceCriteria + characters.qaChecklist (Pip) + a screenshot at default settings and at font scale 2.0, compared side by side with design/reference/*.jpg.",
+    "globalChecklist": [
+      "./gradlew assembleDebug passes with no new warnings about missing resources.",
+      "App runs on the A55; every Home entry opens its screen.",
+      "Functional regression run (from PLAN.md testing checklist): fall -> Attention -> I'm okay; no response -> Emergency -> guardian alert; HELP button and voice 'help'; Visual Assist reads text; Hearing alerts + captions; phrases speak; biometric gate before Guardian.",
+      "TalkBack walkthrough of every screen: logical order, no character announced, status changes announced.",
+      "Font scale 2.0 + largest display size: no clipped or overlapping text.",
+      "Animations off (Developer options): no loops, all states still clear.",
+      "Accessibility Scanner: no contrast or touch-target errors.",
+      "Profile GPU rendering: idle Home and Hearing screens stay under 16ms per frame on the A55.",
+      "git diff shows no changes to FallDetector, UserMonitorService logic, CloudHelper, LocationHelper or GuardianService logic."
+    ]
+  },
+  "workPlan": [
+    {
+      "phase": 0,
+      "name": "Prepare",
+      "steps": [
+        "Read this profile and look at design/reference/duck_style_reference.jpg and previews/pip_duck_lookbook.png.",
+        "Grep R.id usage per Activity and confirm preservedViewIds.",
+        "Create branch ui-redesign (follow the repo owner's instructions about committing/pushing).",
+        "Take baseline screenshots of every screen."
+      ],
+      "done": "Branch ready, baseline captured."
+    },
+    {
+      "phase": 1,
+      "name": "Tokens & theme",
+      "steps": [
+        "colors.xml, dimens.xml, styles_text.xml, styles_widgets.xml.",
+        "Fonts in res/font.",
+        "Theme parent -> Material3.Light.NoActionBar with the theme items.",
+        "Ui.applyEdgeToEdge in every Activity; remove setStatusBarColor."
+      ],
+      "done": "App builds and runs; screens look the same but use the new font and light status bar."
+    },
+    {
+      "phase": 2,
+      "name": "Foundations",
+      "steps": [
+        "GrainTexture, HeroBackgroundDrawable, OrganicShapeDrawable, ScallopBadgeDrawable, PulseRingView, WaveLevelIndicatorView.",
+        "Static drawables (bg_*) and icons (ic_*)."
+      ],
+      "done": "A scratch layout shows each foundation correctly."
+    },
+    {
+      "phase": 3,
+      "name": "Pip the duck",
+      "steps": [
+        "Unzip duck_kit.zip: copy res/drawable/duck_*.xml into app/src/main/res/drawable.",
+        "DuckView + DuckLooks (from looks.json).",
+        "CharacterGalleryActivity (debug only): every look x expression.",
+        "Compare against design/reference/duck_style_reference.jpg and previews/pip_duck_lookbook.png."
+      ],
+      "done": "Gallery shows every look and expression matching the lookbook, idle motion running, passes characters.qaChecklist."
+    },
+    {
+      "phase": 4,
+      "name": "Screens",
+      "steps": [
+        "Home -> SENSE GUARD -> Guardian -> Hearing Assist -> Visual Assist -> Communication -> Sensor Info. One screen per commit: 'UI: <screen> redesign'.",
+        "After each: build, run on the A55, screenshot, tick acceptanceCriteria."
+      ],
+      "done": "All existing screens match their specs."
+    },
+    {
+      "phase": 5,
+      "name": "Polish & QA",
+      "steps": [
+        "Motion pass + reduced motion.",
+        "TalkBack, font-scale, contrast, performance passes (qa.globalChecklist)."
+      ],
+      "done": "qa.globalChecklist all green."
+    },
+    {
+      "phase": 6,
+      "name": "Document",
+      "steps": [
+        "DESIGN_NOTES.md (deviations + decisions).",
+        "README: add a 'Design system' section with screenshots and the character roster.",
+        "DEVLOG: add the redesign segment and any bugs met."
+      ],
+      "done": "Docs updated."
+    }
+  ],
+  "referenceAssets": {
+    "_note": "Generated as vector paths and rendered to check them while writing this profile. Copy the kit into res/drawable unchanged. They set the quality bar for any new look.",
+    "styleReferenceImages": {
+      "design/reference/duck_style_reference.jpg": "The user's duck sticker sheet: the style authority for Pip.",
+      "design/reference/ui_style_reference.jpg": "The pastel app mockups (optional): the style authority for screens, cards and gradients."
+    },
+    "duckKit": {
+      "zip": "duck_kit.zip",
+      "contents": {
+        "res/drawable/duck_shadow.xml": "Ground shadow (ink at 10%).",
+        "res/drawable/duck_base.xml": "Tuft, body fill, cel shading (clip-path), body outline, feet.",
+        "res/drawable/duck_pose_down.xml": "Both wings resting.",
+        "res/drawable/duck_pose_wave.xml": "Left wing waving + motion marks; right wing resting.",
+        "res/drawable/duck_pose_listen.xml": "Left wing resting; right wing raised beside the head.",
+        "res/drawable/duck_pose_hold.xml": "Both wings in front (drawn over a held prop).",
+        "res/drawable/duck_face_idle|happy|wink|talk|alert|concerned|sleeping.xml": "Expressions (same face position in every look).",
+        "res/drawable/duck_guard_cape|shield|knot.xml": "guard look props.",
+        "res/drawable/duck_visual_book|glasses.xml": "visual look props.",
+        "res/drawable/duck_hearing_waves.xml": "hearing look sound waves.",
+        "res/drawable/duck_comm_bubble.xml": "comm look speech bubble.",
+        "res/drawable/duck_sensor_antenna.xml": "sensor look antenna headband.",
+        "res/drawable/duck_nav_hat|satchel.xml": "nav look props.",
+        "res/drawable/duck_sleep_cap.xml": "sleep look nightcap.",
+        "res/drawable/duck_guardian_shadow|duckling|heart.xml": "guardian look extras (the duckling is a 0.44-scale Pip with its own idle face).",
+        "res/drawable/duck_fx_heart|sparkles|question|exclaim|zzz|note.xml": "Doodle/effect layers.",
+        "looks.json": "Machine-readable look recipes (the same as characters.looks).",
+        "previews/pip_duck_lookbook.png": "Every section look on its section background.",
+        "previews/pip_duck_expressions.png": "All 7 expressions."
+      }
+    },
+    "vectorDrawableNotes": [
+      "All files use viewport 240 x 240 and android:width/height 240dp; DuckView sets bounds, so the intrinsic size does not matter.",
+      "Cel shading uses <group><clip-path .../><path .../></group> to keep the shade inside the body outline.",
+      "The duckling and the guardian parent use <group> translate+scale (VectorDrawable applies scale, then translate, the same as SVG translate() scale()).",
+      "Stroke widths scale with the drawable, so at 48dp the outline is about 0.9dp. That is the smallest size where Pip still reads well; below 64dp hide doodle layers."
+    ],
+    "grainTextureJava": "static Bitmap build() { int s = 128; Bitmap b = Bitmap.createBitmap(s, s, Bitmap.Config.ARGB_8888); java.util.Random r = new java.util.Random(7); int[] px = new int[s * s]; for (int i = 0; i < px.length; i++) { float p = r.nextFloat(); if (p < 0.20f) px[i] = Color.argb((int) (255 * (0.10f + r.nextFloat() * 0.12f)), 255, 255, 255); else if (p < 0.40f) px[i] = Color.argb((int) (255 * (0.05f + r.nextFloat() * 0.07f)), 40, 20, 60); else px[i] = Color.TRANSPARENT; } b.setPixels(px, 0, s, 0, 0, s, s); return b; }  // for UI surfaces only, never for Pip"
+  }
+}

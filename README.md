@@ -21,12 +21,13 @@ SENSE+ is **one app with two roles**, chosen on the home screen:
 |---|---|
 | **Fall detection (SENSE GUARD)** | Detects falls using multi-sensor *fusion* (free-fall → impact → stillness), not a single reading — cutting false alarms. |
 | **Three-level safety** | `Normal → Attention → Possible Emergency`. On a fall the phone asks "Are you okay?"; no response escalates to a guardian alert. |
-| **Recovery & voice response** | Cancels automatically if the user gets up (movement), says "I'm okay", or taps I'M OK. Says "help" to raise an alert hands-free. |
+| **Recovery & voice response** | Cancels automatically if the user gets up (movement), says "I'm okay", or taps I'M OK. Says "help" to raise an alert hands-free; the "help" / "I'm okay" keywords use offline **Vosk**. |
 | **Background monitoring** | A foreground service keeps detecting falls even when the app is closed. |
 | **Guardian dashboard** | Real-time status, address, coordinates, battery, and a one-tap **Google Maps** link — updates live over Firebase. |
 | **Background alerts** | The guardian's phone buzzes with a colour-coded, self-resolving notification even when its app is closed. |
 | **Communication board** | Large buttons that speak phrases aloud for users who cannot talk. |
 | **Visual Assist (OCR)** | Point the camera at text and it is read aloud automatically — on-device ML (Edge AI). |
+| **Hearing Assist** | YAMNet (TensorFlow Lite) sound alerts — doorbell, fire/smoke alarm, siren and more — with a coloured card, vibration and a flashlight blink, plus live captions from Google `SpeechRecognizer`. |
 | **Sensor Info** | Live compass + accelerometer / gyroscope / light / proximity readings and the full device sensor list. |
 | **Biometric lock** | Fingerprint / device-PIN protection on the guardian view. |
 
@@ -51,17 +52,18 @@ HomeActivity ──► MainActivity (User)        ──► UserMonitorService  
              ├─► GuardianActivity (Guardian) ◄── GuardianService    ──┤ (both talk only to Firebase,
              ├─► CommunicationActivity                                │  never to each other)
              ├─► VisualAssistActivity                                 │
+             ├─► HearingActivity                                      │
              └─► SensorInfoActivity                      Cloud Firestore
 ```
 
 - **Sensing / detection** — `FallDetector`, `SensorManager`, Fused Location Provider, rotation-vector compass.
-- **Response** — Text-to-Speech, vibration, notifications, `SpeechRecognizer` (voice).
+- **Response** — Text-to-Speech, vibration, notifications, offline **Vosk** for keywords, Google `SpeechRecognizer` for captions.
 - **Cloud** — `CloudHelper` writes the user's status/location to Cloud Firestore; the guardian reads it (with a 2-second server-poll fallback for networks that drop the real-time stream).
 - **Background** — `UserMonitorService` and `GuardianService` are foreground services (Module 5).
 
 ## Tech stack
 
-Java · Android SDK · `SensorManager` · Fused Location Provider · CameraX · ML Kit Text Recognition (on-device) · Text-to-Speech / SpeechRecognizer · Firebase (Auth + Cloud Firestore) · BiometricPrompt · Foreground Services.
+Java · Android SDK · `SensorManager` · Fused Location Provider · CameraX · ML Kit Text Recognition (on-device) · Text-to-Speech / SpeechRecognizer · Vosk (offline speech) · TensorFlow Lite (YAMNet) · Firebase (Auth + Cloud Firestore) · BiometricPrompt · Foreground Services.
 
 ---
 
@@ -69,6 +71,7 @@ Java · Android SDK · `SensorManager` · Fused Location Provider · CameraX · 
 
 1. Clone the repo and open it in Android Studio.
 2. The app uses Firebase — `google-services.json` is included for the demo project. (For your own Firebase project, replace it and enable **Cloud Firestore** + **Anonymous Authentication**.)
+   The Vosk model folder `app/src/main/assets/model-en-us/` must contain the `uuid` file (any text); without it the app reports "model not found".
 3. Run on a **physical Android phone** (sensors + camera needed); grant Location, Microphone, Camera and Notification permissions when asked.
 4. For the two-phone demo, install on a second phone and pick **Guardian** mode on it.
 
@@ -81,4 +84,4 @@ Java · Android SDK · `SensorManager` · Fused Location Provider · CameraX · 
 
 ## Known limitations
 
-Accuracy of OCR and voice depends on lighting and noise; continuous sensing/listening uses more battery; remote monitoring needs an internet connection; automatic detection supports — it does not replace — professional help.
+Accuracy of OCR and voice depends on lighting and noise; continuous sensing/listening uses more battery; remote monitoring needs an internet connection; only one feature can use the microphone at a time (User monitoring or Hearing Assist); automatic detection supports — it does not replace — professional help.
