@@ -2,21 +2,17 @@
 
 These prompts are for building the rest of PLAN.md with other models (Sonnet 5, GPT-OSS 120B…). Claude Code (this repo) reviews each segment afterwards.
 
-Done so far: D0 and segments 13–20 (18a only), plus the 15/16 fixes. Their prompts have been deleted; the phone tests they listed are kept below. 18b (pairing) was dropped and replaced by the better design in segment 23.
+Done so far: D0 and segments 13–24 (18a only; 18b was replaced by 23), plus the 15/16 fixes. Their prompts have been deleted; the phone tests they listed are kept below. **25–28 are NOT done**: an earlier attempt reported success, but none of its code reached the project.
 
 ## Remaining files
 
 | File | What it is | Priority | Model |
 |---|---|---|---|
 | `00-system.md` | System prompt: project context, design decisions, rules, response format, worked examples | — | read first by every model |
-| `21-navigation-fix.md` | **Fix Navigate Home** (7 causes found) + address search + Google Maps walking directions | **must** | Sonnet 5 |
-| `22-accounts-roles.md` | **Login** (email/password), a **User / Guardian role per phone**, role-based Home, sign out | **must** | Sonnet 5 |
-| `23-pairing-private-data.md` | **Link guardian ↔ user** (code + approval), private per-person data, **Firestore security rules** | **must** | Sonnet 5 |
-| `24-guardian-alerts.md` | 🟠 early warning, loud repeating 🔴 alarm, call/map actions, low-battery + lost-contact alerts | high value | Sonnet 5 |
-| `25-on-my-way.md` | Guardian taps "I'm on my way" → user's phone says help is coming | high value | Sonnet 5 |
-| `26-medical-id-call-sms.md` | Medical ID (lock-screen helper view), "Call my guardian", SMS fallback without internet | high value | Sonnet 5 |
-| `27-safe-zone.md` | Alert the guardian when the user leaves home (wandering) | nice | Sonnet 5 |
-| `28-reliability.md` | Resume protection after a restart; Hearing Assist shares the mic | nice | Sonnet 5 |
+| `25-on-my-way.md` | **Not done.** Guardian taps "I'm on my way" → user's phone says help is coming | high value | Sonnet 5 |
+| `26-medical-id-call-sms.md` | **Not done.** Medical ID (lock-screen helper view), "Call my guardian", SMS fallback without internet | high value | Sonnet 5 |
+| `27-safe-zone.md` | **Not done.** Alert the guardian when the user leaves home (wandering) | nice | Sonnet 5 |
+| `28-reliability.md` | **Not done.** Resume protection after a restart; Hearing Assist shares the mic | nice | Sonnet 5 |
 | `D1-report-and-viva.md` | Final README/DEVLOG, Word-report text, viva Q&A | last | Sonnet 5 |
 | `T-bugfix.md` | Template when something fails on the phone | — | same as the segment |
 | `T-extras.md` | Optional extras E1–E3 | — | see file |
@@ -149,3 +145,7 @@ A review can't run the app on your phone. Tell me which phone tests passed.
 | 2026-11-12 | 18a | **on plan, not committed** | Mapping exactly as specified, all cards when nothing is chosen, applied in `onResume`, manifest OK, 13 tests. Material3 button style is safe (theme is Material3). The profile reappears on each cold start until saved (acceptable). Added `styles.xml` (declared deviation). |
 | 2026-11-12 | 19 | **on plan, not committed** | Server `lastSeen` on every write, 30 s heartbeat, `monitoring=false` in `onDestroy`, guardian distinguishes its own failure, `ConnectivityStatus` 7 tests incl. future timestamp. Mixed into the same files as 13/15/16. |
 | 2026-11-12 | whole tree | **builds** | assembleDebug + 80/80 tests. The last commit (`fc7105c`) also builds and passes on its own. DEVLOG has rows 10–13 and 20 only (14–19 missing; D1 can add them). |
+| 2026-11-12 | 13–19, 21, 22, 24 + redesign | **committed** `ed78ec0` | Build + 148 tests green on the clean commit. 24 was built before 23, on demoUser. |
+| 2026-11-12 | 21 / 22 / 24 | **on plan** | All acceptance items found in the code; phone tests pending. |
+| 2026-11-12 | 23 | **done by Claude Code**, committed `d9f3959` | demoUser gone; FirestorePaths; code + approval pairing; firestore.rules; 5 s / 2 s guardian polling; 24's alerts kept. Clean-commit build + 161 tests green. Phone tests pending; publish firestore.rules only after both phones run this build. |
+| 2026-11-12 | 25–28 | **not done** | No code in the repo. The Antigravity run for 28 wrote nothing (0-byte patch, no out/ folder) despite reporting success. |
