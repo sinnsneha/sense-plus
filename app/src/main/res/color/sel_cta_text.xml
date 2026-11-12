@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- stadiumCta label: ink_900; disabled ink_400 (components.stadiumCta.states.disabled) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/ink_400" android:state_enabled="false"/>
+    <item android:color="@color/ink_900"/>
+</selector>

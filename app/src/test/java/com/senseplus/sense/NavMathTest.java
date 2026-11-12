@@ -3,6 +3,8 @@ package com.senseplus.sense;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class NavMathTest {
 
@@ -51,5 +53,37 @@ public class NavMathTest {
         assertEquals("Home is 1.5 kilometres, turn right", NavMath.sentence(1450, 90));
         assertEquals("Home is 320 metres, straight ahead", NavMath.sentence(324, 5));
         assertEquals("Home is 320 metres, turn around", NavMath.sentence(324, 170));
+    }
+
+    @Test
+    public void homeSaveDecisionThresholds() {
+        assertEquals(NavMath.HomeSaveDecision.SAVE, NavMath.homeSaveDecision(20f));
+        assertEquals(NavMath.HomeSaveDecision.SAVE, NavMath.homeSaveDecision(50f));
+        assertEquals(NavMath.HomeSaveDecision.CONFIRM, NavMath.homeSaveDecision(51f));
+        assertEquals(NavMath.HomeSaveDecision.CONFIRM, NavMath.homeSaveDecision(150f));
+        assertEquals(NavMath.HomeSaveDecision.REFUSE, NavMath.homeSaveDecision(151f));
+    }
+
+    @Test
+    public void uprightUsesFortyFiveDegreeThreshold() {
+        assertFalse(NavMath.isUpright(0));
+        assertFalse(NavMath.isUpright(Math.toRadians(30)));
+        assertTrue(NavMath.isUpright(Math.toRadians(60)));
+        assertTrue(NavMath.isUpright(Math.toRadians(-60)));
+    }
+
+    @Test
+    public void mapsSuggestedOnlyBeyondThreeHundredMetres() {
+        assertFalse(NavMath.suggestMaps(299));
+        assertTrue(NavMath.suggestMaps(301));
+    }
+
+    @Test
+    public void walkingHintOnlyBeyondThreeHundredMetres() {
+        assertFalse(NavMath.sentence(299, 0, true).contains("Walking directions"));
+        assertTrue(NavMath.sentence(301, 0, true).contains("Walking directions"));
+        assertEquals("You have arrived home", NavMath.sentence(10, 0, true));
+        // The 2-argument form keeps the original output exactly.
+        assertEquals(NavMath.sentence(324, -30), NavMath.sentence(324, -30, false));
     }
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- screens.navigation compass dial: coral_100 → white radial with an 8dp coral_300 ring -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <gradient android:type="radial" android:gradientRadius="50%p"
+                android:startColor="@color/coral_100" android:endColor="@color/white"/>
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <stroke android:width="8dp" android:color="@color/coral_300"/>
+        </shape>
+    </item>
+</layer-list>

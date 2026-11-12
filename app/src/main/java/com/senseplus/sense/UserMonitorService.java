@@ -19,16 +19,24 @@ import android.location.Geocoder;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
+import android.content.SharedPreferences;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.vosk.Model;
 import org.vosk.Recognizer;
@@ -44,14 +52,18 @@ public class UserMonitorService extends Service implements SensorEventListener {
     public static final String ACTION_START = "START";
     public static final String ACTION_HELP = "HELP";
     public static final String ACTION_IM_OK = "IM_OK";
+    public static final String ACTION_RELOAD_VOICE = "RELOAD_VOICE"; // used by the codeword screen (segment 16)
 
     private static final String CHANNEL_ONGOING = "user_monitor";
     private static final String CHANNEL_ALERT = "user_alert_v2";
     private static final int ONGOING_ID = 10;
     private static final int ALERT_ID = 11;
+    private static final int SIGNIN_ID = 12;
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
+    private Sensor gyroscope;
+    private boolean gyroAvailable = false;
     private FallDetector fallDetector;
     private TextToSpeech tts;
     private Vibrator vibrator;
@@ -67,12 +79,26 @@ public class UserMonitorService extends Service implements SensorEventListener {
 
     private CountDownTimer attentionTimer;
     private long attentionStart = 0;
-    private static final int ATTENTION_SECONDS = 15;
+    // Package-private: GuardianService quotes this window in its early-warning text.
+    static final int ATTENTION_SECONDS = 15;
     private static final long RECOVERY_GRACE_MS = 2500;
     private static final float RECOVERY_MOVEMENT = 4f;
     private static final float GRAVITY = 9.8f;
 
     private boolean started = false;
+
+    // Server-side heartbeat so the guardian can tell a live phone from a lost signal.
+    private static final long HEARTBEAT_MS = 30_000L;
+    private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
+    private final Runnable heartbeatTask = new Runnable() {
+        @Override public void run() {
+            sendHeartbeat();
+            heartbeatHandler.postDelayed(this, HEARTBEAT_MS);
+        }
+    };
+
+    // Warns once per discharge (same rule class the guardian phone uses for this phone's level).
+    private final BatteryAlertRule batteryRule = new BatteryAlertRule();
 
     // guard so the mic doesn't act on the phone's own speech
     private boolean ttsSpeaking = false;
@@ -85,6 +111,8 @@ public class UserMonitorService extends Service implements SensorEventListener {
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        gyroAvailable = gyroscope != null;
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 
         tts = new TextToSpeech(this, status -> {
@@ -99,59 +127,93 @@ public class UserMonitorService extends Service implements SensorEventListener {
         });
 
         cloudHelper = new CloudHelper();
-        cloudHelper.connect();
 
         locationHelper = new LocationHelper(this, (lat, lon, acc) -> handleLocation(lat, lon));
 
         fallDetector = new FallDetector(new FallDetector.Listener() {
-            @Override public void onFallDetected() { enterAttention(); }
-            @Override public void onStateChanged(String info) { }
-        });
+            @Override public void onFallDetected(FusionResult result) { enterAttention(result); }
+            @Override public void onStateChanged(String info) {
+                if (!isRejection(info)) return;
+                String msg = "Fall check: " + info;
+                Log.d("SenseFusion", msg);
+                broadcast("NORMAL", msg);
+            }
+        }, gyroAvailable);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || user.isAnonymous()) {
+            showSignInRequired();
+            return START_NOT_STICKY;
+        }
+
+        String action = intent != null ? intent.getAction() : null;
+
+        // A codeword change only reloads the recognizer; if monitoring is not
+        // running, do nothing (and don't leave a foreground service behind).
+        if (ACTION_RELOAD_VOICE.equals(action) && !started) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
         ensureForeground("Monitoring (normal)");
         if (!started) {
             started = true;
             if (accelerometer != null)
                 sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_GAME);
+            if (gyroscope != null)
+                sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_GAME);
             try { locationHelper.start(); } catch (Exception ignored) { }
             broadcast("NORMAL", "Monitoring (normal)");
             cloudHelper.updateStatus("NORMAL", "Monitoring", battery());
+            startHeartbeat();
             startVoice();
         }
-        String action = intent != null ? intent.getAction() : null;
-        if (ACTION_HELP.equals(action)) triggerEmergency("Manual HELP pressed");
+        if (ACTION_HELP.equals(action)) triggerEmergency(EventTypes.MANUAL_HELP, "Manual HELP pressed");
         else if (ACTION_IM_OK.equals(action)) cancelToNormal("You pressed I'm OK");
+        else if (ACTION_RELOAD_VOICE.equals(action)) {
+            stopVoice();
+            if (voskModel != null) startRecognition();
+        }
         return START_STICKY;
     }
 
     // ---------- state machine ----------
-    private void enterAttention() {
+    private void enterAttention(FusionResult result) {
         if (level != Level.NORMAL) return;
         level = Level.ATTENTION;
         attentionStart = System.currentTimeMillis();
+
+        String summary = result != null ? result.summary() : "fusion data missing";
+        String detail = "Possible fall (" + summary + ")";
+
         speak("Possible fall detected. Are you okay? Say I am okay, or I will alert your guardian.");
         vibrate(800);
-        broadcast("ATTENTION", "Possible fall — are you okay?");
-        cloudHelper.updateStatus("ATTENTION", "Possible fall — awaiting response", battery());
+        broadcast("ATTENTION", detail);
+        cloudHelper.updateStatus("ATTENTION", detail, battery());
+        cloudHelper.logEvent(EventTypes.ATTENTION, detail);
         showAlert("Possible fall — Are you okay?", "Say \"I'm okay\" or tap I'M OK if you are fine.", false);
 
         if (attentionTimer != null) attentionTimer.cancel();
         attentionTimer = new CountDownTimer(ATTENTION_SECONDS * 1000L, 1000) {
             @Override public void onTick(long ms) { ensureForeground("Are you okay? (" + (ms / 1000) + "s)"); }
-            @Override public void onFinish() { triggerEmergency("No response after fall"); }
+            @Override public void onFinish() { triggerEmergency(EventTypes.EMERGENCY, "No response after fall"); }
         }.start();
     }
 
-    private void triggerEmergency(String reason) {
+    private void triggerEmergency(String eventType, String reason) {
+        // Already an emergency: do not re-announce, re-notify or duplicate the event.
+        if (level == Level.EMERGENCY) return;
+
         if (attentionTimer != null) attentionTimer.cancel();
         level = Level.EMERGENCY;
         speak("Possible emergency. Alerting your guardian.");
         vibrate(1200);
         broadcast("EMERGENCY", "POSSIBLE EMERGENCY — " + reason);
         cloudHelper.updateStatus("POSSIBLE EMERGENCY", reason, battery());
+        cloudHelper.logEvent(eventType, reason);
         showAlert("POSSIBLE EMERGENCY", "Guardian notified. Tap I'M OK to cancel.", true);
         ensureForeground("EMERGENCY — guardian notified");
     }
@@ -160,7 +222,10 @@ public class UserMonitorService extends Service implements SensorEventListener {
         if (attentionTimer != null) attentionTimer.cancel();
         boolean wasActive = level != Level.NORMAL;
         level = Level.NORMAL;
-        if (wasActive) speak("Okay. Alert canceled.");
+        if (wasActive) {
+            speak("Okay. Alert canceled.");
+            cloudHelper.logEvent(EventTypes.ALL_CLEAR, "All clear (" + reason + ")");
+        }
         broadcast("NORMAL", "All clear (" + reason + ")");
         cloudHelper.updateStatus("NORMAL", "All clear (" + reason + ")", battery());
         cancelAlert();
@@ -170,19 +235,36 @@ public class UserMonitorService extends Service implements SensorEventListener {
     // ---------- sensors ----------
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER) return;
-        float x = event.values[0], y = event.values[1], z = event.values[2];
-        double mag = Math.sqrt(x * x + y * y + z * z);
-        if (level == Level.NORMAL) {
-            fallDetector.process(mag);
-        } else if (level == Level.ATTENTION) {
-            long since = System.currentTimeMillis() - attentionStart;
-            if (since > RECOVERY_GRACE_MS && Math.abs(mag - GRAVITY) > RECOVERY_MOVEMENT) {
-                cancelToNormal("movement detected — you're up");
+        int type = event.sensor.getType();
+        if (type != Sensor.TYPE_ACCELEROMETER && type != Sensor.TYPE_GYROSCOPE) return;
+
+        long tMs = event.timestamp / 1_000_000L; // same time base for both sensors
+
+        if (type == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0], y = event.values[1], z = event.values[2];
+            double mag = Math.sqrt(x * x + y * y + z * z);
+            if (level == Level.NORMAL) {
+                fallDetector.processAccel(x, y, z, tMs);
+            } else if (level == Level.ATTENTION) {
+                long since = System.currentTimeMillis() - attentionStart;
+                if (since > RECOVERY_GRACE_MS && Math.abs(mag - GRAVITY) > RECOVERY_MOVEMENT) {
+                    cancelToNormal("movement detected — you're up");
+                }
             }
+        } else {
+            fallDetector.processGyro(event.values[0], event.values[1], event.values[2], tMs);
         }
     }
     @Override public void onAccuracyChanged(Sensor sensor, int accuracy) { }
+
+    /** Only rejection messages are forwarded to the screen; ordinary state noise is not. */
+    private boolean isRejection(String info) {
+        if (info == null) return false;
+        return info.startsWith("fusion reject")
+                || info.startsWith("bump, not a fall")
+                || info.startsWith("not a fall")
+                || info.startsWith("movement after impact");
+    }
 
     // ---------- Vosk voice (offline keyword listening) ----------
     private void startVoice() {
@@ -202,9 +284,36 @@ public class UserMonitorService extends Service implements SensorEventListener {
             });
     }
 
+    /** Reads the private codeword from SharedPreferences, or null when unset. */
+    private String codeword() {
+        SharedPreferences p = getSharedPreferences("senseplus_prefs", MODE_PRIVATE);
+        String cw = p.getString("codeword", null);
+        if (cw == null) return null;
+        cw = cw.trim().toLowerCase(Locale.US);
+        return cw.isEmpty() ? null : cw;
+    }
+
     private void startRecognition() {
         try {
-            Recognizer rec = new Recognizer(voskModel, 16000.0f);
+            // Restricted grammar keeps Vosk on the keywords we care about.
+            // org.json escapes any codeword safely; "not"/"no" must stay so
+            // segment 13's negation rule can see "I'm not okay".
+            JSONArray grammar = new JSONArray();
+            grammar.put("help");
+            grammar.put("okay");
+            grammar.put("i'm okay");
+            grammar.put("i am okay");
+            grammar.put("fine");
+            grammar.put("alright");
+            grammar.put("yes");
+            grammar.put("no");
+            grammar.put("not");
+            grammar.put("i'm not okay");
+            String cw = codeword();
+            if (cw != null) grammar.put(cw);
+            grammar.put("[unk]");
+
+            Recognizer rec = new Recognizer(voskModel, 16000.0f, grammar.toString());
             speechService = new SpeechService(rec, 16000.0f);
             speechService.startListening(new RecognitionListener() {
                 @Override public void onPartialResult(String hypothesis) { handleVosk(hypothesis); }
@@ -215,7 +324,7 @@ public class UserMonitorService extends Service implements SensorEventListener {
                 }
                 @Override public void onTimeout() { }
             });
-            broadcast("NORMAL", "Voice ready — say \"help\"");
+            broadcast("NORMAL", "Voice ready: say help or your codeword");
             speak("Voice ready.");
         } catch (Exception e) {
             broadcast("NORMAL", "VOICE OFF — recognizer failed (" + e.getMessage() + ")");
@@ -233,14 +342,25 @@ public class UserMonitorService extends Service implements SensorEventListener {
             text = o.has("partial") ? o.optString("partial") : o.optString("text");
         } catch (Exception e) { return; }
         if (text == null || text.trim().isEmpty()) return;
-        text = text.toLowerCase(Locale.US);
 
+        VoiceCommandParser.Command cmd = VoiceCommandParser.parse(text, codeword());
         if (level == Level.NORMAL) {
-            if (text.contains("help")) triggerEmergency("Voice command: HELP");
-        } else {
-            if (text.contains("okay") || text.contains("fine") || text.contains("yes") || text.contains("alright")) {
+            if (cmd == VoiceCommandParser.Command.HELP)
+                triggerEmergency(EventTypes.VOICE_HELP, "Voice command: HELP");
+            else if (cmd == VoiceCommandParser.Command.CODEWORD)
+                triggerEmergency(EventTypes.CODEWORD, "Codeword heard");
+            // OKAY means nothing when no alert is active.
+        } else if (level == Level.ATTENTION) {
+            if (cmd == VoiceCommandParser.Command.HELP)
+                triggerEmergency(EventTypes.VOICE_HELP, "Voice: HELP after fall");
+            else if (cmd == VoiceCommandParser.Command.CODEWORD)
+                triggerEmergency(EventTypes.CODEWORD, "Codeword heard");
+            else if (cmd == VoiceCommandParser.Command.OKAY)
                 cancelToNormal("you said you're okay");
-            }
+        } else { // EMERGENCY
+            if (cmd == VoiceCommandParser.Command.OKAY)
+                cancelToNormal("you said you're okay");
+            // HELP/CODEWORD are already an emergency: don't duplicate the event.
         }
     }
 
@@ -289,6 +409,36 @@ public class UserMonitorService extends Service implements SensorEventListener {
     }
 
     // ---------- notifications ----------
+    /** No account: leave a notification, satisfy the foreground-service contract, then stop. */
+    private void showSignInRequired() {
+        Notification n = signInNotification();
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) nm.notify(SIGNIN_ID, n);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(ONGOING_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                startForeground(ONGOING_ID, n);
+            }
+        } catch (Exception ignored) { }
+        stopSelf();
+    }
+
+    private Notification signInNotification() {
+        Intent login = new Intent(this, LoginActivity.class);
+        login.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, login,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        return new NotificationCompat.Builder(this, CHANNEL_ONGOING)
+                .setContentTitle("Sign in to SENSE+")
+                .setContentText("Sign in to SENSE+ to resume protection.")
+                .setSmallIcon(android.R.drawable.ic_lock_lock)
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build();
+    }
+
     private void ensureForeground(String text) {
         Notification n = new NotificationCompat.Builder(this, CHANNEL_ONGOING)
             .setContentTitle("SENSE+ is protecting you")
@@ -348,11 +498,39 @@ public class UserMonitorService extends Service implements SensorEventListener {
         nm.createNotificationChannel(alert);
     }
 
+    /** Writes a heartbeat immediately, then every 30 s until onDestroy. */
+    private void startHeartbeat() {
+        heartbeatHandler.removeCallbacks(heartbeatTask);
+        sendHeartbeat();
+        heartbeatHandler.postDelayed(heartbeatTask, HEARTBEAT_MS);
+    }
+
+    /** One heartbeat: monitoring flag, fresh lastSeen and the battery level, then the battery check. */
+    private void sendHeartbeat() {
+        int pct = battery();
+        cloudHelper.updateMonitoring(true, pct);
+        checkBattery(pct);
+    }
+
+    /**
+     * Once per discharge: log a LOW_BATTERY event for the guardian's timeline and say it aloud.
+     * The rule is consulted in every state so it stays in step with the real level, but speech
+     * is skipped during a fall prompt or emergency because speak() would cut that off.
+     */
+    private void checkBattery(int pct) {
+        if (!batteryRule.shouldAlert(pct)) return;
+        cloudHelper.logEvent(EventTypes.LOW_BATTERY, "Battery low (" + pct + "%)");
+        if (level == Level.NORMAL) speak("Battery low, please charge the phone");
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
+        // Best effort: tell the guardian monitoring was turned off rather than lost.
+        heartbeatHandler.removeCallbacks(heartbeatTask);
+        if (cloudHelper != null) cloudHelper.updateMonitoring(false);
         if (attentionTimer != null) attentionTimer.cancel();
-        if (sensorManager != null) sensorManager.unregisterListener(this);
+        if (sensorManager != null) sensorManager.unregisterListener(this); // removes accel + gyro
         if (locationHelper != null) locationHelper.stop();
         stopVoice();
         if (voskModel != null) { try { voskModel.close(); } catch (Exception ignored) { } voskModel = null; }

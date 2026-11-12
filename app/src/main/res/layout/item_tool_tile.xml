@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- components.toolTile: title + subtitle top-left, arrow chip top-right, Pip (section look)
+     bottom-right, never cropped. The bottom padding keeps Pip clear of the text at any font
+     scale. Background (grad_tile_family + grain) is set in HomeActivity. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:elevation="@dimen/shadow_xs"
+    android:focusable="true"
+    android:foreground="@drawable/fg_card_r28"
+    android:minHeight="@dimen/tool_tile_min_height">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:importantForAccessibility="noHideDescendants"
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="100dp">
+
+        <TextView
+            android:id="@+id/tileTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="36dp"
+            android:textAppearance="@style/TextAppearance.SENSE.TitleM" />
+
+        <TextView
+            android:id="@+id/tileSub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="@style/TextAppearance.SENSE.BodyS" />
+    </LinearLayout>
+
+    <ImageView
+        style="@style/Widget.SENSE.ArrowChip"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp" />
+
+    <com.senseplus.sense.ui.DuckView
+        android:id="@+id/tilePip"
+        android:layout_width="@dimen/pip_tile"
+        android:layout_height="@dimen/pip_tile"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="6dp"
+        android:layout_marginBottom="4dp"
+        app:duckLook="plain" />
+</FrameLayout>

@@ -27,12 +27,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SENSE">
 
-        <activity android:name=".HomeActivity" android:exported="true">
+        <activity android:name=".LoginActivity" android:exported="true"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".HomeActivity" android:exported="false" />
 
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".GuardianActivity" android:exported="false" />
@@ -42,6 +45,9 @@
             android:screenOrientation="portrait" />
         <activity android:name=".SensorInfoActivity" android:exported="false" />
         <activity android:name=".HearingActivity" android:exported="false" />
+        <activity android:name=".ProfileActivity" android:exported="false" />
+        <!-- Debug-only Pip gallery (finishes itself in non-debuggable builds) -->
+        <activity android:name=".CharacterGalleryActivity" android:exported="false" />
 
         <service android:name=".GuardianService" android:exported="false"
             android:foregroundServiceType="dataSync" />

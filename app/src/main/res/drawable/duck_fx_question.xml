@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- question bubble -->
+    <path android:pathData="M181.0,40.0 a17.0,17.0 0 1,0 34.0,0 a17.0,17.0 0 1,0 -34.0,0 Z"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- question mark -->
+    <path android:pathData="M192,35 C192,28 205,28 205,36 C205,41 198,42 198,47"
+        android:strokeColor="#FFE36F1E"
+        android:strokeWidth="3.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- question dot -->
+    <path android:pathData="M195.6,53.0 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0 Z"
+        android:fillColor="#FFE36F1E"/>
+</vector>

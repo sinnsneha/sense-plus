@@ -1,26 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- screens.communication: compact mint hero (Pip comm look) → phrase grid (HELP first). -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/commScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/surface_canvas"
+    android:fillViewport="true">
 
     <LinearLayout
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:background="@drawable/header_gradient"
-        android:paddingTop="44dp" android:paddingBottom="22dp"
-        android:paddingStart="24dp" android:paddingEnd="24dp">
-        <ImageView android:layout_width="36dp" android:layout_height="36dp" android:src="@drawable/ic_chat"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Communication" android:textSize="24sp" android:textStyle="bold"
-            android:textColor="@color/white" android:layout_marginTop="8dp"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Tap a phrase to speak it aloud" android:textSize="14sp" android:textColor="#CFE0F5"/>
-    </LinearLayout>
+        android:id="@+id/commContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
-        <LinearLayout android:id="@+id/phraseContainer"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:padding="16dp"/>
-    </ScrollView>
-</LinearLayout>
+        <FrameLayout
+            android:id="@+id/commHero"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/hero_compact">
+
+            <com.senseplus.sense.ui.DuckView
+                android:id="@+id/pipComm"
+                android:layout_width="@dimen/pip_header"
+                android:layout_height="@dimen/pip_header"
+                android:layout_gravity="bottom|end"
+                android:layout_marginEnd="6dp"
+                android:layout_marginBottom="8dp"
+                app:duckLook="comm" />
+
+            <LinearLayout
+                android:id="@+id/topBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_gutter"
+                android:paddingEnd="@dimen/screen_gutter"
+                android:paddingBottom="44dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/top_bar_height">
+
+                    <Button
+                        android:id="@+id/btnBack"
+                        style="@style/Widget.SENSE.Button.PillWhite"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvCommTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginEnd="140dp"
+                    android:accessibilityHeading="true"
+                    android:text="@string/comm_title"
+                    android:textAppearance="@style/TextAppearance.SENSE.HeadlineL" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="140dp"
+                    android:text="@string/comm_sub"
+                    android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                    android:textColor="@color/ink_700" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Filled in CommunicationActivity.renderPhrases() -->
+        <com.senseplus.sense.ui.TileGridLayout
+            android:id="@+id/phraseContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/screen_gutter"
+            android:paddingTop="12dp"
+            android:paddingEnd="@dimen/screen_gutter"
+            android:paddingBottom="8dp" />
+    </LinearLayout>
+</ScrollView>

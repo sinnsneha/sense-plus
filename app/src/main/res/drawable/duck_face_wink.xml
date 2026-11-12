@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- blush L -->
+    <path android:pathData="M70.5,109.0 a9.5,6.2 0 1,0 19.0,0 a9.5,6.2 0 1,0 -19.0,0 Z"
+        android:fillColor="#F2FFB3BA"/>
+    <!-- blush R -->
+    <path android:pathData="M150.5,109.0 a9.5,6.2 0 1,0 19.0,0 a9.5,6.2 0 1,0 -19.0,0 Z"
+        android:fillColor="#F2FFB3BA"/>
+    <!-- eye L -->
+    <path android:pathData="M95.4,94.0 a4.6,5.6 0 1,0 9.2,0 a4.6,5.6 0 1,0 -9.2,0 Z"
+        android:fillColor="#FF2B2523"/>
+    <!-- eye shine L -->
+    <path android:pathData="M100.2,91.6 a1.5,1.5 0 1,0 3.0,0 a1.5,1.5 0 1,0 -3.0,0 Z"
+        android:fillColor="#FFFFFFFF"/>
+    <!-- wink R -->
+    <path android:pathData="M134,90 L143,94 L134,98"
+        android:strokeColor="#FF2B2523"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- mouth inside -->
+    <path android:pathData="M106,106 C108,121 132,121 134,106 Z"
+        android:fillColor="#FFE0662F"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- tongue -->
+    <path android:pathData="M112,114 C115,110 125,110 128,114 C126,118 114,118 112,114 Z"
+        android:fillColor="#FFFF8E9E"/>
+    <!-- upper beak -->
+    <path android:pathData="M102,104 C105,96 135,96 138,104 C137,108 128,109 120,109 C112,109 103,108 102,104 Z"
+        android:fillColor="#FFF5A142"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

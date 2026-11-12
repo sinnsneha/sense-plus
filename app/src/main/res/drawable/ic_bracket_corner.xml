@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Decorative camera focus bracket (top-left; rotate for the other corners): 4dp, 28dp arms -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp" android:height="28dp"
+    android:viewportWidth="28" android:viewportHeight="28">
+    <path android:strokeColor="@color/white" android:strokeWidth="4"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M2,26 L2,10 C2,5.6 5.6,2 10,2 L26,2"/>
+</vector>

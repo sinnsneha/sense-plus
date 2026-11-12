@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- sparkle 1 -->
+    <path android:pathData="M200,43 Q201.62,50.38 209,52 Q201.62,53.62 200,61 Q198.38,53.62 191,52 Q198.38,50.38 200,43 Z"
+        android:fillColor="#FFF2C94C"/>
+    <!-- sparkle 2 -->
+    <path android:pathData="M40,114 Q41.08,118.92 46,120 Q41.08,121.08 40,126 Q38.92,121.08 34,120 Q38.92,118.92 40,114 Z"
+        android:fillColor="#FFF2C94C"/>
+</vector>

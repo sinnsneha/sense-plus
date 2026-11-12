@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- tokens.spacing / radius / elevation / touchTargets / layout + Pip sizes -->
+<resources>
+    <!-- spacing (4dp grid) -->
+    <dimen name="space_1">4dp</dimen>
+    <dimen name="space_2">8dp</dimen>
+    <dimen name="space_3">12dp</dimen>
+    <dimen name="space_4">16dp</dimen>
+    <dimen name="space_5">20dp</dimen>
+    <dimen name="space_6">24dp</dimen>
+    <dimen name="space_7">28dp</dimen>
+    <dimen name="space_8">32dp</dimen>
+    <dimen name="space_10">40dp</dimen>
+    <dimen name="space_12">48dp</dimen>
+    <dimen name="space_16">64dp</dimen>
+    <dimen name="screen_gutter">20dp</dimen>
+    <dimen name="card_padding">20dp</dimen>
+    <dimen name="card_padding_large">24dp</dimen>
+    <dimen name="gap_cards">14dp</dimen>
+    <dimen name="gap_sections">28dp</dimen>
+    <dimen name="top_bar_height">56dp</dimen>
+    <dimen name="top_bar_extra_top">12dp</dimen>
+    <dimen name="bottom_safe_extra">20dp</dimen>
+
+    <!-- radius -->
+    <dimen name="radius_xs">8dp</dimen>
+    <dimen name="radius_sm">12dp</dimen>
+    <dimen name="radius_md">16dp</dimen>
+    <dimen name="radius_lg">20dp</dimen>
+    <dimen name="radius_xl">24dp</dimen>
+    <dimen name="radius_2xl">28dp</dimen>
+    <dimen name="radius_3xl">32dp</dimen>
+    <dimen name="radius_hero">36dp</dimen>
+    <dimen name="radius_pill">999dp</dimen>
+
+    <!-- elevation -->
+    <dimen name="shadow_xs">2dp</dimen>
+    <dimen name="shadow_sm">4dp</dimen>
+    <dimen name="shadow_md">8dp</dimen>
+    <dimen name="shadow_lg">14dp</dimen>
+    <dimen name="shadow_glow">12dp</dimen>
+
+    <!-- touch targets -->
+    <dimen name="touch_min">48dp</dimen>
+    <dimen name="touch_primary">64dp</dimen>
+    <dimen name="touch_primary_guard">72dp</dimen>
+    <dimen name="touch_emergency">80dp</dimen>
+    <dimen name="touch_spacing">8dp</dimen>
+
+    <!-- heroes -->
+    <dimen name="hero_full_min">300dp</dimen>
+    <dimen name="hero_full_max">420dp</dimen>
+    <dimen name="hero_compact">200dp</dimen>
+    <dimen name="hero_compact_sensor">190dp</dimen>
+    <dimen name="hero_card">196dp</dimen>
+    <dimen name="hero_wave_depth">28dp</dimen>
+    <dimen name="organic_card_width">300dp</dimen>
+    <dimen name="guardian_status_card_min">180dp</dimen>
+
+    <!-- Pip sizes (characters.placementRules) -->
+    <dimen name="pip_hero">260dp</dimen>
+    <dimen name="pip_header">170dp</dimen>
+    <dimen name="pip_card">150dp</dimen>
+    <dimen name="pip_peek">120dp</dimen>
+    <dimen name="pip_tile">96dp</dimen>
+    <dimen name="pip_mini">80dp</dimen>
+    <dimen name="pip_row">64dp</dimen>
+    <dimen name="pip_avatar">44dp</dimen>
+    <dimen name="pip_snackbar">32dp</dimen>
+
+    <!-- components -->
+    <dimen name="icon_default">24dp</dimen>
+    <dimen name="icon_small">20dp</dimen>
+    <dimen name="icon_in_tile">32dp</dimen>
+    <dimen name="icon_tile">36dp</dimen>
+    <dimen name="icon_tile_list">40dp</dimen>
+    <dimen name="icon_tile_alert">72dp</dimen>
+    <dimen name="cta_icon_circle">40dp</dimen>
+    <dimen name="circle_button">48dp</dimen>
+    <dimen name="chip_height">28dp</dimen>
+    <dimen name="live_dot">8dp</dimen>
+    <dimen name="scallop_badge">136dp</dimen>
+    <dimen name="scallop_medallion">40dp</dimen>
+    <dimen name="segment_track_height">64dp</dimen>
+    <dimen name="tool_tile_min_height">172dp</dimen>
+    <dimen name="phrase_card_min_height">104dp</dimen>
+    <dimen name="phrase_help_min_height">88dp</dimen>
+    <dimen name="stroke_focus">3dp</dimen>
+    <dimen name="stroke_card">2dp</dimen>
+    <dimen name="max_content_width">560dp</dimen>
+    <dimen name="compass_dial">240dp</dimen>
+</resources>

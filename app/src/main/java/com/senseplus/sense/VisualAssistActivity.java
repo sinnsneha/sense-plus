@@ -2,9 +2,15 @@ package com.senseplus.sense;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Outline;
 import android.media.Image;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
+import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,6 +37,9 @@ import com.google.mlkit.vision.label.defaults.ImageLabelerOptions;
 import com.google.mlkit.vision.text.TextRecognition;
 import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.senseplus.sense.ui.DuckLooks;
+import com.senseplus.sense.ui.DuckView;
+import com.senseplus.sense.ui.Ui;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,18 +71,52 @@ public class VisualAssistActivity extends AppCompatActivity {
     private long lastChangeTime = 0;
     private static final long STABLE_MS = 1200;   // text must hold steady this long before auto-reading
 
+    // Pip (visual look): text found → alert for this long, then idle
+    private static final long FOUND_ALERT_MS = 1500;
+    private DuckView pip;
+    private boolean cameraDenied;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable pipBackToIdle = () -> {
+        if (!cameraDenied) pip.setExpression(DuckLooks.Expression.IDLE, true);
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Ui.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visual_assist);
+        Ui.applyInsets(findViewById(R.id.topBar), findViewById(R.id.visualContent));
+        Ui.bindBack(this);
 
         previewView = findViewById(R.id.previewView);
         tvRecognized = findViewById(R.id.tvRecognized);
         Button btnSpeak = findViewById(R.id.btnSpeak);
         MaterialButtonToggleGroup modeToggle = findViewById(R.id.modeToggle);
+        pip = findViewById(R.id.pipVisual);
+        pip.setExpression(DuckLooks.Expression.IDLE, false); // scanning
+        roundPreview();
 
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) tts.setLanguage(Locale.US);
+        });
+        tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
+            @Override public void onStart(String utteranceId) {
+                runOnUiThread(() -> {
+                    handler.removeCallbacks(pipBackToIdle);
+                    pip.setTalking(true);
+                });
+            }
+
+            @Override public void onDone(String utteranceId) {
+                runOnUiThread(() -> {
+                    pip.setTalking(false);
+                    pipBackToIdle.run();
+                });
+            }
+
+            @Override public void onError(String utteranceId) {
+                runOnUiThread(() -> pip.setTalking(false));
+            }
         });
         recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
         labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS);
@@ -84,13 +127,11 @@ public class VisualAssistActivity extends AppCompatActivity {
             if (!isChecked) return;
             if (checkedId == R.id.btnReadText) {
                 mode = Mode.TEXT;
-                tvRecognized.setTextSize(16);
-                tvRecognized.setText("(point the camera at text)");
+                showPlaceholder(R.string.visual_placeholder);
                 speak("Read text");
             } else {
                 mode = Mode.LABELS;
-                tvRecognized.setTextSize(22);
-                tvRecognized.setText("(point the camera at an object)");
+                showPlaceholder(R.string.visual_placeholder_objects);
                 speak("What's around me");
             }
         });
@@ -100,6 +141,7 @@ public class VisualAssistActivity extends AppCompatActivity {
             if (!latestClean.isEmpty()) speak(latestClean);
             else Toast.makeText(this, "Point the camera at some text first", Toast.LENGTH_SHORT).show();
         });
+        Ui.pressFeedback(btnSpeak);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -118,6 +160,9 @@ public class VisualAssistActivity extends AppCompatActivity {
             startCamera();
         } else {
             Toast.makeText(this, "Camera permission is needed for Visual Assist", Toast.LENGTH_SHORT).show();
+            cameraDenied = true;
+            pip.setExpression(DuckLooks.Expression.CONCERNED, true);
+            showPlaceholder(R.string.visual_no_camera);
         }
     }
 
@@ -182,14 +227,17 @@ public class VisualAssistActivity extends AppCompatActivity {
                     String clean = result.getText().replaceAll("\\s+", " ").trim();
                     latestClean = clean;
 
-                    runOnUiThread(() -> tvRecognized.setText(
-                            clean.isEmpty() ? "(point the camera at text)" : clean));
+                    runOnUiThread(() -> {
+                        if (clean.isEmpty()) showPlaceholder(R.string.visual_placeholder);
+                        else showRecognized(clean);
+                    });
 
                     long now = System.currentTimeMillis();
                     if (!clean.equals(previousText)) {
                         // text is still changing — reset the steadiness timer
                         previousText = clean;
                         lastChangeTime = now;
+                        if (!clean.isEmpty()) runOnUiThread(this::pipFoundSomething);
                     } else if (!clean.isEmpty()
                             && !clean.equals(lastSpokenText)
                             && now - lastChangeTime > STABLE_MS) {
@@ -214,8 +262,8 @@ public class VisualAssistActivity extends AppCompatActivity {
                     String screenText = formatLabels(top);
                     runOnUiThread(() -> {
                         if (mode == Mode.LABELS) {
-                            tvRecognized.setText(screenText.isEmpty()
-                                    ? "(point the camera at an object)" : screenText);
+                            if (screenText.isEmpty()) showPlaceholder(R.string.visual_placeholder_objects);
+                            else showRecognized(screenText);
                         }
                     });
 
@@ -245,9 +293,42 @@ public class VisualAssistActivity extends AppCompatActivity {
         if (tts != null) tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "visual");
     }
 
+    // ---------- presentation ----------
+
+    /** Rounded camera preview (PreviewView runs in "compatible" mode so the outline clips it). */
+    private void roundPreview() {
+        final float radius = getResources().getDimension(R.dimen.radius_3xl) - Ui.dpF(this, 6);
+        previewView.setOutlineProvider(new ViewOutlineProvider() {
+            @Override
+            public void getOutline(View view, Outline outline) {
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+            }
+        });
+        previewView.setClipToOutline(true);
+    }
+
+    private void showRecognized(String text) {
+        tvRecognized.setText(text);
+        tvRecognized.setTextColor(Ui.color(this, R.color.ink_900));
+    }
+
+    private void showPlaceholder(int textRes) {
+        tvRecognized.setText(textRes);
+        tvRecognized.setTextColor(Ui.color(this, R.color.ink_500));
+    }
+
+    /** New text in view: Pip looks up (alert) for 1.5 s, then back to idle. */
+    private void pipFoundSomething() {
+        if (cameraDenied) return;
+        pip.setExpression(DuckLooks.Expression.ALERT, true);
+        handler.removeCallbacks(pipBackToIdle);
+        handler.postDelayed(pipBackToIdle, FOUND_ALERT_MS);
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
         if (tts != null) { tts.stop(); tts.shutdown(); }
         if (recognizer != null) recognizer.close();
         if (labeler != null) labeler.close();

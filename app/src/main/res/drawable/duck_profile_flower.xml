@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Profile look prop (not in duck_kit.zip): a yellow flower held by the resting left wing,
+     from the "holding a flower, wearing an orange bow tie" duck on the sticker sheet.
+     Draw BEFORE duck_pose_down so the wing covers the end of the stem. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- stem outline -->
+    <path android:pathData="M41,137 C43,148 50,158 61,169"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="7.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- stem -->
+    <path android:pathData="M41,137 C43,148 50,158 61,169"
+        android:strokeColor="#FF65CB9C"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- leaf -->
+    <path android:pathData="M48,153 C52,145 60,143 65,146 C62,153 55,157 48,153 Z"
+        android:fillColor="#FF8EDDB8"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- petals (one scalloped outline) -->
+    <path android:pathData="M31.715,112.597 A8.5,8.5 0 1,1 48.285,112.597 A8.5,8.5 0 1,1 53.405,128.356 A8.5,8.5 0 1,1 40,138.095 A8.5,8.5 0 1,1 26.595,128.356 A8.5,8.5 0 1,1 31.715,112.597 Z"
+        android:fillColor="#FFF5C04A"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- petal creases -->
+    <path android:pathData="M43.5,119.1 L46.5,115.1 M45.7,125.9 L50.5,127.4 M40,130 L40,135 M34.3,125.9 L29.5,127.4 M36.5,119.1 L33.5,115.1"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"/>
+    <!-- centre -->
+    <path android:pathData="M34.5,124.0 a5.5,5.5 0 1,0 11.0,0 a5.5,5.5 0 1,0 -11.0,0 Z"
+        android:fillColor="#FFF5A142"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

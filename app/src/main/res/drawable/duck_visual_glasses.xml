@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- lens L rim -->
+    <path android:pathData="M86.0,94.0 a14.0,14.0 0 1,0 28.0,0 a14.0,14.0 0 1,0 -28.0,0 Z"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- lens R rim -->
+    <path android:pathData="M126.0,94.0 a14.0,14.0 0 1,0 28.0,0 a14.0,14.0 0 1,0 -28.0,0 Z"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- bridge -->
+    <path android:pathData="M114,92 C117,88 123,88 126,92"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- lens shine L -->
+    <path android:pathData="M90,90 L94,85"
+        android:strokeColor="#FFBFE0F7"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- lens shine R -->
+    <path android:pathData="M130,90 L134,85"
+        android:strokeColor="#FFBFE0F7"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

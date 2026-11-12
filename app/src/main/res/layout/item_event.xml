@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- components.listRow for the guardian event timeline: 40dp tinted icon tile, title,
+     trailing time, optional detail, 1dp divider inset 68dp. One TalkBack node per row. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusable="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:importantForAccessibility="noHideDescendants"
+        android:minHeight="56dp"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="10dp">
+
+        <FrameLayout
+            android:id="@+id/eventIconTile"
+            android:layout_width="@dimen/icon_tile_list"
+            android:layout_height="@dimen/icon_tile_list"
+            android:background="@drawable/bg_icon_tile_circle">
+
+            <ImageView
+                android:id="@+id/eventIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:baselineAligned="true"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/eventTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.SENSE.TitleS" />
+
+                <TextView
+                    android:id="@+id/eventTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFeatureSettings="tnum"
+                    android:textAppearance="@style/TextAppearance.SENSE.Caption" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/eventDetail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.SENSE.BodyS" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:id="@+id/eventDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="68dp"
+        android:background="@color/ink_200" />
+</LinearLayout>

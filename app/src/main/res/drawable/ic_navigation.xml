@@ -1,7 +1,10 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <!-- Navigation arrow: points up by default; the screen rotates it by the relative bearing. -->
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M12,2 L4.5,20.29 L5.21,21 L12,18 L18.79,21 L19.5,20.29 Z"/>
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@color/ink_800">
+  <path
+      android:fillColor="@android:color/white"
+      android:pathData="M12.93,4.26l6.15,14.99c0.34,0.83 -0.51,1.66 -1.33,1.29l-5.34,-2.36c-0.26,-0.11 -0.55,-0.11 -0.81,0l-5.34,2.36c-0.82,0.36 -1.67,-0.46 -1.33,-1.29l6.15,-14.99c0.33,-0.83 1.51,-0.83 1.85,0z"/>
 </vector>

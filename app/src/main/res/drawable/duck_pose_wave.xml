@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- left wing (waving) -->
+    <path android:pathData="M70,134 C56,126 44,108 50,96 C54,88 64,90 68,100 C70,108 74,118 80,128"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- wave motion 1 -->
+    <path android:pathData="M37.0,94.5 A16.0,16.0 0 0,1 46.5,85.0"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- wave motion 2 -->
+    <path android:pathData="M30.2,89.9 A24.0,24.0 0 0,1 41.9,78.2"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- right wing -->
+    <path android:pathData="M170,146 C186,150 194,170 184,181 C177,188 166,183 160,171"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

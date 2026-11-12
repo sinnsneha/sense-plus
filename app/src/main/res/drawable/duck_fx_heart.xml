@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- floating heart -->
+    <path android:pathData="M46,69.9 C33.9,62.2 35.0,51.75 40.5,51.75 C43.8,51.75 46,54.5 46,56.7 C46,54.5 48.2,51.75 51.5,51.75 C57.0,51.75 58.1,62.2 46,69.9 Z"
+        android:fillColor="#FFF49A9A"/>
+</vector>

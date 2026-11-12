@@ -1,0 +1,6 @@
+<resources>
+    <!-- Dark navigation-bar icons on our light screens (API 27+). -->
+    <style name="Theme.SENSE" parent="Base.Theme.SENSE">
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

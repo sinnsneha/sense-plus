@@ -11,11 +11,39 @@ public final class NavMath {
     /** Within this distance the person is considered home (metres). */
     public static final double ARRIVED_M = 20.0;
 
+    /**
+     * Accuracy at or below this can be saved without asking (metres).
+     * Indoors a Wi-Fi fix is often 15-60 m, so 30 m was too strict.
+     */
+    public static final float HOME_GOOD_ACCURACY_M = 50f;
+
+    /**
+     * Above this the fix is too rough to be a useful Home point (metres).
+     * 150 m is still the right building in a dense area but is never silent.
+     */
+    public static final float HOME_MAX_ACCURACY_M = 150f;
+
+    /** Beyond this distance walking directions are more useful than an arrow (metres). */
+    public static final double MAPS_SUGGEST_M = 300.0;
+
+    /** Pitch (radians) beyond which the phone counts as held upright. 45 degrees. */
+    private static final double UPRIGHT_THRESHOLD_RAD = Math.toRadians(45.0);
+
+    private static final String MAPS_HINT =
+            "For step-by-step walking directions, tap Walking directions.";
+
     // Sector boundaries in degrees. Chosen so a small heading error still reads
     // as "straight ahead" while a real turn gets its own phrase.
     private static final double AHEAD_MAX_DEG = 15.0;
     private static final double SLIGHTLY_MAX_DEG = 45.0;
     private static final double SIDE_MAX_DEG = 135.0;
+
+    /** What to do with a measured Home fix. */
+    public enum HomeSaveDecision {
+        SAVE,
+        CONFIRM,
+        REFUSE
+    }
 
     private NavMath() {
     }
@@ -71,5 +99,41 @@ public final class NavMath {
             return "Home is " + distancePhrase(metres) + ", turn around";
         }
         return "Home is " + distancePhrase(metres) + ", turn " + dir;
+    }
+
+    /**
+     * Same sentence as {@link #sentence(double, double)}, with an optional hint
+     * that Google Maps can give step-by-step walking directions. The hint is
+     * only added past {@link #MAPS_SUGGEST_M} so short walks stay concise.
+     */
+    public static String sentence(double metres, double relativeDeg, boolean walkingDirectionsHint) {
+        String base = sentence(metres, relativeDeg);
+        if (walkingDirectionsHint && suggestMaps(metres)) {
+            return base + ". " + MAPS_HINT;
+        }
+        return base;
+    }
+
+    /**
+     * Decides whether a measured fix is good enough for Home.
+     * 50 m or better saves silently; up to 150 m asks first; worse is refused.
+     */
+    public static HomeSaveDecision homeSaveDecision(float accuracyM) {
+        if (accuracyM <= HOME_GOOD_ACCURACY_M) return HomeSaveDecision.SAVE;
+        if (accuracyM <= HOME_MAX_ACCURACY_M) return HomeSaveDecision.CONFIRM;
+        return HomeSaveDecision.REFUSE;
+    }
+
+    /**
+     * True when the phone is held upright (pitch beyond 45 degrees either way),
+     * where the raw rotation-vector heading is unstable.
+     */
+    public static boolean isUpright(double pitchRad) {
+        return Math.abs(pitchRad) > UPRIGHT_THRESHOLD_RAD;
+    }
+
+    /** True when the walk is long enough that Google Maps walking directions help. */
+    public static boolean suggestMaps(double distanceM) {
+        return distanceM > MAPS_SUGGEST_M;
     }
 }

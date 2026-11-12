@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Login / create account (segment 22), in the Pastel Companion style: compact lavender hero
+     with Pip waving hello → sign in / create tabs → form card. All ids are LoginActivity's. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_canvas"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:id="@+id/loginContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:id="@+id/loginHero"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/hero_compact">
+
+                <com.senseplus.sense.ui.DuckView
+                    android:id="@+id/pipLogin"
+                    android:layout_width="@dimen/pip_card"
+                    android:layout_height="@dimen/pip_card"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="10dp"
+                    app:duckLook="home" />
+
+                <LinearLayout
+                    android:id="@+id/topBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="@dimen/screen_gutter"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="@dimen/screen_gutter"
+                    android:paddingBottom="48dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:layout_marginEnd="150dp"
+                        android:accessibilityHeading="true"
+                        android:text="@string/app_name"
+                        android:textAppearance="@style/TextAppearance.SENSE.HeadlineL" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="150dp"
+                        android:text="@string/login_sub"
+                        android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                        android:textColor="@color/ink_700" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/screen_gutter"
+                android:paddingTop="4dp"
+                android:paddingEnd="@dimen/screen_gutter"
+                android:paddingBottom="8dp">
+
+                <!-- tabs: segmented control on a white pill track -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/bg_segment_track"
+                    android:elevation="@dimen/shadow_xs"
+                    android:padding="6dp">
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/tabs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:spacing="6dp"
+                        app:innerCornerSize="50%"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTabSignIn"
+                            style="@style/Widget.SENSE.Button.Toggle.Lavender"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/login_tab_sign_in" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTabCreate"
+                            style="@style/Widget.SENSE.Button.Toggle.Lavender"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/login_tab_create" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/tvAuthError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:background="@drawable/bg_listening_chip_error"
+                    android:padding="14dp"
+                    android:textAppearance="@style/TextAppearance.SENSE.TitleS"
+                    android:textColor="@color/status_emergency_text"
+                    android:visibility="gone" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/loginProgress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="12dp"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    app:indicatorColor="@color/lavender_700"
+                    app:trackColor="@color/lavender_100" />
+
+                <!-- Sign in -->
+                <LinearLayout
+                    android:id="@+id/signInContainer"
+                    style="@style/Widget.SENSE.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilSignInEmail"
+                        style="@style/Widget.SENSE.TextField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="@string/login_email">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etSignInEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="emailAddress"
+                            android:inputType="textEmailAddress"
+                            android:minHeight="56dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilSignInPassword"
+                        style="@style/Widget.SENSE.TextField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
+                        android:hint="@string/login_password"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etSignInPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="password"
+                            android:inputType="textPassword"
+                            android:minHeight="56dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <Button
+                        android:id="@+id/btnForgot"
+                        style="@style/Widget.SENSE.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/login_forgot" />
+
+                    <Button
+                        android:id="@+id/btnSignIn"
+                        style="@style/Widget.SENSE.Button.Stadium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/login_sign_in"
+                        app:icon="@drawable/ic_cta_play" />
+                </LinearLayout>
+
+                <!-- Create account -->
+                <LinearLayout
+                    android:id="@+id/createContainer"
+                    style="@style/Widget.SENSE.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilName"
+                        style="@style/Widget.SENSE.TextField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="@string/login_name">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="personName"
+                            android:inputType="textPersonName"
+                            android:minHeight="56dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilCreateEmail"
+                        style="@style/Widget.SENSE.TextField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="@string/login_email">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etCreateEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="emailAddress"
+                            android:inputType="textEmailAddress"
+                            android:minHeight="56dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilCreatePassword"
+                        style="@style/Widget.SENSE.TextField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="@string/login_new_password"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etCreatePassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="newPassword"
+                            android:inputType="textPassword"
+                            android:minHeight="56dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilConfirm"
+                        style="@style/Widget.SENSE.TextField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:hint="@string/login_confirm"
+                        app:endIconMode="password_toggle">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etConfirm"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="newPassword"
+                            android:inputType="textPassword"
+                            android:minHeight="56dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/tilPhone"
+                        style="@style/Widget.SENSE.TextField"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        android:hint="@string/login_phone">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etPhone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="phone"
+                            android:inputType="phone"
+                            android:minHeight="56dp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:accessibilityHeading="true"
+                        android:text="@string/login_role_question"
+                        android:textAppearance="@style/TextAppearance.SENSE.TitleM" />
+
+                    <!-- one role only; Pip (guard / guardian look) is added in LoginActivity -->
+                    <android.widget.CheckBox
+                        android:id="@+id/cbRoleUser"
+                        style="@style/Widget.SENSE.ProfileRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp"
+                        android:text="@string/login_role_user" />
+
+                    <android.widget.CheckBox
+                        android:id="@+id/cbRoleGuardian"
+                        style="@style/Widget.SENSE.ProfileRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="20dp"
+                        android:text="@string/login_role_guardian" />
+
+                    <Button
+                        android:id="@+id/btnCreate"
+                        style="@style/Widget.SENSE.Button.Stadium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/login_create"
+                        app:icon="@drawable/ic_cta_check" />
+                </LinearLayout>
+
+                <!-- Shown only when a signed-in account has no role we can load. -->
+                <LinearLayout
+                    android:id="@+id/retryBox"
+                    style="@style/Widget.SENSE.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:accessibilityHeading="true"
+                        android:text="@string/login_not_ready"
+                        android:textAppearance="@style/TextAppearance.SENSE.HeadlineM" />
+
+                    <TextView
+                        android:id="@+id/tvRetryMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="18dp"
+                        android:accessibilityLiveRegion="polite"
+                        android:gravity="center"
+                        android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                        android:textColor="@color/ink_600" />
+
+                    <Button
+                        android:id="@+id/btnRetryRole"
+                        style="@style/Widget.SENSE.Button.Stadium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/login_retry"
+                        app:icon="@drawable/ic_cta_play" />
+
+                    <Button
+                        android:id="@+id/btnUseAnotherAccount"
+                        style="@style/Widget.SENSE.Button.Outline"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/login_other_account" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

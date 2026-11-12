@@ -1,85 +1,202 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- screens.visualAssist: butter_50 → mode toggle → rounded camera card with Pip peeking over
+     its corner → "I can see" text card → READ ALOUD. The camera card takes the free height. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/visualScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/navy">
+    android:background="@color/butter_50"
+    android:fillViewport="true">
 
     <LinearLayout
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:background="@drawable/header_gradient"
-        android:paddingTop="44dp" android:paddingBottom="16dp"
-        android:paddingStart="24dp" android:paddingEnd="24dp">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Visual Assist" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/white"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Read text, or hear what's around you" android:textSize="13sp" android:textColor="#CFE0F5"/>
+        android:id="@+id/visualContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/top_bar_height"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/screen_gutter"
+            android:paddingEnd="@dimen/screen_gutter">
+
+            <Button
+                android:id="@+id/btnBack"
+                style="@style/Widget.SENSE.Button.PillWhite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                style="@style/Widget.SENSE.TopBarTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/visual_title" />
+        </LinearLayout>
+
+        <!-- mode: segmented control (white pill track) -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:background="@drawable/bg_segment_track"
+            android:elevation="@dimen/shadow_xs"
+            android:padding="6dp">
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/modeToggle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:spacing="6dp"
+                app:innerCornerSize="50%"
+                app:selectionRequired="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnReadText"
+                    style="@style/Widget.SENSE.Button.Toggle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/visual_read_text"
+                    app:icon="@drawable/ic_menu_book" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAroundMe"
+                    style="@style/Widget.SENSE.Button.Toggle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/visual_around_me"
+                    app:icon="@drawable/ic_center_focus_strong" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+        </FrameLayout>
+
+        <!-- camera card + Pip (peek placement) -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1"
+            android:minHeight="300dp">
+
+            <FrameLayout
+                android:id="@+id/cameraCard"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="@dimen/screen_gutter"
+                android:layout_marginTop="40dp"
+                android:layout_marginEnd="@dimen/screen_gutter"
+                android:background="@drawable/bg_card_white_r32"
+                android:elevation="@dimen/shadow_md"
+                android:outlineSpotShadowColor="@color/lavender_800"
+                android:padding="6dp">
+
+                <androidx.camera.view.PreviewView
+                    android:id="@+id/previewView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no"
+                    app:implementationMode="compatible" />
+
+                <!-- decorative focus brackets, inset 24dp -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="noHideDescendants"
+                    android:padding="18dp">
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="top|start"
+                        android:src="@drawable/ic_bracket_corner" />
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="top|end"
+                        android:rotation="90"
+                        android:src="@drawable/ic_bracket_corner" />
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="bottom|end"
+                        android:rotation="180"
+                        android:src="@drawable/ic_bracket_corner" />
+
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="bottom|start"
+                        android:rotation="270"
+                        android:src="@drawable/ic_bracket_corner" />
+                </FrameLayout>
+            </FrameLayout>
+
+            <com.senseplus.sense.ui.DuckView
+                android:id="@+id/pipVisual"
+                android:layout_width="@dimen/pip_peek"
+                android:layout_height="@dimen/pip_peek"
+                android:layout_gravity="top|end"
+                android:layout_marginEnd="6dp"
+                android:elevation="10dp"
+                app:duckLook="visual" />
+        </FrameLayout>
+
+        <!-- what Pip can see -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:background="@drawable/bg_card_white_r28"
+            android:elevation="@dimen/shadow_sm"
+            android:orientation="vertical"
+            android:outlineSpotShadowColor="@color/ink_900"
+            android:padding="22dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:text="@string/visual_label"
+                android:textAppearance="@style/TextAppearance.SENSE.CaptionCaps" />
+
+            <TextView
+                android:id="@+id/tvRecognized"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:ellipsize="end"
+                android:maxLines="5"
+                android:text="@string/visual_placeholder"
+                android:textAppearance="@style/TextAppearance.SENSE.TitleL"
+                android:textColor="@color/ink_500" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnSpeak"
+            style="@style/Widget.SENSE.Button.Stadium.Butter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="14dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:text="@string/visual_read_aloud"
+            app:icon="@drawable/ic_cta_volume" />
     </LinearLayout>
-
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/modeToggle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="6dp"
-        app:singleSelection="true"
-        app:selectionRequired="true">
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnReadText"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="64dp"
-            android:layout_weight="1"
-            android:backgroundTint="@color/mode_button_tint"
-            android:text="Read text"
-            android:textAllCaps="false"
-            android:textColor="@color/mode_button_text"
-            android:textSize="16sp"
-            app:strokeColor="@color/white"/>
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnAroundMe"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="64dp"
-            android:layout_weight="1"
-            android:backgroundTint="@color/mode_button_tint"
-            android:text="What\'s around me"
-            android:textAllCaps="false"
-            android:textColor="@color/mode_button_text"
-            android:textSize="16sp"
-            app:strokeColor="@color/white"/>
-    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-    <TextView
-        android:id="@+id/tvRecognized"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="(point the camera at text)"
-        android:textSize="16sp"
-        android:textColor="@color/text_dark"
-        android:padding="14dp"
-        android:maxLines="4"
-        android:ellipsize="end"
-        android:background="@color/white"/>
-
-    <Button
-        android:id="@+id/btnSpeak"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="64dp"
-        android:text="READ ALOUD"
-        android:textSize="19sp"
-        android:textStyle="bold"
-        android:textColor="@color/white"
-        android:backgroundTint="@color/orange"/>
-
-</LinearLayout>
+</ScrollView>

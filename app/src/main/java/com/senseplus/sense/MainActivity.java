@@ -1,30 +1,133 @@
 package com.senseplus.sense;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.TransitionDrawable;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.provider.Settings;
+import android.text.InputType;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.senseplus.sense.ui.DuckDrawable;
+import com.senseplus.sense.ui.DuckLooks;
+import com.senseplus.sense.ui.DuckView;
+import com.senseplus.sense.ui.HeroBackgroundDrawable;
+import com.senseplus.sense.ui.ScallopBadgeDrawable;
+import com.senseplus.sense.ui.StatusStyle;
+import com.senseplus.sense.ui.Ui;
+import com.senseplus.sense.ui.WaveLevelIndicatorView;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String STATUS_ACTION = "com.senseplus.sense.STATUS";
 
+    /** How long Pip stays happy after "All clear" before going back to idle (ms). */
+    private static final long ALL_CLEAR_HAPPY_MS = 2000;
+
     private TextView tvStatus;
-    private Button btnToggle;
+    private MaterialButton btnToggle;
+    private Button btnCodeword;
+    private Button btnLocationSettings;
+    private SharedPreferences prefs;
+
+    // redesign
+    private View hero;
+    private DuckView pipGuard;
+    private TextView tvBadge, tvTitle;
+    private ImageView imgMedallion;
+    private View badgeWrap;
+    private WaveLevelIndicatorView levelIndicator;
+    private ScallopBadgeDrawable badgeBg;
+    private HeroBackgroundDrawable heroBg;
+    private StatusStyle currentStyle;
+    private ObjectAnimator badgePulse;
+    private long happyUntil;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable backToIdle = () -> {
+        if (currentStyle == StatusStyle.NORMAL) pipGuard.setExpression(DuckLooks.Expression.IDLE, true);
+    };
+
+    private void initCodewordButton() {
+        btnCodeword = findViewById(R.id.btnCodeword);
+        prefs = getSharedPreferences("senseplus_prefs", MODE_PRIVATE);
+        updateCodewordButton();
+        btnCodeword.setOnClickListener(v -> {
+            final EditText input = new EditText(this);
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            int side = Ui.dp(this, 24);
+            FrameLayout wrapper = new FrameLayout(this);
+            wrapper.setPadding(side, Ui.dp(this, 4), side, 0);
+            wrapper.addView(input, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Set emergency codeword")
+                    .setView(wrapper)
+                    .setMessage("Use a common English word. Made‑up words can't be recognised by the offline voice model.")
+                    .setPositiveButton("Save", (dialog, which) -> {
+                        String raw = input.getText().toString();
+                        String err = CodewordRules.validate(raw);
+                        if (err != null) {
+                            Toast.makeText(this, err, Toast.LENGTH_LONG).show();
+                        } else {
+                            String cw = raw.trim().toLowerCase(Locale.US);
+                            prefs.edit().putString("codeword", cw).apply();
+                            updateCodewordButton();
+                            // reload the recognizer only if monitoring is running; sendAction
+                            // is a no-op otherwise, so we never start a service just to stop it.
+                            sendAction(UserMonitorService.ACTION_RELOAD_VOICE);
+                        }
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> dialog.cancel())
+                    .show();
+        });
+    }
+
+    private void updateCodewordButton() {
+        String cw = prefs.getString("codeword", null);
+        if (cw == null) {
+            btnCodeword.setText("Set emergency codeword");
+        } else {
+            // mask after first character
+            String masked = cw.charAt(0) + "•••••";
+            btnCodeword.setText("Codeword: " + masked);
+        }
+    }
     private boolean monitoring = false;
 
     private final BroadcastReceiver statusReceiver = new BroadcastReceiver() {
@@ -35,20 +138,51 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Ui.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || user.isAnonymous()) {
+            Intent login = new Intent(this, LoginActivity.class);
+            login.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(login);
+            finish();
+            return;
+        }
+
         setContentView(R.layout.activity_main);
-        getWindow().setStatusBarColor(Color.parseColor("#0D2B45"));
+        Ui.applyInsets(findViewById(R.id.topBar), findViewById(R.id.guardContent));
+        Ui.bindBack(this);
 
         tvStatus = findViewById(R.id.tvStatus);
         btnToggle = findViewById(R.id.btnToggle);
+        btnLocationSettings = findViewById(R.id.btnLocationSettings);
         Button btnHelp = findViewById(R.id.btnHelp);
         Button btnOk = findViewById(R.id.btnOk);
 
+        hero = findViewById(R.id.guardHero);
+        pipGuard = findViewById(R.id.pipGuard);
+        tvBadge = findViewById(R.id.tvStatusBadge);
+        tvTitle = findViewById(R.id.tvGuardTitle);
+        imgMedallion = findViewById(R.id.imgBadgeMedallion);
+        badgeWrap = findViewById(R.id.badgeWrap);
+        levelIndicator = findViewById(R.id.levelIndicator);
+        badgeBg = new ScallopBadgeDrawable(Ui.color(this, R.color.tangerine_300),
+                Ui.color(this, R.color.tangerine_500));
+        tvBadge.setBackground(badgeBg);
+        sizeHero();
+        applyStyle(StatusStyle.OFF, false); // initial state = monitoring off
+
+        btnLocationSettings.setOnClickListener(v -> openAppSettings());
+        refreshLocationPermissionUi();
         requestNeededPermissions();
 
         btnToggle.setOnClickListener(v -> { if (!monitoring) startMonitoring(); else stopMonitoring(); });
         btnHelp.setOnClickListener(v -> sendAction(UserMonitorService.ACTION_HELP));
         btnOk.setOnClickListener(v -> sendAction(UserMonitorService.ACTION_IM_OK));
+        Ui.pressFeedback(btnHelp, btnOk, btnToggle);
+        // initialize codeword UI
+        initCodewordButton();
     }
 
     private void startMonitoring() {
@@ -56,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
                 new Intent(this, UserMonitorService.class).setAction(UserMonitorService.ACTION_START));
         monitoring = true;
         btnToggle.setText("STOP MONITORING");
+        btnToggle.setIconResource(R.drawable.ic_cta_stop);
         updateStatusUi("NORMAL", "Monitoring (normal)");
     }
 
@@ -63,8 +198,9 @@ public class MainActivity extends AppCompatActivity {
         stopService(new Intent(this, UserMonitorService.class));
         monitoring = false;
         btnToggle.setText("START MONITORING");
+        btnToggle.setIconResource(R.drawable.ic_cta_play);
         tvStatus.setText("Status: monitoring OFF");
-        tvStatus.setTextColor(Color.parseColor("#555555"));
+        applyStyle(StatusStyle.OFF, true);
     }
 
     private void sendAction(String action) {
@@ -75,18 +211,139 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateStatusUi(String status, String info) {
         if (status == null) status = "";
-        int color = Color.parseColor("#1565C0");
-        if (status.contains("EMERGENCY")) color = Color.parseColor("#C62828");
-        else if (status.contains("ATTENTION")) color = Color.parseColor("#E65100");
-        else if (status.contains("NORMAL")) color = Color.parseColor("#2E7D32");
-        tvStatus.setTextColor(color);
+        StatusStyle style = StatusStyle.from(status);
+        applyStyle(style, true);
         tvStatus.setText("Status: " + (info != null ? info : status));
+        if (style == StatusStyle.NORMAL && info != null && info.contains("All clear")) allClearFlourish();
     }
+
+    // ---------- presentation (design profile: dynamicStyleHooks.updateStatusUi) ----------
+
+    /** Hero 46% of the screen (300–420dp); Pip at most 68% of the width. */
+    private void sizeHero() {
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int min = getResources().getDimensionPixelSize(R.dimen.hero_full_min);
+        int max = getResources().getDimensionPixelSize(R.dimen.hero_full_max);
+        hero.getLayoutParams().height = Math.max(min, Math.min(max, Math.round(screenH * 0.46f)));
+        int pip = Math.min(getResources().getDimensionPixelSize(R.dimen.pip_hero), Math.round(screenW * 0.68f));
+        pipGuard.getLayoutParams().width = pip;
+        pipGuard.getLayoutParams().height = pip;
+    }
+
+    /** The single place that applies a StatusStyle to the screen. */
+    private void applyStyle(StatusStyle s, boolean animate) {
+        boolean changed = s != currentStyle;
+        currentStyle = s;
+        boolean motion = animate && !Ui.isReducedMotion();
+
+        if (changed) {
+            HeroBackgroundDrawable next = s.hero.hero(this).wave();
+            if (motion && heroBg != null) {
+                TransitionDrawable fade = new TransitionDrawable(new Drawable[]{heroBg, next});
+                fade.setCrossFadeEnabled(true);
+                hero.setBackground(fade);
+                fade.startTransition(360);
+            } else {
+                hero.setBackground(next);
+            }
+            heroBg = next;
+        }
+
+        // Pip: keep the 2 s "all clear" smile unless the level has changed.
+        boolean keepHappy = s == StatusStyle.NORMAL && SystemClock.uptimeMillis() < happyUntil;
+        if (!keepHappy) pipGuard.setLook(s.look, s.expression, motion && changed);
+        if (s != StatusStyle.NORMAL) {
+            happyUntil = 0;
+            handler.removeCallbacks(backToIdle);
+        }
+        pipGuard.setEffect(s.effect);
+        pipGuard.setPulseRings(s == StatusStyle.EMERGENCY);
+
+        // badge
+        if (s == StatusStyle.EMERGENCY) {
+            badgeBg.setSolid(Ui.color(this, R.color.white));
+            tvBadge.setTextColor(Ui.color(this, R.color.status_emergency_deep));
+        } else {
+            badgeBg.setGradient(Ui.color(this, R.color.tangerine_300), Ui.color(this, R.color.tangerine_500));
+            tvBadge.setTextColor(Ui.color(this, R.color.ink_900));
+        }
+        tvBadge.setText(s.badgeCopy);
+        imgMedallion.setImageResource(s.badgeIcon);
+        setBadgePulse(s == StatusStyle.ATTENTION);
+
+        levelIndicator.setLevel(s.level, motion);
+        tvStatus.setTextColor(Ui.color(this, s.textColor));
+        tvStatus.setAccessibilityLiveRegion(s == StatusStyle.EMERGENCY
+                ? View.ACCESSIBILITY_LIVE_REGION_ASSERTIVE : View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        tvTitle.setTextColor(Ui.color(this, s == StatusStyle.EMERGENCY ? R.color.white : R.color.ink_900));
+        Ui.setLightStatusBar(this, s.lightStatusBar);
+    }
+
+    /** ATTENTION: the badge gently pulses (1 → 1.04, 1200 ms) unless animations are off. */
+    private void setBadgePulse(boolean on) {
+        if (on && !Ui.isReducedMotion()) {
+            if (badgePulse == null) {
+                badgePulse = ObjectAnimator.ofPropertyValuesHolder(badgeWrap,
+                        PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.04f),
+                        PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.04f));
+                badgePulse.setDuration(1200);
+                badgePulse.setRepeatCount(ValueAnimator.INFINITE);
+                badgePulse.setRepeatMode(ValueAnimator.REVERSE);
+                badgePulse.start();
+            }
+        } else if (badgePulse != null) {
+            badgePulse.cancel();
+            badgePulse = null;
+            badgeWrap.setScaleX(1f);
+            badgeWrap.setScaleY(1f);
+        }
+    }
+
+    /** "All clear": Pip smiles for 2 s, plus a snackbar with Pip's head (celebrate look). */
+    private void allClearFlourish() {
+        happyUntil = SystemClock.uptimeMillis() + ALL_CLEAR_HAPPY_MS;
+        pipGuard.setExpression(DuckLooks.Expression.HAPPY, !Ui.isReducedMotion());
+        handler.removeCallbacks(backToIdle);
+        handler.postDelayed(backToIdle, ALL_CLEAR_HAPPY_MS);
+
+        Snackbar bar = Snackbar.make(findViewById(android.R.id.content), R.string.all_clear, Snackbar.LENGTH_LONG);
+        View v = bar.getView();
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(Ui.color(this, R.color.ink_900));
+        bg.setCornerRadius(getResources().getDimension(R.dimen.radius_lg));
+        v.setBackgroundTintList(null);
+        v.setBackground(bg);
+        TextView text = v.findViewById(com.google.android.material.R.id.snackbar_text);
+        if (text != null) {
+            text.setTextAppearance(R.style.TextAppearance_SENSE_BodyM);
+            text.setTextColor(Ui.color(this, R.color.white));
+            text.setGravity(Gravity.CENTER_VERTICAL);
+            int size = getResources().getDimensionPixelSize(R.dimen.pip_snackbar);
+            DuckDrawable head = new DuckDrawable(this, DuckLooks.Look.CELEBRATE, DuckLooks.Expression.WINK,
+                    size, true).backdrop(Ui.color(this, R.color.lavender_100));
+            head.setBounds(0, 0, size, size);
+            text.setCompoundDrawablesRelative(head, null, null, null);
+            text.setCompoundDrawablePadding(Ui.dp(this, 12));
+        }
+        bar.show();
+    }
+
+    // ---------- permissions & receiver (unchanged) ----------
 
     private void requestNeededPermissions() {
         List<String> need = new ArrayList<>();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+        boolean fine = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        // Android 12+ requires FINE to be requested together with COARSE.
+        if (!fine) {
             need.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            need.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        } else if (!coarse) {
+            need.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
             need.add(Manifest.permission.RECORD_AUDIO);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
@@ -97,8 +354,50 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                                           int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != 101) return;
+
+        refreshLocationPermissionUi();
+        boolean fine = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        if (!fine && coarse) {
+            Toast.makeText(this, "Precise location is off. Navigation needs it.",
+                    Toast.LENGTH_LONG).show();
+        } else if (!fine && !coarse) {
+            Toast.makeText(this, "Location permission is needed for monitoring and navigation.",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void refreshLocationPermissionUi() {
+        boolean fine = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarse = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        if (!fine && coarse) {
+            btnLocationSettings.setText("Precise location is off. Navigation needs it. Open settings");
+            btnLocationSettings.setVisibility(View.VISIBLE);
+        } else if (!fine) {
+            btnLocationSettings.setText("Location permission is needed. Open settings");
+            btnLocationSettings.setVisibility(View.VISIBLE);
+        } else {
+            btnLocationSettings.setVisibility(View.GONE);
+        }
+    }
+
+    private void openAppSettings() {
+        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:" + getPackageName())));
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
+        refreshLocationPermissionUi();
         IntentFilter filter = new IntentFilter(STATUS_ACTION);
         ContextCompat.registerReceiver(this, statusReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
     }
@@ -107,5 +406,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         try { unregisterReceiver(statusReceiver); } catch (Exception ignored) { }
+    }
+
+    @Override
+    protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        if (badgeWrap != null) setBadgePulse(false); // null when redirected to login
+        super.onDestroy();
     }
 }

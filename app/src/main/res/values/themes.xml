@@ -1,9 +1,97 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.SENSE" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <!-- SENSE+ Pastel Companion theme (androidImplementation.theme). v1 is light-only:
+         DayNight would flip system colours under our explicit pastel tokens. -->
+    <style name="Base.Theme.SENSE" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/tangerine_500</item>
+        <item name="colorOnPrimary">@color/ink_900</item>
+        <item name="colorPrimaryContainer">@color/tangerine_100</item>
+        <item name="colorOnPrimaryContainer">@color/tangerine_900</item>
+        <item name="colorSecondary">@color/lavender_500</item>
+        <item name="colorOnSecondary">@color/ink_900</item>
+        <item name="colorSecondaryContainer">@color/lavender_100</item>
+        <item name="colorOnSecondaryContainer">@color/lavender_900</item>
+        <item name="colorTertiary">@color/mint_700</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/ink_900</item>
+        <item name="colorSurfaceVariant">@color/ink_100</item>
+        <item name="colorOnSurfaceVariant">@color/ink_600</item>
+        <item name="colorSurfaceContainerLowest">@color/white</item>
+        <item name="colorSurfaceContainerLow">@color/white</item>
+        <item name="colorSurfaceContainer">@color/white</item>
+        <item name="colorSurfaceContainerHigh">@color/white</item>
+        <item name="colorSurfaceContainerHighest">@color/ink_100</item>
+        <item name="colorOutline">@color/ink_500</item>
+        <item name="colorOutlineVariant">@color/ink_200</item>
+        <item name="colorError">@color/status_emergency_solid</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="android:colorBackground">@color/surface_canvas</item>
+        <item name="android:windowBackground">@color/surface_canvas</item>
+        <item name="colorControlNormal">@color/ink_600</item>
+        <item name="colorControlActivated">@color/lavender_700</item>
+        <item name="colorControlHighlight">@color/ripple_ink</item>
+        <item name="android:textColorPrimary">@color/ink_900</item>
+        <item name="android:textColorSecondary">@color/ink_600</item>
+        <item name="android:textColorHint">@color/ink_500</item>
+        <item name="android:fontFamily">@font/lexend</item>
+        <item name="fontFamily">@font/lexend</item>
+        <item name="materialButtonStyle">@style/Widget.SENSE.Button</item>
+        <item name="materialSwitchStyle">@style/Widget.SENSE.Switch</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.SENSE.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.SENSE.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.SENSE.Large</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.SENSE.MaterialAlertDialog</item>
+        <item name="android:spotShadowAlpha">0.14</item>
+        <item name="android:ambientShadowAlpha">0.06</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.SENSE" parent="Base.Theme.SENSE" />
+
+    <!-- Dialogs: white, 32dp corners, Lexend; text buttons in tangerine_700 (4.8:1 on white). -->
+    <style name="ThemeOverlay.SENSE.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/tangerine_700</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorSurfaceContainerHigh">@color/white</item>
+        <item name="colorOnSurface">@color/ink_900</item>
+        <item name="colorOnSurfaceVariant">@color/ink_700</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.SENSE.Large</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.SENSE.HeadlineM</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.SENSE.BodyM</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.SENSE.LabelButtonSmall</item>
+    </style>
+
+    <!-- Text fields: lavender cursor / focus, Lexend body_l input. -->
+    <style name="ThemeOverlay.SENSE.TextField" parent="ThemeOverlay.Material3.TextInputEditText.OutlinedBox">
+        <item name="colorPrimary">@color/lavender_700</item>
+        <item name="colorControlActivated">@color/lavender_700</item>
+        <item name="editTextStyle">@style/Widget.SENSE.TextFieldInput</item>
+    </style>
+
+    <style name="Widget.SENSE.TextFieldInput" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.BodyL</item>
+        <item name="android:textColor">@color/ink_900</item>
+    </style>
+
+    <style name="ShapeAppearance.SENSE.Small" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_sm</item>
+    </style>
+
+    <style name="ShapeAppearance.SENSE.Medium" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_xl</item>
+    </style>
+
+    <style name="ShapeAppearance.SENSE.Large" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_3xl</item>
+    </style>
+
+    <style name="ShapeAppearance.SENSE.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>

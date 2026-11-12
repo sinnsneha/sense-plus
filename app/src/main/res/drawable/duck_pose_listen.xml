@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- left wing -->
+    <path android:pathData="M70,146 C54,150 46,170 56,181 C63,188 74,183 80,171"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- right wing (cupping ear) -->
+    <path android:pathData="M166,132 C180,128 194,114 192,100 C190,90 180,88 174,96 C172,104 170,112 164,120"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

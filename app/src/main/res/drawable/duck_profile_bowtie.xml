@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Profile look prop (not in duck_kit.zip): orange bow tie, from the sticker sheet. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- bow L -->
+    <path android:pathData="M120,131 C112,124 104,119.5 99.5,122.5 C95.5,126 95.5,136 99.5,139.5 C104,142.5 112,138 120,131 Z"
+        android:fillColor="#FFF7893B"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- bow R -->
+    <path android:pathData="M120,131 C128,124 136,119.5 140.5,122.5 C144.5,126 144.5,136 140.5,139.5 C136,142.5 128,138 120,131 Z"
+        android:fillColor="#FFF7893B"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- folds -->
+    <path android:pathData="M105.5,127.5 C108.5,129.5 108.5,132.5 105.5,134.5 M134.5,127.5 C131.5,129.5 131.5,132.5 134.5,134.5"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- knot -->
+    <path android:pathData="M114.5,131.0 a5.5,6.5 0 1,0 11.0,0 a5.5,6.5 0 1,0 -11.0,0 Z"
+        android:fillColor="#FFF7893B"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

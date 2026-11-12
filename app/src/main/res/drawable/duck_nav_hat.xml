@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- hat crown -->
+    <path android:pathData="M74,64 C74,38 96,26 118,26 C142,26 164,38 164,64 Z"
+        android:fillColor="#FFF5C04A"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- hat brim -->
+    <path android:pathData="M52,70 C70,58 168,58 186,70 C190,78 182,84 172,82 C150,74 88,74 66,82 C56,84 48,78 52,70 Z"
+        android:fillColor="#FFF5C04A"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- hat band -->
+    <path android:pathData="M76,62 C96,56 142,56 162,62"
+        android:strokeColor="#FFE3A529"
+        android:strokeWidth="4.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

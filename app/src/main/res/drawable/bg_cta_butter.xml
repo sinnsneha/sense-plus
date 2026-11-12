@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Visual Assist READ ALOUD: butter_300 → tangerine_400 (ink_900 label ≥ 7:1 throughout) -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/ripple_ink">
+    <item>
+        <selector>
+            <item android:state_enabled="false">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/ink_100"/>
+                    <corners android:radius="@dimen/radius_pill"/>
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <gradient android:angle="315"
+                        android:startColor="@color/butter_300"
+                        android:endColor="@color/tangerine_400"/>
+                    <corners android:radius="@dimen/radius_pill"/>
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

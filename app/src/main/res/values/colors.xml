@@ -1,16 +1,172 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SENSE+ Pastel Companion design tokens (sense_plus_design_profile.json → tokens.color).
+     Layouts and Java must only use these names: no raw hex anywhere else. -->
 <resources>
-    <color name="navy">#0D2B45</color>
-    <color name="blue">#1565C0</color>
-    <color name="bg">#EEF2F7</color>
-    <color name="card">#FFFFFF</color>
-    <color name="text_dark">#1A2B3C</color>
-    <color name="text_muted">#5B6B7B</color>
-    <color name="green">#2E7D32</color>
-    <color name="orange">#E65100</color>
-    <color name="red">#C62828</color>
-    <color name="purple">#6A1B9A</color>
-    <color name="nav">#00796B</color>
+
+    <!-- ===== Palettes ===== -->
+    <color name="tangerine_50">#FFF4EC</color>
+    <color name="tangerine_100">#FFE6D3</color>
+    <color name="tangerine_200">#FFD0AD</color>
+    <color name="tangerine_300">#FFB67F</color>
+    <color name="tangerine_400">#FF9F5A</color>
+    <color name="tangerine_500">#F7893B</color>
+    <color name="tangerine_600">#E36F1E</color>
+    <color name="tangerine_700">#B85512</color>
+    <color name="tangerine_800">#8A3E0D</color>
+    <color name="tangerine_900">#5C2908</color>
+
+    <color name="lavender_50">#F6F2FE</color>
+    <color name="lavender_100">#ECE5FC</color>
+    <color name="lavender_200">#DCD1F8</color>
+    <color name="lavender_300">#C6B6F1</color>
+    <color name="lavender_400">#AE9AE6</color>
+    <color name="lavender_500">#957ED8</color>
+    <color name="lavender_600">#7B63C2</color>
+    <color name="lavender_700">#614CA0</color>
+    <color name="lavender_800">#47377A</color>
+    <color name="lavender_900">#2F2452</color>
+
+    <color name="butter_50">#FFFBEA</color>
+    <color name="butter_100">#FFF3C6</color>
+    <color name="butter_200">#FFE89A</color>
+    <color name="butter_300">#FFDB6B</color>
+    <color name="butter_400">#FFCD45</color>
+    <color name="butter_500">#F5B820</color>
+    <color name="butter_600">#D99A0B</color>
+    <color name="butter_700">#A87406</color>
+    <color name="butter_800">#8A5A00</color>
+    <color name="butter_900">#4D3503</color>
+
+    <color name="blush_50">#FFF2F5</color>
+    <color name="blush_100">#FFE2EA</color>
+    <color name="blush_200">#FFC9D7</color>
+    <color name="blush_300">#FFAAC0</color>
+    <color name="blush_400">#FF8DA9</color>
+    <color name="blush_500">#F26F93</color>
+    <color name="blush_600">#D85479</color>
+    <color name="blush_700">#B03E5E</color>
+    <color name="blush_800">#832C45</color>
+    <color name="blush_900">#561C2D</color>
+
+    <color name="mint_50">#EFFBF5</color>
+    <color name="mint_100">#D9F5E7</color>
+    <color name="mint_200">#B6EBD2</color>
+    <color name="mint_300">#8EDDB8</color>
+    <color name="mint_400">#65CB9C</color>
+    <color name="mint_500">#3FB37F</color>
+    <color name="mint_600">#2B9467</color>
+    <color name="mint_700">#1F7451</color>
+    <color name="mint_800">#17553C</color>
+    <color name="mint_900">#0E3727</color>
+
+    <color name="sky_50">#EEF7FF</color>
+    <color name="sky_100">#D9EDFF</color>
+    <color name="sky_200">#B8DCFF</color>
+    <color name="sky_300">#8FC6FB</color>
+    <color name="sky_400">#66AEF2</color>
+    <color name="sky_500">#4495E3</color>
+    <color name="sky_600">#2F79C4</color>
+    <color name="sky_700">#245E9C</color>
+    <color name="sky_800">#1B4573</color>
+    <color name="sky_900">#122E4C</color>
+
+    <color name="coral_50">#FFF1EE</color>
+    <color name="coral_100">#FFDFD8</color>
+    <color name="coral_200">#FFC2B6</color>
+    <color name="coral_300">#FFA08E</color>
+    <color name="coral_400">#FF8169</color>
+    <color name="coral_500">#F2634A</color>
+    <color name="coral_600">#D24A33</color>
+    <color name="coral_700">#A83826</color>
+    <color name="coral_800">#7C291C</color>
+    <color name="coral_900">#511A12</color>
+
+    <!-- ===== Neutrals ===== -->
+    <color name="ink_900">#2B2633</color>
+    <color name="ink_800">#3A3442</color>
+    <color name="ink_700">#4D4656</color>
+    <color name="ink_600">#625B6B</color>
+    <color name="ink_500">#6E6777</color>
+    <color name="ink_400">#9C96A4</color>
+    <color name="ink_300">#C4BFCB</color>
+    <color name="ink_200">#E3E0E8</color>
+    <color name="ink_100">#F1EFF4</color>
+    <color name="ink_50">#F8F7FA</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- ===== Surfaces ===== -->
+    <color name="surface_canvas">#FFFCFA</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="surface_cream">#FBF3EE</color>
+    <color name="surface_scrim">#802B2633</color>
+    <color name="surface_glass">#B3FFFFFF</color>
+    <color name="surface_ghost_card1">#8CFFFFFF</color>
+    <color name="surface_ghost_card2">#4DFFFFFF</color>
+    <!-- 8% / 12% ink overlays for pressed states and ripples -->
+    <color name="overlay_ink_pressed">#142B2633</color>
+    <color name="ripple_ink">#1F2B2633</color>
+    <color name="ripple_white">#40FFFFFF</color>
+
+    <!-- ===== Semantic status ===== -->
+    <color name="status_normal_solid">#1F7451</color>
+    <color name="status_normal_tint">#D9F5E7</color>
+    <color name="status_normal_text">#1F7451</color>
+    <color name="status_normal_accent">#3FB37F</color>
+    <color name="status_attention_solid">#F59E0B</color>
+    <color name="status_attention_tint">#FFE9C7</color>
+    <color name="status_attention_text">#8A4B00</color>
+    <color name="status_emergency_solid">#D92D20</color>
+    <color name="status_emergency_deep">#B42318</color>
+    <color name="status_emergency_tint">#FFE3E1</color>
+    <color name="status_emergency_text">#A61B1B</color>
+    <color name="status_off_tint">#F1EFF4</color>
+    <color name="status_off_text">#625B6B</color>
+    <color name="focus_ring">#614CA0</color>
+    <color name="live_dot_on">#3FB37F</color>
+    <color name="live_dot_error">#D92D20</color>
+
+    <!-- ===== Sound types (Hearing Assist) ===== -->
+    <color name="sound_fire_solid">#B42318</color>
+    <color name="sound_fire_tile">#FFE3E1</color>
+    <color name="sound_siren_solid">#C2410C</color>
+    <color name="sound_siren_tile">#FFDFD8</color>
+    <color name="sound_horn_solid">#B54708</color>
+    <color name="sound_horn_tile">#FFE9C7</color>
+    <color name="sound_alarm_solid">#7B63C2</color>
+    <color name="sound_alarm_tile">#ECE5FC</color>
+    <color name="sound_doorbell_solid">#245E9C</color>
+    <color name="sound_doorbell_tile">#D9EDFF</color>
+    <color name="sound_phone_tint">#D9F5E7</color>
+    <color name="sound_phone_icon">#1F7451</color>
+    <color name="sound_baby_tint">#FFE2EA</color>
+    <color name="sound_baby_icon">#B03E5E</color>
+    <color name="sound_glass_tint">#FFF3C6</color>
+    <color name="sound_glass_icon">#8A5A00</color>
+    <color name="sound_shout_tint">#FFDFD8</color>
+    <color name="sound_shout_icon">#A83826</color>
+    <color name="sound_dog_tint">#ECE5FC</color>
+    <color name="sound_dog_icon">#614CA0</color>
+
+    <!-- ===== Gradient stops (tokens.color.gradients) ===== -->
+    <!-- grad_hero_lavender -->
+    <color name="grad_lavender_base">#E6DDF6</color>
+    <!-- grad_hero_peachSunrise -->
+    <color name="grad_peach_blob_cream">#FFF4D9</color>
+    <color name="grad_peach_blob_peach">#FFC9A3</color>
+    <!-- grad_hero_emergency -->
+    <color name="grad_emergency_blob">#FF7A6B</color>
+    <!-- grad_card_tangerine / grad_cta_tangerine -->
+    <color name="grad_tangerine_light">#FFC48C</color>
+    <color name="grad_tangerine_mid">#FFA866</color>
+    <color name="grad_tangerine_deep">#EE7A2E</color>
+    <!-- level track -->
+    <color name="grad_track_mint">#8EDDB8</color>
+    <color name="grad_track_butter">#FFDB6B</color>
+    <color name="grad_track_coral">#FF8169</color>
+
+    <!-- Pip's own sticker colours (characters.styleGuide) for code-drawn extras -->
+    <color name="pip_outline">#3B312D</color>
+    <color name="pip_shadow">#1A2B2633</color>
 </resources>

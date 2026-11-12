@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cognitive look prop (not in duck_kit.zip): a small checklist notepad with a pencil tucked
+     behind it = "helps you remember". Draw BEFORE duck_pose_hold so the wings hold it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- pencil, tucked behind the pad -->
+    <group android:pivotX="152" android:pivotY="140" android:rotation="28">
+        <!-- body -->
+        <path android:pathData="M147,108 L157,108 L157,150 L147,150 Z"
+            android:fillColor="#FFFFCD45"
+            android:strokeColor="#FF3B312D"
+            android:strokeWidth="3.0"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+        <!-- band -->
+        <path android:pathData="M147,108 L157,108 L157,114 L147,114 Z"
+            android:fillColor="#FFC4BFCB"
+            android:strokeColor="#FF3B312D"
+            android:strokeWidth="2.4"
+            android:strokeLineJoin="round"/>
+        <!-- eraser -->
+        <path android:pathData="M147,108 L147,103 C147,99 157,99 157,103 L157,108 Z"
+            android:fillColor="#FFFF8DA9"
+            android:strokeColor="#FF3B312D"
+            android:strokeWidth="3.0"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"/>
+    </group>
+    <!-- pad -->
+    <path android:pathData="M97,140 L143,140 C147,140 150,143 150,147 L150,186 C150,190 147,193 143,193 L97,193 C93,193 90,190 90,186 L90,147 C90,143 93,140 97,140 Z"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- cover band -->
+    <path android:pathData="M92.3,148.5 L147.7,148.5"
+        android:strokeColor="#FFC6B6F1"
+        android:strokeWidth="9"
+        android:strokeLineCap="butt"/>
+    <!-- spiral rings -->
+    <path android:pathData="M100,139 L100,146 M110,139 L110,146 M120,139 L120,146 M130,139 L130,146 M140,139 L140,146"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"/>
+    <!-- tick boxes -->
+    <path android:pathData="M99,160 L106,160 L106,167 L99,167 Z M99,174 L106,174 L106,181 L99,181 Z"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="2.2"
+        android:strokeLineJoin="round"/>
+    <!-- ticks -->
+    <path android:pathData="M100,163.5 L102.5,166 L107.5,158.5 M100,177.5 L102.5,180 L107.5,172.5"
+        android:strokeColor="#FF3FB37F"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- list lines -->
+    <path android:pathData="M111,163.5 L141,163.5 M111,177.5 L136,177.5"
+        android:strokeColor="#FFAE9AE6"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"/>
+</vector>

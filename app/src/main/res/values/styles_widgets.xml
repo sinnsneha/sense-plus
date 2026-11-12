@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- components.* as reusable styles. Under a Material 3 theme every <Button> is a
+     MaterialButton: a custom android:background only shows with backgroundTint="@null"
+     (androidImplementation.materialButtonGotcha). -->
+<resources>
+
+    <!-- ===== Buttons ===== -->
+
+    <!-- Base: pill, 56dp, label_button, ink text, no M3 width cap. -->
+    <style name="Widget.SENSE.Button" parent="Widget.Material3.Button">
+        <item name="android:minHeight">56dp</item>
+        <item name="android:maxWidth">@dimen/max_content_width</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingLeft">20dp</item>
+        <item name="android:paddingRight">20dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButton</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/ink_900</item>
+        <item name="iconTint">@color/ink_900</item>
+        <item name="iconSize">24dp</item>
+        <item name="iconPadding">10dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="backgroundTint">@color/tangerine_400</item>
+        <item name="rippleColor">@color/ripple_ink</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.SENSE.Pill</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <!-- components.pillBackButton: white pill, arrow + BACK in label_caps. -->
+    <style name="Widget.SENSE.Button.PillWhite">
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">48dp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">18dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelCaps</item>
+        <item name="android:textColor">@color/ink_900</item>
+        <item name="backgroundTint">@color/surface_card</item>
+        <item name="icon">@drawable/ic_arrow_back</item>
+        <item name="iconSize">20dp</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconGravity">start</item>
+        <item name="iconTint">@color/ink_900</item>
+        <item name="android:text">@string/back</item>
+        <item name="android:contentDescription">@string/back</item>
+        <item name="elevation">@dimen/shadow_sm</item>
+        <item name="android:elevation">@dimen/shadow_sm</item>
+        <item name="android:outlineSpotShadowColor">@color/ink_900</item>
+    </style>
+
+    <!-- components.stadiumCta: THE primary action. Gradient pill + white icon circle. -->
+    <style name="Widget.SENSE.Button.Stadium">
+        <item name="android:minHeight">@dimen/touch_primary</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">28dp</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:background">@drawable/bg_cta_tangerine</item>
+        <item name="android:textColor">@color/sel_cta_text</item>
+        <item name="iconTint">@null</item>
+        <item name="iconSize">@dimen/cta_icon_circle</item>
+        <item name="iconPadding">12dp</item>
+        <item name="iconGravity">start</item>
+        <item name="elevation">@dimen/shadow_glow</item>
+        <item name="android:elevation">@dimen/shadow_glow</item>
+        <item name="android:outlineSpotShadowColor">@color/tangerine_600</item>
+        <item name="android:outlineAmbientShadowColor">@color/tangerine_500</item>
+    </style>
+
+    <!-- SENSE GUARD's CTA is 72dp -->
+    <style name="Widget.SENSE.Button.Stadium.Guard">
+        <item name="android:minHeight">@dimen/touch_primary_guard</item>
+    </style>
+
+    <!-- Visual Assist: butter_300 → tangerine_400 -->
+    <style name="Widget.SENSE.Button.Stadium.Butter">
+        <item name="android:background">@drawable/bg_cta_butter</item>
+        <item name="android:outlineSpotShadowColor">@color/butter_600</item>
+        <item name="android:outlineAmbientShadowColor">@color/butter_500</item>
+    </style>
+
+    <!-- components.emergencyButton: never pastel, never grain, always the tallest. -->
+    <style name="Widget.SENSE.Button.Emergency">
+        <item name="android:minHeight">@dimen/touch_emergency</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButton.Emergency</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="backgroundTint">@color/status_emergency_solid</item>
+        <item name="cornerRadius">@dimen/radius_xl</item>
+        <item name="icon">@drawable/ic_emergency</item>
+        <item name="iconSize">28dp</item>
+        <item name="iconTint">@color/white</item>
+        <item name="rippleColor">@color/ripple_white</item>
+        <item name="elevation">@dimen/shadow_glow</item>
+        <item name="android:elevation">@dimen/shadow_glow</item>
+        <item name="android:outlineSpotShadowColor">@color/status_emergency_solid</item>
+        <item name="android:outlineAmbientShadowColor">@color/status_emergency_solid</item>
+    </style>
+
+    <!-- components.tonalButton: positive secondary action (I'M OK). -->
+    <style name="Widget.SENSE.Button.Tonal">
+        <item name="android:minHeight">@dimen/touch_emergency</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="backgroundTint">@color/status_normal_tint</item>
+        <item name="strokeColor">@color/status_normal_solid</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">@dimen/radius_xl</item>
+        <item name="icon">@drawable/ic_check_circle</item>
+        <item name="iconTint">@color/status_normal_solid</item>
+    </style>
+
+    <!-- components.outlineButton: low emphasis. -->
+    <style name="Widget.SENSE.Button.Outline">
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButtonSmall</item>
+        <item name="android:textColor">@color/ink_800</item>
+        <item name="iconTint">@color/ink_800</item>
+        <item name="iconSize">20dp</item>
+        <item name="backgroundTint">@color/transparent</item>
+        <item name="strokeColor">@color/ink_300</item>
+        <item name="strokeWidth">2dp</item>
+    </style>
+
+    <!-- Small outlined pill for a section header's trailing action. -->
+    <style name="Widget.SENSE.Button.Outline.Small">
+        <item name="android:minHeight">@dimen/touch_min</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="iconSize">18dp</item>
+        <item name="iconPadding">6dp</item>
+        <item name="backgroundTint">@color/surface_card</item>
+        <item name="strokeColor">@color/ink_200</item>
+    </style>
+
+    <!-- Attention-tinted warning action (e.g. "Location permission needed"): 5.7:1. -->
+    <style name="Widget.SENSE.Button.Warning">
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButtonSmall</item>
+        <item name="android:textColor">@color/status_attention_text</item>
+        <item name="iconTint">@color/status_attention_text</item>
+        <item name="iconSize">20dp</item>
+        <item name="backgroundTint">@color/status_attention_tint</item>
+        <item name="strokeColor">@color/status_attention_solid</item>
+        <item name="strokeWidth">2dp</item>
+        <item name="cornerRadius">@dimen/radius_xl</item>
+        <item name="android:minHeight">@dimen/touch_primary</item>
+    </style>
+
+    <!-- Solid tangerine pill (Open in Maps): ink_900 on tangerine_400 = 7.2:1. -->
+    <style name="Widget.SENSE.Button.Tangerine">
+        <item name="backgroundTint">@color/tangerine_400</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButtonSmall</item>
+    </style>
+
+    <!-- components.segmentedControl (Hearing): gradient when selected, clear otherwise. -->
+    <style name="Widget.SENSE.Button.Segment">
+        <item name="android:minHeight">52dp</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButtonSmall</item>
+        <item name="android:textColor">@color/sel_segment_text</item>
+        <item name="iconTint">@color/sel_segment_text</item>
+        <item name="iconSize">20dp</item>
+        <item name="iconPadding">6dp</item>
+        <item name="backgroundTint">@null</item>
+    </style>
+
+    <style name="Widget.SENSE.Button.Segment.Sounds">
+        <item name="android:background">@drawable/sel_segment_sounds</item>
+    </style>
+
+    <style name="Widget.SENSE.Button.Segment.Captions">
+        <item name="android:background">@drawable/sel_segment_captions</item>
+    </style>
+
+    <!-- Visual Assist mode toggle: buttons inside a MaterialButtonToggleGroup must keep
+         Material's own background (the group reshapes it), so selection is a tint. -->
+    <style name="Widget.SENSE.Button.Toggle">
+        <item name="android:minHeight">52dp</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButtonSmall</item>
+        <item name="android:textColor">@color/sel_segment_text</item>
+        <item name="iconTint">@color/sel_segment_text</item>
+        <item name="iconSize">20dp</item>
+        <item name="iconPadding">6dp</item>
+        <item name="backgroundTint">@color/sel_toggle_bg</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="android:checkable">true</item>
+    </style>
+
+    <!-- Same toggle, lavender when checked (Login tabs: neutral, not a section colour). -->
+    <style name="Widget.SENSE.Button.Toggle.Lavender">
+        <item name="backgroundTint">@color/sel_toggle_bg_lavender</item>
+    </style>
+
+    <!-- Low-emphasis text action ("Forgot password?"): lavender_700 = 6.9:1 on white. -->
+    <style name="Widget.SENSE.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">@dimen/touch_min</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelButtonSmall</item>
+        <item name="android:textColor">@color/lavender_700</item>
+        <item name="rippleColor">@color/ripple_ink</item>
+    </style>
+
+    <!-- Form field (screens.profileSettings): 56dp, radius_lg, labels title_s. The resting
+         outline is ink_500 (5.4:1), not the profile's ink_200 (1.2:1): input boundaries need
+         3:1. Focused: 2dp lavender_600. -->
+    <style name="Widget.SENSE.TextField" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">@dimen/radius_lg</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_lg</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_lg</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_lg</item>
+        <item name="boxStrokeColor">@color/sel_textfield_stroke</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxBackgroundColor">@color/surface_card</item>
+        <item name="hintTextColor">@color/lavender_700</item>
+        <item name="android:textColorHint">@color/ink_600</item>
+        <item name="hintTextAppearance">@style/TextAppearance.SENSE.TitleS</item>
+        <item name="materialThemeOverlay">@style/ThemeOverlay.SENSE.TextField</item>
+    </style>
+
+    <!-- ===== Other controls ===== -->
+
+    <!-- MaterialSwitch with ≥ 3:1 parts (tangerine on white would be 2.4:1). -->
+    <style name="Widget.SENSE.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbTint">@color/sel_switch_thumb</item>
+        <item name="trackTint">@color/sel_switch_track</item>
+        <item name="trackDecorationTint">@color/sel_switch_track_decoration</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.TitleS</item>
+        <item name="android:textColor">@color/ink_900</item>
+    </style>
+
+    <!-- Profile mode card: one CheckBox (framework class) = one card, Pip on the start,
+         custom tick box on the end, lavender outline when checked. -->
+    <style name="Widget.SENSE.ProfileRow" parent="">
+        <item name="android:button">@null</item>
+        <item name="android:background">@drawable/bg_profile_row</item>
+        <item name="android:foreground">@drawable/fg_card_r24</item>
+        <item name="android:minHeight">88dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">18dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:drawablePadding">14dp</item>
+        <item name="android:drawableEnd">@drawable/sel_checkbox</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.BodyL</item>
+        <item name="android:textColor">@color/ink_900</item>
+        <item name="android:gravity">center_vertical|start</item>
+        <item name="android:elevation">@dimen/shadow_xs</item>
+    </style>
+
+    <!-- components.circleIconButton -->
+    <style name="Widget.SENSE.CircleIconButton" parent="">
+        <item name="android:layout_width">@dimen/circle_button</item>
+        <item name="android:layout_height">@dimen/circle_button</item>
+        <item name="android:background">@drawable/bg_circle_white</item>
+        <item name="android:foreground">@drawable/fg_circle</item>
+        <item name="android:scaleType">center</item>
+        <item name="android:elevation">@dimen/shadow_sm</item>
+        <item name="tint">@color/ink_800</item>
+    </style>
+
+    <!-- components.chip (on gradients: white). -->
+    <style name="Widget.SENSE.Chip" parent="">
+        <item name="android:background">@drawable/bg_chip_white</item>
+        <item name="android:minHeight">@dimen/chip_height</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.LabelCaps</item>
+        <item name="android:textColor">@color/ink_900</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+
+    <!-- components.arrowChip (decorative when the whole tile is clickable). -->
+    <style name="Widget.SENSE.ArrowChip" parent="">
+        <item name="android:layout_width">32dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:background">@drawable/bg_arrow_chip</item>
+        <item name="android:src">@drawable/ic_arrow_forward</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="tint">@color/ink_800</item>
+    </style>
+
+    <!-- components.statTile -->
+    <style name="Widget.SENSE.StatTile" parent="">
+        <item name="android:background">@drawable/bg_tile_cream_r24</item>
+        <item name="android:padding">18dp</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <!-- White card (cards on canvas). -->
+    <style name="Widget.SENSE.Card" parent="">
+        <item name="android:background">@drawable/bg_card_white_r24</item>
+        <item name="android:padding">@dimen/card_padding</item>
+        <item name="android:elevation">@dimen/shadow_sm</item>
+        <item name="android:outlineSpotShadowColor">@color/ink_900</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <!-- Sensor Info stat tiles -->
+    <style name="SensorTileLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:drawablePadding">6dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.TitleS</item>
+        <item name="android:textColor">@color/ink_800</item>
+        <item name="drawableTint">@color/sky_700</item>
+    </style>
+
+    <style name="SensorTileUnit" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.Caption</item>
+    </style>
+
+    <!-- statTile.compactVariant: multi-line values in body_l with tabular figures -->
+    <style name="SensorTileCompactValue" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.BodyL</item>
+        <item name="android:textColor">@color/ink_800</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+    </style>
+
+    <!-- statTile value: big LIGHT number, shrinks to fit instead of wrapping -->
+    <style name="SensorTileBigValue" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.DisplayNumber</item>
+    </style>
+
+    <!-- components.sectionHeader -->
+    <style name="Widget.SENSE.SectionHeader" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.TitleM</item>
+        <item name="android:textColor">@color/ink_800</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
+
+    <!-- components.topBar title -->
+    <style name="Widget.SENSE.TopBarTitle" parent="">
+        <item name="android:textAppearance">@style/TextAppearance.SENSE.TitleM</item>
+        <item name="android:textColor">@color/ink_900</item>
+        <item name="android:gravity">end|center_vertical</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
+</resources>

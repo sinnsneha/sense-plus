@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Visual Assist mode toggle: butter_300 when checked (ink_900 label = 12:1), clear otherwise -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/butter_300" android:state_checked="true"/>
+    <item android:color="@color/transparent"/>
+</selector>

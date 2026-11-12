@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- components.statTile: surface_cream, radius_xl, no shadow -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/surface_cream"/>
+    <corners android:radius="@dimen/radius_xl"/>
+</shape>

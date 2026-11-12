@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segmented control label/icon: ink_900 when selected (or checked in a toggle group), ink_600 otherwise -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/ink_900" android:state_selected="true"/>
+    <item android:color="@color/ink_900" android:state_checked="true"/>
+    <item android:color="@color/ink_600"/>
+</selector>

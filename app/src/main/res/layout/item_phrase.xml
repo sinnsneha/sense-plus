@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Communication phrase card: white, radius_xl, ≥ 104dp, icon tile above the phrase.
+     The card grows with the text, so nothing is clipped at 200% font scale. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card_white_r24"
+    android:clickable="true"
+    android:elevation="@dimen/shadow_sm"
+    android:focusable="true"
+    android:foreground="@drawable/fg_card_r24"
+    android:minHeight="@dimen/phrase_card_min_height"
+    android:orientation="vertical"
+    android:outlineSpotShadowColor="@color/ink_900"
+    android:padding="16dp">
+
+    <!-- 36dp icon tile (or a 64dp sticker for "Thank you" / "I need water") -->
+    <FrameLayout
+        android:id="@+id/phraseIconTile"
+        android:layout_width="@dimen/icon_tile"
+        android:layout_height="@dimen/icon_tile"
+        android:background="@drawable/bg_icon_tile_circle"
+        android:importantForAccessibility="no">
+
+        <ImageView
+            android:id="@+id/phraseIcon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:padding="8dp"
+            android:scaleType="fitCenter" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/phraseText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:importantForAccessibility="no"
+        android:textAppearance="@style/TextAppearance.SENSE.TitleM" />
+</LinearLayout>

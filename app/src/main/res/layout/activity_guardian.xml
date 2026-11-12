@@ -1,66 +1,326 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- screens.guardian: status hero card (StatusStyle) → at a glance (battery, last update) →
+     location → recent events → stop monitoring. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/guardianScroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/surface_canvas"
+    android:fillViewport="true">
 
     <LinearLayout
+        android:id="@+id/guardianContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/header_gradient"
-        android:paddingTop="44dp" android:paddingBottom="26dp"
-        android:paddingStart="24dp" android:paddingEnd="24dp">
-        <ImageView android:layout_width="38dp" android:layout_height="38dp" android:src="@drawable/ic_eye"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Guardian Dashboard" android:textSize="26sp" android:textStyle="bold"
-            android:textColor="@color/white" android:layout_marginTop="8dp"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Live status of your dependent" android:textSize="14sp" android:textColor="#CFE0F5"/>
-    </LinearLayout>
+        android:paddingStart="@dimen/screen_gutter"
+        android:paddingEnd="@dimen/screen_gutter">
 
-    <ScrollView android:layout_width="match_parent" android:layout_height="match_parent">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:padding="16dp">
+        <LinearLayout
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/top_bar_height"
+            android:orientation="horizontal">
 
-            <!-- Status card -->
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical" android:gravity="center"
-                android:background="@drawable/card_white" android:elevation="3dp"
-                android:padding="24dp" android:layout_marginBottom="16dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="CURRENT STATUS" android:textSize="12sp" android:textColor="@color/text_muted"
-                    android:letterSpacing="0.1"/>
-                <TextView android:id="@+id/tvGStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Connecting..." android:textSize="34sp" android:textStyle="bold"
-                    android:gravity="center" android:paddingTop="8dp"/>
-            </LinearLayout>
+            <Button
+                android:id="@+id/btnBack"
+                style="@style/Widget.SENSE.Button.PillWhite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
-            <!-- Details card -->
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/card_white" android:elevation="3dp"
-                android:padding="20dp" android:layout_marginBottom="18dp">
-                <TextView android:id="@+id/tvGAddress" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Address: —" android:textSize="16sp" android:textColor="@color/text_dark" android:paddingBottom="6dp"/>
-                <TextView android:id="@+id/tvGCoords" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Coordinates: —" android:textSize="14sp" android:textColor="@color/text_muted" android:paddingBottom="16dp"/>
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E3E8EF"/>
-                <TextView android:id="@+id/tvGBattery" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Battery: —" android:textSize="16sp" android:textColor="@color/text_dark" android:paddingTop="16dp" android:paddingBottom="6dp"/>
-                <TextView android:id="@+id/tvGUpdated" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:text="Last update: —" android:textSize="14sp" android:textColor="@color/text_muted"/>
-            </LinearLayout>
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
-            <Button android:id="@+id/btnOpenMaps" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:minHeight="64dp" android:text="OPEN IN GOOGLE MAPS" android:textSize="17sp" android:textStyle="bold"
-                android:textColor="@color/white" android:backgroundTint="@color/blue" android:layout_marginBottom="12dp"/>
-
-            <Button android:id="@+id/btnStop" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:minHeight="52dp" android:text="Stop background monitoring" android:textSize="14sp"
-                android:textColor="@color/white" android:backgroundTint="#90A4AE"/>
-
+            <TextView
+                style="@style/Widget.SENSE.TopBarTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/guardian_title" />
         </LinearLayout>
-    </ScrollView>
-</LinearLayout>
+
+        <!-- status hero card (organic; gradient + Pip expression by StatusStyle) -->
+        <FrameLayout
+            android:id="@+id/statusHeroCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:elevation="@dimen/shadow_md"
+            android:minHeight="@dimen/guardian_status_card_min"
+            android:outlineSpotShadowColor="@color/lavender_800">
+
+            <com.senseplus.sense.ui.DuckView
+                android:id="@+id/pipGuardian"
+                android:layout_width="@dimen/pip_card"
+                android:layout_height="@dimen/pip_card"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="-4dp"
+                android:layout_marginBottom="-10dp"
+                app:duckExpression="sleeping"
+                app:duckLook="guardian" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="138dp"
+                android:layout_marginTop="18dp"
+                android:layout_marginEnd="18dp"
+                android:layout_marginBottom="20dp"
+                android:gravity="end"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvGConn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_chip_white"
+                    android:drawableStart="@drawable/bg_live_dot"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/chip_height"
+                    android:paddingStart="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/guardian_checking"
+                    android:textAppearance="@style/TextAppearance.SENSE.Caption"
+                    android:textColor="@color/ink_900" />
+
+                <TextView
+                    android:id="@+id/tvGStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:accessibilityLiveRegion="polite"
+                    android:gravity="end"
+                    android:includeFontPadding="false"
+                    android:text="@string/guardian_connecting"
+                    android:textAppearance="@style/TextAppearance.SENSE.HeadlineM" />
+
+                <TextView
+                    android:id="@+id/tvGStatusCaption"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="end"
+                    android:textAppearance="@style/TextAppearance.SENSE.BodyS"
+                    android:textColor="@color/ink_800" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <TextView
+            style="@style/Widget.SENSE.SectionHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap_sections"
+            android:text="@string/guardian_glance" />
+
+        <!-- stat tiles -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                style="@style/Widget.SENSE.StatTile"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/guardian_battery"
+                    android:textAppearance="@style/TextAppearance.SENSE.TitleS"
+                    android:textColor="@color/ink_800"
+                    app:drawableStartCompat="@drawable/ic_battery"
+                    app:drawableTint="@color/ink_600" />
+
+                <com.senseplus.sense.ui.FitTextView
+                    android:id="@+id/tvGBattery"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="@string/dash"
+                    android:textAppearance="@style/TextAppearance.SENSE.DisplayNumber" />
+
+                <!-- how old the reading is (segment 24) -->
+                <TextView
+                    android:id="@+id/tvGBatteryAge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:importantForAccessibility="no"
+                    android:textAppearance="@style/TextAppearance.SENSE.Caption"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                style="@style/Widget.SENSE.StatTile"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="@dimen/gap_cards"
+                android:layout_weight="1"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawablePadding="6dp"
+                    android:gravity="center_vertical"
+                    android:text="@string/guardian_last_update"
+                    android:textAppearance="@style/TextAppearance.SENSE.TitleS"
+                    android:textColor="@color/ink_800"
+                    app:drawableStartCompat="@drawable/ic_schedule"
+                    app:drawableTint="@color/ink_600" />
+
+                <com.senseplus.sense.ui.FitTextView
+                    android:id="@+id/tvGUpdated"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:fontFeatureSettings="tnum"
+                    android:maxLines="1"
+                    android:text="@string/dash"
+                    android:textAppearance="@style/TextAppearance.SENSE.TitleL"
+                    android:textColor="@color/ink_800" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- location -->
+        <LinearLayout
+            style="@style/Widget.SENSE.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap_cards">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:focusable="true"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:drawablePadding="6dp"
+                        android:gravity="center_vertical"
+                        android:text="@string/guardian_location"
+                        android:textAppearance="@style/TextAppearance.SENSE.TitleS"
+                        android:textColor="@color/ink_800"
+                        app:drawableStartCompat="@drawable/ic_location_on"
+                        app:drawableTint="@color/coral_700" />
+
+                    <TextView
+                        android:id="@+id/tvGAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:ellipsize="end"
+                        android:maxLines="3"
+                        android:text="@string/dash"
+                        android:textAppearance="@style/TextAppearance.SENSE.BodyL"
+                        android:textColor="@color/ink_900" />
+
+                    <TextView
+                        android:id="@+id/tvGCoords"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFeatureSettings="tnum"
+                        android:text="@string/dash"
+                        android:textAppearance="@style/TextAppearance.SENSE.Caption" />
+                </LinearLayout>
+
+                <!-- white card: Pip sits on a coral_100 backdrop -->
+                <FrameLayout
+                    android:layout_width="@dimen/pip_mini"
+                    android:layout_height="@dimen/pip_mini"
+                    android:layout_marginStart="12dp"
+                    android:background="@drawable/bg_icon_tile_circle"
+                    android:backgroundTint="@color/coral_100">
+
+                    <com.senseplus.sense.ui.DuckView
+                        android:id="@+id/pipLocation"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:padding="4dp"
+                        app:duckLook="nav" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btnOpenMaps"
+                style="@style/Widget.SENSE.Button.Tangerine"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/guardian_open_maps"
+                app:icon="@drawable/ic_map" />
+        </LinearLayout>
+
+        <!-- recent events -->
+        <TextView
+            style="@style/Widget.SENSE.SectionHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/gap_sections"
+            android:text="@string/guardian_events" />
+
+        <LinearLayout
+            style="@style/Widget.SENSE.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:paddingStart="4dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvNoEvents"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:drawablePadding="8dp"
+                android:gravity="center"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:text="@string/guardian_no_events"
+                android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                android:textColor="@color/ink_600" />
+
+            <LinearLayout
+                android:id="@+id/eventsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnStop"
+            style="@style/Widget.SENSE.Button.Outline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/guardian_stop"
+            app:icon="@drawable/ic_stop" />
+    </LinearLayout>
+</ScrollView>

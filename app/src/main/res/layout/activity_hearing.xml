@@ -1,80 +1,299 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- screens.hearingAssist: peach-sunrise background (set on hearingRoot) → back + title →
+     Pip (hearing look) peeking over a tilted alert-card deck → listening chip → feed →
+     segmented control. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/hearingRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/surface_canvas">
 
     <LinearLayout
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:background="@drawable/header_gradient"
-        android:paddingTop="44dp" android:paddingBottom="16dp"
-        android:paddingStart="24dp" android:paddingEnd="24dp">
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="Hearing Assist" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/white"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="See the sounds around you" android:textSize="13sp" android:textColor="#CFE0F5"/>
-    </LinearLayout>
+        android:id="@+id/hearingContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipChildren="false"
+        android:orientation="vertical">
 
-    <LinearLayout
-        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-        android:orientation="vertical" android:padding="16dp">
+        <!-- top bar: circle back + centred title -->
+        <FrameLayout
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/top_bar_height"
+            android:paddingStart="@dimen/screen_gutter"
+            android:paddingEnd="@dimen/screen_gutter">
 
-        <!-- Big alert card: turns a colour + shows an icon when a sound is detected -->
-        <LinearLayout
-            android:id="@+id/alertCard"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical" android:gravity="center"
-            android:background="@drawable/card_white" android:elevation="3dp"
-            android:padding="24dp">
-            <TextView android:id="@+id/tvAlertIcon"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="👂" android:textSize="56sp"/>
-            <TextView android:id="@+id/tvAlertTitle"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="Listening for sounds" android:textSize="24sp" android:textStyle="bold"
-                android:textColor="@color/text_dark" android:gravity="center" android:layout_marginTop="6dp"
-                android:accessibilityLiveRegion="assertive"/>
-            <TextView android:id="@+id/tvAlertDetail"
-                android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="Doorbell · alarms · sirens · horns · baby crying" android:textSize="14sp"
-                android:textColor="@color/text_muted" android:gravity="center" android:layout_marginTop="4dp"/>
-        </LinearLayout>
+            <ImageButton
+                android:id="@+id/btnBack"
+                style="@style/Widget.SENSE.CircleIconButton"
+                android:layout_gravity="start|top"
+                android:contentDescription="@string/back"
+                android:src="@drawable/ic_arrow_back" />
 
-        <TextView android:id="@+id/tvListening"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="Starting…" android:textSize="13sp" android:textColor="@color/text_muted"
-            android:layout_marginTop="10dp"/>
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginStart="56dp"
+                android:layout_marginEnd="56dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
-        <TextView android:id="@+id/tvFeedLabel"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="RECENT SOUNDS" android:textSize="12sp" android:textStyle="bold"
-            android:textColor="@color/text_muted" android:layout_marginTop="14dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:text="@string/hearing_title"
+                    android:textAppearance="@style/TextAppearance.SENSE.HeadlineL" />
 
-        <ScrollView android:id="@+id/feedScroll"
-            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-            android:background="@drawable/card_white" android:elevation="2dp"
-            android:layout_marginTop="6dp" android:padding="14dp">
-            <TextView android:id="@+id/tvFeed"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="No important sounds yet." android:textSize="16sp"
-                android:textColor="@color/text_dark" android:lineSpacingExtra="4dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:text="@string/hearing_sub"
+                    android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                    android:textColor="@color/ink_700" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- Pip + card deck. Pip is drawn first; the deck covers its bottom quarter. -->
+        <FrameLayout
+            android:id="@+id/deckArea"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <com.senseplus.sense.ui.DuckView
+                android:id="@+id/pipHearing"
+                android:layout_width="@dimen/pip_header"
+                android:layout_height="@dimen/pip_header"
+                android:layout_gravity="top|center_horizontal"
+                app:duckLook="hearing" />
+
+            <!-- soundTypeBadge: 44dp white circle at Pip's top-right -->
+            <ImageView
+                android:id="@+id/soundTypeBadge"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_circle_white"
+                android:elevation="@dimen/shadow_md"
+                android:importantForAccessibility="no"
+                android:padding="10dp"
+                android:translationX="76dp"
+                android:visibility="gone" />
+
+            <!-- the deck: ghost cards and pulse rings are constrained to the main card, so only
+                 the main card decides the deck's height (20dp margin = room for the rings). -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/deck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="108dp"
+                android:clipChildren="false"
+                android:clipToPadding="false">
+
+                <com.senseplus.sense.ui.PulseRingView
+                    android:id="@+id/alertRings"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <View
+                    android:id="@+id/ghostCard2"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="@drawable/bg_ghost_card2"
+                    android:importantForAccessibility="no"
+                    android:rotation="-1"
+                    android:scaleX="0.90"
+                    android:scaleY="0.90"
+                    android:translationY="-26dp"
+                    app:layout_constraintBottom_toBottomOf="@id/alertCard"
+                    app:layout_constraintEnd_toEndOf="@id/alertCard"
+                    app:layout_constraintStart_toStartOf="@id/alertCard"
+                    app:layout_constraintTop_toTopOf="@id/alertCard" />
+
+                <View
+                    android:id="@+id/ghostCard1"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:background="@drawable/bg_ghost_card1"
+                    android:importantForAccessibility="no"
+                    android:rotation="3"
+                    android:scaleX="0.95"
+                    android:scaleY="0.95"
+                    android:translationY="-14dp"
+                    app:layout_constraintBottom_toBottomOf="@id/alertCard"
+                    app:layout_constraintEnd_toEndOf="@id/alertCard"
+                    app:layout_constraintStart_toStartOf="@id/alertCard"
+                    app:layout_constraintTop_toTopOf="@id/alertCard" />
+
+                <LinearLayout
+                    android:id="@+id/alertCard"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="20dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    android:background="@drawable/bg_card_white_r32"
+                    android:elevation="@dimen/shadow_lg"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:minHeight="210dp"
+                    android:orientation="vertical"
+                    android:outlineSpotShadowColor="@color/lavender_800"
+                    android:padding="22dp"
+                    android:rotation="-2.5">
+
+                    <FrameLayout
+                        android:id="@+id/alertIconTile"
+                        android:layout_width="@dimen/icon_tile_alert"
+                        android:layout_height="@dimen/icon_tile_alert"
+                        android:background="@drawable/bg_icon_tile_circle"
+                        android:backgroundTint="@color/blush_100">
+
+                        <ImageView
+                            android:id="@+id/tvAlertIcon"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_gravity="center"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_hearing"
+                            app:tint="@color/blush_700" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvAlertTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:accessibilityLiveRegion="assertive"
+                        android:gravity="center"
+                        android:text="@string/hearing_idle_title"
+                        android:textAppearance="@style/TextAppearance.SENSE.HeadlineM" />
+
+                    <TextView
+                        android:id="@+id/tvAlertDetail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center"
+                        android:text="@string/hearing_idle_detail"
+                        android:textAppearance="@style/TextAppearance.SENSE.BodyM"
+                        android:textColor="@color/ink_700" />
+
+                    <TextView
+                        android:id="@+id/tvAlertMeta"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:drawablePadding="6dp"
+                        android:fontFeatureSettings="tnum"
+                        android:gravity="center"
+                        android:textAppearance="@style/TextAppearance.SENSE.Caption"
+                        android:visibility="gone"
+                        app:drawableStartCompat="@drawable/ic_schedule" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </FrameLayout>
+
+        <!-- listening status chip -->
+        <TextView
+            android:id="@+id/tvListening"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:background="@drawable/bg_listening_chip"
+            android:drawableStart="@drawable/bg_live_dot"
+            android:drawablePadding="8dp"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="6dp"
+            android:text="@string/hearing_starting"
+            android:textAppearance="@style/TextAppearance.SENSE.Caption"
+            android:textColor="@color/ink_700" />
+
+        <TextView
+            android:id="@+id/tvFeedLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="14dp"
+            android:text="@string/hearing_recent"
+            android:textAppearance="@style/TextAppearance.SENSE.CaptionCaps" />
+
+        <ScrollView
+            android:id="@+id/feedScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:layout_weight="1"
+            android:background="@drawable/bg_card_white_r24"
+            android:elevation="@dimen/shadow_xs"
+            android:minHeight="96dp"
+            android:outlineSpotShadowColor="@color/ink_900"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/tvFeed"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lineSpacingExtra="4dp"
+                android:text="@string/hearing_no_sounds"
+                android:textAppearance="@style/TextAppearance.SENSE.BodyM" />
         </ScrollView>
-    </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:paddingStart="16dp" android:paddingEnd="16dp"
-        android:paddingBottom="16dp">
-        <Button android:id="@+id/btnSounds"
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:minHeight="64dp" android:text="SOUND ALERTS" android:textSize="16sp" android:textStyle="bold"
-            android:textColor="@color/white" android:backgroundTint="@color/blue"/>
-        <Button android:id="@+id/btnCaptions"
-            android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-            android:minHeight="64dp" android:text="LIVE CAPTIONS" android:textSize="16sp" android:textStyle="bold"
-            android:textColor="@color/white" android:backgroundTint="@color/purple"
-            android:layout_marginStart="10dp"/>
-    </LinearLayout>
+        <!-- segmented control -->
+        <LinearLayout
+            android:id="@+id/segmentTrack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:background="@drawable/bg_segment_track"
+            android:elevation="@dimen/shadow_xs"
+            android:orientation="horizontal"
+            android:padding="6dp">
 
-</LinearLayout>
+            <Button
+                android:id="@+id/btnSounds"
+                style="@style/Widget.SENSE.Button.Segment.Sounds"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/hearing_sound_alerts"
+                app:icon="@drawable/ic_hearing" />
+
+            <Button
+                android:id="@+id/btnCaptions"
+                style="@style/Widget.SENSE.Button.Segment.Captions"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="@string/hearing_live_captions"
+                app:icon="@drawable/ic_closed_caption" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

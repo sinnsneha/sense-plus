@@ -13,6 +13,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.CancellationTokenSource;
 
 public class LocationHelper {
 
@@ -48,6 +49,23 @@ public class LocationHelper {
         };
 
         client.requestLocationUpdates(request, callback, Looper.getMainLooper());
+    }
+
+    /**
+     * One-shot high-accuracy fix, faster than waiting for the first update.
+     * The result may be a recent cached location. Call ONLY after permission
+     * has been granted. The passed listener is called on the main thread.
+     */
+    @SuppressLint("MissingPermission")
+    public void getCurrentLocation(Listener listener) {
+        CancellationTokenSource tokenSource = new CancellationTokenSource();
+        client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, tokenSource.getToken())
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        listener.onLocation(location.getLatitude(), location.getLongitude(),
+                                location.getAccuracy());
+                    }
+                });
     }
 
     public void stop() {

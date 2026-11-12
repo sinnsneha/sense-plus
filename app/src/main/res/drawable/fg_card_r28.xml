@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Card foreground: touch ripple + 3dp focus_ring when focused (keyboard / switch access) -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="@color/ripple_ink">
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/white"/>
+            <corners android:radius="@dimen/radius_2xl"/>
+        </shape>
+    </item>
+    <item>
+        <selector>
+            <item android:state_focused="true">
+                <shape android:shape="rectangle">
+                    <stroke android:width="@dimen/stroke_focus" android:color="@color/focus_ring"/>
+                    <corners android:radius="@dimen/radius_2xl"/>
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

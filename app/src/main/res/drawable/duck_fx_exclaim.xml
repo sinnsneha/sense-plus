@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- exclaim bubble -->
+    <path android:pathData="M181.0,40.0 a17.0,17.0 0 1,0 34.0,0 a17.0,17.0 0 1,0 -34.0,0 Z"
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- exclaim bar -->
+    <path android:pathData="M198,30 L198,44"
+        android:strokeColor="#FFD92D20"
+        android:strokeWidth="4.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- exclaim dot -->
+    <path android:pathData="M195.4,51.0 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0 Z"
+        android:fillColor="#FFD92D20"/>
+</vector>

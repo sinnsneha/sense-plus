@@ -1,14 +1,22 @@
 package com.senseplus.sense;
 
-import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.senseplus.sense.ui.DuckLooks;
+import com.senseplus.sense.ui.DuckView;
+import com.senseplus.sense.ui.Gradients;
+import com.senseplus.sense.ui.Ui;
 
 import java.util.List;
 import java.util.Locale;
@@ -21,9 +29,12 @@ public class SensorInfoActivity extends AppCompatActivity implements SensorEvent
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Ui.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sensor_info);
-        getWindow().setStatusBarColor(Color.parseColor("#0D2B45"));
+        Ui.applyInsets(findViewById(R.id.topBar), findViewById(R.id.sensorContent));
+        Ui.bindBack(this);
+        findViewById(R.id.sensorHero).setBackground(Gradients.heroSky(this).wave());
 
         tvAccel = findViewById(R.id.tvAccel);
         tvGyro = findViewById(R.id.tvGyro);
@@ -40,6 +51,7 @@ public class SensorInfoActivity extends AppCompatActivity implements SensorEvent
         rotationVector = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
         showAvailableSensors();
+        showMissingSensors();
     }
 
     private void showAvailableSensors() {
@@ -47,6 +59,24 @@ public class SensorInfoActivity extends AppCompatActivity implements SensorEvent
         StringBuilder sb = new StringBuilder("This phone has " + all.size() + " sensors:\n\n");
         for (Sensor s : all) sb.append("•  ").append(s.getName()).append("\n");
         tvSensorList.setText(sb.toString());
+    }
+
+    /** A sensor this phone lacks says so in its tile, and Pip looks worried (sensorInfo states). */
+    private void showMissingSensors() {
+        boolean missing = false;
+        if (accelerometer == null) { tvAccel.setText(R.string.sensor_missing); missing = true; }
+        if (gyroscope == null) { tvGyro.setText(R.string.sensor_missing); missing = true; }
+        if (lightSensor == null) { showMissingBig(tvLight); missing = true; }
+        if (proximity == null) { showMissingBig(tvProx); missing = true; }
+        if (rotationVector == null) { showMissingBig(tvCompass); missing = true; }
+        DuckView pip = findViewById(R.id.pipSensor);
+        pip.setExpression(missing ? DuckLooks.Expression.CONCERNED : DuckLooks.Expression.ALERT, false);
+    }
+
+    private void showMissingBig(TextView tv) {
+        tv.setTextAppearance(R.style.TextAppearance_SENSE_BodyL);
+        tv.setTextColor(Ui.color(this, R.color.ink_600));
+        tv.setText(R.string.sensor_missing);
     }
 
     @Override
@@ -65,22 +95,23 @@ public class SensorInfoActivity extends AppCompatActivity implements SensorEvent
         sensorManager.unregisterListener(this);
     }
 
+    // The tiles show each sensor's name and unit, so only the values are written here.
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
             case Sensor.TYPE_ACCELEROMETER:
-                tvAccel.setText(String.format(Locale.US, "Accelerometer (m/s²):  X %.2f   Y %.2f   Z %.2f",
+                tvAccel.setText(String.format(Locale.US, "X  %6.2f\nY  %6.2f\nZ  %6.2f",
                         event.values[0], event.values[1], event.values[2]));
                 break;
             case Sensor.TYPE_GYROSCOPE:
-                tvGyro.setText(String.format(Locale.US, "Gyroscope (rad/s):  X %.2f   Y %.2f   Z %.2f",
+                tvGyro.setText(String.format(Locale.US, "X  %6.2f\nY  %6.2f\nZ  %6.2f",
                         event.values[0], event.values[1], event.values[2]));
                 break;
             case Sensor.TYPE_LIGHT:
-                tvLight.setText(String.format(Locale.US, "Light:  %.1f lux", event.values[0]));
+                tvLight.setText(withUnit(String.format(Locale.US, "%.0f", event.values[0]), getString(R.string.unit_lux)));
                 break;
             case Sensor.TYPE_PROXIMITY:
-                tvProx.setText(String.format(Locale.US, "Proximity:  %.1f cm", event.values[0]));
+                tvProx.setText(withUnit(String.format(Locale.US, "%.1f", event.values[0]), getString(R.string.unit_cm)));
                 break;
             case Sensor.TYPE_ROTATION_VECTOR:
                 float[] rotMat = new float[9];
@@ -89,9 +120,19 @@ public class SensorInfoActivity extends AppCompatActivity implements SensorEvent
                 SensorManager.getOrientation(rotMat, orientation);
                 float azimuth = (float) Math.toDegrees(orientation[0]);
                 if (azimuth < 0) azimuth += 360;
-                tvCompass.setText(String.format(Locale.US, "Compass:  %.0f°  %s", azimuth, cardinal(azimuth)));
+                tvCompass.setText(withUnit(String.format(Locale.US, "%.0f°", azimuth), cardinal(azimuth)));
                 break;
         }
+    }
+
+    /** Big light number + a smaller unit in ink_600 (components.statTile). */
+    private CharSequence withUnit(String value, String unit) {
+        SpannableString s = new SpannableString(value + " " + unit);
+        int from = value.length() + 1, to = s.length();
+        s.setSpan(new RelativeSizeSpan(0.36f), from, to, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        s.setSpan(new ForegroundColorSpan(Ui.color(this, R.color.ink_600)), from, to,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return s;
     }
 
     private String cardinal(float deg) {

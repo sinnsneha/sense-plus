@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- book -->
+    <path android:pathData="M80,146 L120,154 L160,146 L160,184 L120,192 L80,184 Z"
+        android:fillColor="#FF6E9BD6"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="4.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- book spine -->
+    <path android:pathData="M120,154 L120,192"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- page line L -->
+    <path android:pathData="M90,158 L110,162"
+        android:strokeColor="#FFDCE9F8"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- page line L2 -->
+    <path android:pathData="M90,166 L110,170"
+        android:strokeColor="#FFDCE9F8"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- page line R -->
+    <path android:pathData="M130,162 L150,158"
+        android:strokeColor="#FFDCE9F8"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- page line R2 -->
+    <path android:pathData="M130,170 L150,166"
+        android:strokeColor="#FFDCE9F8"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- scallopBadge medallion: butter_300 → butter_500 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <gradient android:angle="315" android:startColor="@color/butter_300" android:endColor="@color/butter_500"/>
+    <stroke android:width="2dp" android:color="@color/white"/>
+</shape>

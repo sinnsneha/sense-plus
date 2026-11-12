@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp" android:height="240dp"
+    android:viewportWidth="240" android:viewportHeight="240">
+    <!-- strap -->
+    <path android:pathData="M78,130 C110,150 150,168 176,184"
+        android:strokeColor="#FFE3A529"
+        android:strokeWidth="6.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- strap outline -->
+    <path android:pathData="M78,130 C110,150 150,168 176,184"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="1.4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- bag -->
+    <path android:pathData="M160,176 C160,170 166,166 172,166 L196,166 C202,166 206,170 206,176 L206,196 C206,202 202,206 196,206 L172,206 C166,206 160,202 160,196 Z"
+        android:fillColor="#FFF5C04A"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- bag flap -->
+    <path android:pathData="M160,180 C172,188 194,188 206,180"
+        android:strokeColor="#FF3B312D"
+        android:strokeWidth="3.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- bag button -->
+    <path android:pathData="M179.8,186.0 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0 Z"
+        android:fillColor="#FF3B312D"/>
+</vector>

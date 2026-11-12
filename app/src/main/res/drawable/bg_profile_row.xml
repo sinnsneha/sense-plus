@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Profile mode card: white; checked = lavender_50 with a 2dp lavender_600 outline -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/lavender_50"/>
+            <stroke android:width="2dp" android:color="@color/lavender_600"/>
+            <corners android:radius="@dimen/radius_xl"/>
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/surface_card"/>
+            <stroke android:width="1dp" android:color="@color/ink_200"/>
+            <corners android:radius="@dimen/radius_xl"/>
+        </shape>
+    </item>
+</selector>

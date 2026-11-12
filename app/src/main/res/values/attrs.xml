@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pip the duckling (ui/DuckView). Enum order must match DuckLooks.Look / Expression. -->
+    <declare-styleable name="DuckView">
+        <attr name="duckLook" format="enum">
+            <enum name="home" value="0"/>
+            <enum name="guard" value="1"/>
+            <enum name="guardian" value="2"/>
+            <enum name="comm" value="3"/>
+            <enum name="visual" value="4"/>
+            <enum name="hearing" value="5"/>
+            <enum name="sensor" value="6"/>
+            <enum name="nav" value="7"/>
+            <enum name="sleep" value="8"/>
+            <enum name="celebrate" value="9"/>
+            <enum name="plain" value="10"/>
+            <enum name="profile" value="11"/>
+            <enum name="cognitive" value="12"/>
+        </attr>
+        <attr name="duckExpression" format="enum">
+            <enum name="idle" value="0"/>
+            <enum name="happy" value="1"/>
+            <enum name="wink" value="2"/>
+            <enum name="talk" value="3"/>
+            <enum name="alert" value="4"/>
+            <enum name="concerned" value="5"/>
+            <enum name="sleeping" value="6"/>
+        </attr>
+        <attr name="idleMotion" format="boolean"/>
+        <attr name="duckCrop" format="enum">
+            <enum name="full" value="0"/>
+            <enum name="head" value="1"/>
+        </attr>
+    </declare-styleable>
+
+    <!-- ui/TileGridLayout children -->
+    <declare-styleable name="TileGridLayout_Layout">
+        <attr name="layout_fullSpan" format="boolean"/>
+    </declare-styleable>
+</resources>

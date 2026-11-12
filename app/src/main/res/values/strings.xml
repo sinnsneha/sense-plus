@@ -1,3 +1,178 @@
 <resources>
     <string name="app_name">SENSE+</string>
+
+    <!-- shared -->
+    <string name="back">Back</string>
+    <string name="selected">Selected</string>
+    <string name="not_selected">Not selected</string>
+
+    <!-- Home -->
+    <string name="home_greeting">Hello,</string>
+    <string name="home_name_fallback">Friend</string>
+    <string name="home_greeting_cd">Hello, %1$s</string>
+    <string name="home_greeting_role_cd">Hello, %1$s. Signed in as %2$s.</string>
+    <string name="home_title_guardian">SENSE+ Guardian</string>
+    <string name="home_account_cd">Account. Shows your name, email and role, and signs you out.</string>
+    <string name="home_card_guard_chip">Safety</string>
+    <string name="home_card_guard_title">Keep me safe</string>
+    <string name="home_card_guard_sub">Fall detection &amp; HELP</string>
+    <string name="home_card_guard_cd">Keep me safe. Fall detection and HELP button.</string>
+    <string name="home_card_guardian_chip">Guardian</string>
+    <string name="home_card_guardian_title">Watch over someone</string>
+    <string name="home_card_guardian_sub">Location, battery &amp; alerts</string>
+    <string name="home_card_guardian_cd">Watch over someone. Location, battery and alerts. Requires fingerprint or screen lock.</string>
+    <string name="home_tools_header">Your assist tools</string>
+    <string name="home_tools_caption">Tap a tool to start</string>
+    <string name="home_edit_profile">Edit profile</string>
+    <string name="home_edit_profile_cd">Edit profile. Choose which tools appear on this screen.</string>
+    <string name="home_sensor_cd">Sensor Info. Live readings from your phone\'s sensors.</string>
+    <string name="home_tile_comm_title">Talk for me</string>
+    <string name="home_tile_comm_sub">Tap phrases to speak aloud</string>
+    <string name="home_tile_visual_title">Visual Assist</string>
+    <string name="home_tile_visual_sub">Hear printed text read out</string>
+    <string name="home_tile_hearing_title">Hearing Assist</string>
+    <string name="home_tile_hearing_sub">Sound alerts &amp; live captions</string>
+    <string name="home_tile_nav_title">Navigate Home</string>
+    <string name="home_tile_nav_sub">Arrow &amp; spoken directions</string>
+    <string name="tile_cd">%1$s. %2$s</string>
+
+    <!-- SENSE GUARD -->
+    <string name="guard_title">SENSE GUARD</string>
+    <string name="guard_badge_off">Monitoring is off</string>
+    <string name="guard_badge_normal">You\'re protected</string>
+    <string name="guard_badge_attention">Are you okay?</string>
+    <string name="guard_badge_emergency">Getting help</string>
+    <string name="level_normal">Normal</string>
+    <string name="level_attention">Attention</string>
+    <string name="level_emergency">Emergency</string>
+    <string name="level_now">now</string>
+    <string name="level_cd">Safety level: %1$s</string>
+    <string name="level_cd_emergency">possible emergency</string>
+    <string name="level_cd_off">Safety level: monitoring is off</string>
+    <string name="status_label">Status</string>
+    <string name="help">HELP</string>
+    <string name="help_cd">HELP. Alerts your guardian now.</string>
+    <string name="im_ok">I\'M OK</string>
+    <string name="start_monitoring">START MONITORING</string>
+    <string name="set_codeword">Set emergency codeword</string>
+    <string name="guard_footnote">Monitoring runs in the background. You can lock your phone or close the app and you\'re still protected.</string>
+    <string name="all_clear">All clear — you\'re okay</string>
+
+    <!-- Guardian -->
+    <string name="guardian_title">Guardian</string>
+    <string name="guardian_checking">Checking…</string>
+    <string name="guardian_connecting">Connecting…</string>
+    <string name="guardian_glance">At a glance</string>
+    <string name="guardian_battery">Battery</string>
+    <string name="guardian_last_update">Last update</string>
+    <string name="guardian_location">Location</string>
+    <string name="guardian_open_maps">Open in Maps</string>
+    <string name="guardian_stop">Stop monitoring</string>
+    <string name="guardian_events">Recent events</string>
+    <string name="guardian_no_events">No alerts yet</string>
+    <string name="guardian_status_normal">All okay</string>
+    <string name="guardian_status_attention">Possible fall</string>
+    <string name="guardian_status_emergency">Possible emergency</string>
+    <string name="guardian_waiting">Waiting for the user\'s phone…</string>
+    <string name="guardian_caption_normal">SENSE GUARD is watching over them.</string>
+    <string name="guardian_caption_attention">We asked if they\'re okay. Waiting for an answer.</string>
+    <string name="guardian_caption_emergency">They may need help now. Call them or open Maps.</string>
+    <string name="guardian_caption_waiting">Their phone hasn\'t sent a status yet.</string>
+    <string name="dash">—</string>
+
+    <!-- Communication -->
+    <string name="comm_title">Talk for me</string>
+    <string name="comm_sub">Tap a phrase — I\'ll say it out loud</string>
+    <string name="comm_add_phrase">Add phrase</string>
+    <string name="comm_add_phrase_cd">Add a custom phrase</string>
+    <string name="comm_custom_cd">%1$s, custom phrase. Long-press to delete.</string>
+
+    <!-- Visual Assist -->
+    <string name="visual_title">Visual Assist</string>
+    <string name="visual_read_text">Read text</string>
+    <string name="visual_around_me">What\'s around me</string>
+    <string name="visual_label">I can see</string>
+    <string name="visual_placeholder">Point the camera at some text</string>
+    <string name="visual_placeholder_objects">Point the camera at an object</string>
+    <string name="visual_read_aloud">READ ALOUD</string>
+    <string name="visual_no_camera">Camera permission is needed for Visual Assist</string>
+
+    <!-- Hearing Assist -->
+    <string name="hearing_title">Hearing Assist</string>
+    <string name="hearing_sub">See the sounds around you</string>
+    <string name="hearing_idle_title">Listening for sounds</string>
+    <string name="hearing_idle_detail">Doorbell · alarms · sirens · horns · baby crying</string>
+    <string name="hearing_sound_alerts">Sound alerts</string>
+    <string name="hearing_live_captions">Live captions</string>
+    <string name="hearing_recent">Recent sounds</string>
+    <string name="hearing_no_sounds">No important sounds yet.</string>
+    <string name="hearing_speak_near">Speak near the phone…</string>
+    <string name="hearing_starting">Starting…</string>
+
+    <!-- Sensor Info -->
+    <string name="sensor_title">Sensor Info</string>
+    <string name="sensor_sub">Live readings from your phone</string>
+    <string name="sensor_accel">Accelerometer</string>
+    <string name="sensor_gyro">Gyroscope</string>
+    <string name="sensor_light">Light</string>
+    <string name="sensor_prox">Proximity</string>
+    <string name="sensor_compass">Compass</string>
+    <string name="unit_accel">m/s²</string>
+    <string name="unit_gyro">rad/s</string>
+    <string name="unit_lux">lux</string>
+    <string name="unit_cm">cm</string>
+    <string name="sensor_list_header">Your phone\'s sensors</string>
+    <string name="sensor_missing">Not on this phone</string>
+
+    <!-- Navigation -->
+    <string name="nav_title">Navigate Home</string>
+    <string name="nav_sub">Arrow and spoken directions back to Home</string>
+    <string name="nav_distance_label">Distance to Home</string>
+    <string name="nav_save_home">Save this place as Home</string>
+    <string name="nav_speak">Speak directions</string>
+    <string name="nav_auto_speak">Auto-speak every 10 s</string>
+    <string name="nav_finding">Finding your location…</string>
+    <string name="nav_no_fix">No GPS fix yet</string>
+    <string name="nav_hold_hint">Hold the phone flat, or point it like a camera</string>
+    <string name="nav_open_settings">Open settings</string>
+    <string name="nav_turn_on_location">Turn on location</string>
+    <string name="nav_type_address">Type Home address</string>
+    <string name="nav_walking">Walking directions (Google Maps)</string>
+    <string name="nav_no_home">No Home saved yet. Stand where you want Home to be and tap Save this place as Home, or type your address.</string>
+    <string name="nav_calibrate">Compass needs calibration: move the phone in a figure 8</string>
+    <string name="nav_arrow_cd">Directions to Home</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Your profile</string>
+    <string name="profile_sub">Choose what applies to you. Safety, Guardian and Sensor Info are always shown.</string>
+    <string name="profile_seeing">I have difficulty seeing\nAdds Visual Assist and Navigate Home</string>
+    <string name="profile_hearing">I have difficulty hearing\nAdds Hearing Assist: sound alerts and live captions</string>
+    <string name="profile_speaking">I have difficulty speaking\nAdds the Communication Board: tap phrases to speak aloud</string>
+    <string name="profile_moving">I have difficulty moving or walking\nAdds Navigate Home: compass arrow and spoken directions</string>
+    <string name="profile_remembering">I sometimes need help remembering or finding my way\nAdds the Communication Board and Navigate Home</string>
+    <string name="profile_hint">Not sure? Leave everything unticked, or press Back, and all tools stay visible. You can change this any time with Edit profile on the Home screen.</string>
+    <string name="profile_save">Save</string>
+
+    <!-- Login (segment 22 copy) -->
+    <string name="login_sub">Sign in to your safety companion</string>
+    <string name="login_tab_sign_in">Sign in</string>
+    <string name="login_tab_create">Create account</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_forgot">Forgot password?</string>
+    <string name="login_sign_in">Sign in</string>
+    <string name="login_name">Your name</string>
+    <string name="login_new_password">Password (at least 6 characters)</string>
+    <string name="login_confirm">Confirm password</string>
+    <string name="login_phone">Phone number (optional)</string>
+    <string name="login_role_question">How will you use SENSE+?</string>
+    <string name="login_role_user">I need assistance\nThis phone detects falls, reads text, alerts your guardian, and runs the user tools.</string>
+    <string name="login_role_guardian">I look after someone\nThis phone receives alerts and shows their location and safety status.</string>
+    <string name="login_create">Create account</string>
+    <string name="login_not_ready">Account not ready</string>
+    <string name="login_retry">Retry</string>
+    <string name="login_other_account">Use another account</string>
+
+    <!-- Debug gallery -->
+    <string name="gallery_title">Pip gallery</string>
 </resources>

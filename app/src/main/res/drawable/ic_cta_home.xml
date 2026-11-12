@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- stadiumCta leading icon: 40dp white circle + 24dp ink_900 home glyph, colours baked in
+     so MaterialButton's iconTint="@null" can't wash the glyph out. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp" android:height="40dp"
+    android:viewportWidth="40" android:viewportHeight="40">
+    <path android:fillColor="@color/white"
+        android:pathData="M20,0 A20,20 0 1,1 19.99,0 Z"/>
+    <group android:translateX="8" android:translateY="8">
+        <path android:fillColor="@color/ink_900"
+            android:pathData="M10,19v-5h4v5c0,0.55 0.45,1 1,1h3c0.55,0 1,-0.45 1,-1v-7h1.7c0.46,0 0.68,-0.57 0.33,-0.87L12.67,3.6c-0.38,-0.34 -0.96,-0.34 -1.34,0l-8.36,7.53c-0.34,0.3 -0.13,0.87 0.33,0.87H5v7c0,0.55 0.45,1 1,1h3c0.55,0 1,-0.45 1,-1z"/>
+    </group>
+</vector>

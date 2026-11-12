@@ -1,9 +1,10 @@
 package com.senseplus.sense;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioRecord;
@@ -13,15 +14,25 @@ import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.View;
+import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.senseplus.sense.ui.DuckLooks;
+import com.senseplus.sense.ui.DuckView;
+import com.senseplus.sense.ui.Gradients;
+import com.senseplus.sense.ui.PulseRingView;
+import com.senseplus.sense.ui.SoundStyle;
+import com.senseplus.sense.ui.Ui;
 
 import org.json.JSONObject;
 import org.tensorflow.lite.support.audio.TensorAudio;
@@ -58,27 +69,29 @@ public class HearingActivity extends AppCompatActivity {
     private static final float MIN_SCORE = 0.30f;              // ignore weak guesses
     private static final long SAME_SOUND_COOLDOWN_MS = 4000;   // don't repeat the same alert every 0.5 s
     private static final long CARD_RESET_MS = 6000;
+    private static final long CAPTION_ALERT_MS = 2000;         // Pip stays alert this long after speech
 
     // ---------- the sounds we care about ----------
+    // Colours and icons come from ui.SoundStyle (design tokens); the name must match.
     private enum SoundType {
-        FIRE_ALARM("🔥", "FIRE / SMOKE ALARM", "Smoke or fire alarm is ringing", "#B71C1C", new long[]{0, 800, 200, 800, 200, 800}, true),
-        SIREN("🚨", "SIREN", "Emergency vehicle nearby", "#C62828", new long[]{0, 1000, 300, 1000}, true),
-        HORN("🚗", "VEHICLE HORN", "A vehicle is honking — be careful", "#E65100", new long[]{0, 300, 100, 300, 100, 300}, true),
-        ALARM("⏰", "ALARM", "An alarm is ringing", "#EF6C00", new long[]{0, 600, 200, 600}, true),
-        DOORBELL("🚪", "DOORBELL / KNOCK", "Someone may be at the door", "#1565C0", new long[]{0, 200, 150, 200}, true),
-        PHONE("📞", "PHONE RINGING", "A phone is ringing", "#2E7D32", new long[]{0, 400, 200, 400}, false),
-        BABY("👶", "BABY CRYING", "A baby is crying", "#6A1B9A", new long[]{0, 500, 300, 500}, false),
-        GLASS("💥", "GLASS BREAKING", "Something may have broken", "#4E342E", new long[]{0, 700}, false),
-        SHOUT("📢", "SHOUTING", "Someone is shouting nearby", "#AD1457", new long[]{0, 300, 200, 300}, false),
-        DOG("🐕", "DOG BARKING", "A dog is barking", "#455A64", new long[]{0, 250}, false);
+        FIRE_ALARM("Fire / smoke alarm", "Smoke or fire alarm is ringing", new long[]{0, 800, 200, 800, 200, 800}, true),
+        SIREN("Siren", "Emergency vehicle nearby", new long[]{0, 1000, 300, 1000}, true),
+        HORN("Vehicle horn", "A vehicle is honking — be careful", new long[]{0, 300, 100, 300, 100, 300}, true),
+        ALARM("Alarm", "An alarm is ringing", new long[]{0, 600, 200, 600}, true),
+        DOORBELL("Doorbell / knock", "Someone may be at the door", new long[]{0, 200, 150, 200}, true),
+        PHONE("Phone ringing", "A phone is ringing", new long[]{0, 400, 200, 400}, false),
+        BABY("Baby crying", "A baby is crying", new long[]{0, 500, 300, 500}, false),
+        GLASS("Glass breaking", "Something may have broken", new long[]{0, 700}, false),
+        SHOUT("Shouting", "Someone is shouting nearby", new long[]{0, 300, 200, 300}, false),
+        DOG("Dog barking", "A dog is barking", new long[]{0, 250}, false);
 
-        final String icon, title, detail, color;
+        final String title, detail;
         final long[] pattern;
         final boolean flash;
 
-        SoundType(String icon, String title, String detail, String color, long[] pattern, boolean flash) {
-            this.icon = icon; this.title = title; this.detail = detail;
-            this.color = color; this.pattern = pattern; this.flash = flash;
+        SoundType(String title, String detail, long[] pattern, boolean flash) {
+            this.title = title; this.detail = detail;
+            this.pattern = pattern; this.flash = flash;
         }
     }
 
@@ -87,9 +100,18 @@ public class HearingActivity extends AppCompatActivity {
 
     // UI
     private LinearLayout alertCard;
-    private TextView tvAlertIcon, tvAlertTitle, tvAlertDetail, tvListening, tvFeedLabel, tvFeed;
+    private ImageView tvAlertIcon;
+    private TextView tvAlertTitle, tvAlertDetail, tvListening, tvFeedLabel, tvFeed;
     private ScrollView feedScroll;
     private Button btnSounds, btnCaptions;
+
+    // redesign
+    private DuckView pip;
+    private ImageView soundTypeBadge;
+    private View alertIconTile, ghostCard1, ghostCard2;
+    private TextView tvAlertMeta;
+    private PulseRingView alertRings;
+    private float cardRotation;
 
     // sound classification (YAMNet)
     private AudioClassifier classifier;
@@ -110,12 +132,18 @@ public class HearingActivity extends AppCompatActivity {
     private boolean askedMic = false;
 
     private final Runnable resetCard = this::showIdleCard;
+    private final Runnable pipCalm = () -> {
+        if (pip != null) pip.setExpression(DuckLooks.Expression.IDLE, true);
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Ui.enableEdgeToEdge(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_hearing);
-        getWindow().setStatusBarColor(Color.parseColor("#0D2B45"));
+        Ui.applyInsets(findViewById(R.id.topBar), findViewById(R.id.hearingContent));
+        Ui.bindBack(this);
+        findViewById(R.id.hearingRoot).setBackground(Gradients.heroPeachSunrise(this));
 
         alertCard = findViewById(R.id.alertCard);
         tvAlertIcon = findViewById(R.id.tvAlertIcon);
@@ -128,10 +156,23 @@ public class HearingActivity extends AppCompatActivity {
         btnSounds = findViewById(R.id.btnSounds);
         btnCaptions = findViewById(R.id.btnCaptions);
 
+        pip = findViewById(R.id.pipHearing);
+        soundTypeBadge = findViewById(R.id.soundTypeBadge);
+        alertIconTile = findViewById(R.id.alertIconTile);
+        ghostCard1 = findViewById(R.id.ghostCard1);
+        ghostCard2 = findViewById(R.id.ghostCard2);
+        tvAlertMeta = findViewById(R.id.tvAlertMeta);
+        alertRings = findViewById(R.id.alertRings);
+
+        // components.cardDeck: at large font sizes the main card stands straight for readability.
+        cardRotation = getResources().getConfiguration().fontScale >= 1.3f ? 0f : -2.5f;
+        alertCard.setRotation(cardRotation);
+
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
 
         btnSounds.setOnClickListener(v -> { mode = Mode.SOUNDS; startCurrentMode(); });
         btnCaptions.setOnClickListener(v -> { mode = Mode.CAPTIONS; startCurrentMode(); });
+        Ui.pressFeedback(btnSounds, btnCaptions);
 
         showIdleCard();
     }
@@ -164,7 +205,7 @@ public class HearingActivity extends AppCompatActivity {
                 askedMic = true;
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQ_MIC);
             } else {
-                tvListening.setText("Microphone permission is needed. Turn it on in Settings → Apps → SENSE+ → Permissions.");
+                setListening("Microphone permission is needed. Turn it on in Settings → Apps → SENSE+ → Permissions.", true);
             }
             return;
         }
@@ -174,18 +215,28 @@ public class HearingActivity extends AppCompatActivity {
     }
 
     private void updateModeButtons() {
-        btnSounds.setAlpha(mode == Mode.SOUNDS ? 1f : 0.45f);
-        btnCaptions.setAlpha(mode == Mode.CAPTIONS ? 1f : 0.45f);
-        if (mode == Mode.SOUNDS) {
+        boolean sounds = mode == Mode.SOUNDS;
+        btnSounds.setSelected(sounds);
+        btnCaptions.setSelected(!sounds);
+        Ui.setStateDescription(btnSounds, getString(sounds ? R.string.selected : R.string.not_selected));
+        Ui.setStateDescription(btnCaptions, getString(sounds ? R.string.not_selected : R.string.selected));
+        int deck = sounds ? View.VISIBLE : View.GONE;
+        ghostCard1.setVisibility(deck);
+        ghostCard2.setVisibility(deck);
+        if (sounds) {
             alertCard.setVisibility(View.VISIBLE);
-            tvFeedLabel.setText("RECENT SOUNDS");
+            tvFeedLabel.setText(R.string.hearing_recent);
             tvFeed.setTextSize(16);
-            tvFeed.setText(history.length() == 0 ? "No important sounds yet." : history.toString());
+            tvFeed.setTextColor(Ui.color(this, R.color.ink_800));
+            tvFeed.setText(history.length() == 0 ? getString(R.string.hearing_no_sounds) : history.toString());
         } else {
             alertCard.setVisibility(View.GONE);
-            tvFeedLabel.setText("LIVE CAPTIONS");
+            alertRings.setActive(false);
+            soundTypeBadge.setVisibility(View.GONE);
+            tvFeedLabel.setText(R.string.hearing_live_captions);
             tvFeed.setTextSize(26);
-            tvFeed.setText(transcript.length() == 0 ? "Speak near the phone…" : transcript.toString());
+            tvFeed.setTextColor(Ui.color(this, R.color.ink_900));
+            tvFeed.setText(transcript.length() == 0 ? getString(R.string.hearing_speak_near) : transcript.toString());
         }
     }
 
@@ -198,11 +249,11 @@ public class HearingActivity extends AppCompatActivity {
             audioRecord = classifier.createAudioRecord();
             audioRecord.startRecording();
         } catch (Exception e) {
-            tvListening.setText("Sound model not loaded — is yamnet.tflite in assets? (" + e.getMessage() + ")");
+            setListening("Sound model not loaded — is yamnet.tflite in assets? (" + e.getMessage() + ")", true);
             return;
         }
         soundRunning = true;
-        tvListening.setText("Listening for important sounds…");
+        setListening("Listening for important sounds…", false);
         executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleAtFixedRate(this::classifyOnce, 0, 500, TimeUnit.MILLISECONDS);
     }
@@ -241,8 +292,8 @@ public class HearingActivity extends AppCompatActivity {
             final float scoreF = bestScore;
             runOnUiThread(() -> {
                 if (!soundRunning) return;
-                if (topF != null) tvListening.setText(String.format(Locale.US,
-                        "Listening… now hearing: %s (%.0f%%)", topF.getLabel(), topF.getScore() * 100));
+                if (topF != null) setListening(String.format(Locale.US,
+                        "Listening… now hearing: %s (%.0f%%)", topF.getLabel(), topF.getScore() * 100), false);
                 if (bestF != null) onSoundDetected(bestF, scoreF);
             });
         } catch (Exception ignored) { }
@@ -272,13 +323,9 @@ public class HearingActivity extends AppCompatActivity {
         if (last != null && now - last < SAME_SOUND_COOLDOWN_MS) return;
         lastAlert.put(t, now);
 
-        // 1) visual: big coloured card
-        alertCard.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(t.color)));
-        tvAlertIcon.setText(t.icon);
-        tvAlertTitle.setText(t.title);
-        tvAlertTitle.setTextColor(Color.WHITE);
-        tvAlertDetail.setText(String.format(Locale.US, "%s · %.0f%% sure", t.detail, score * 100));
-        tvAlertDetail.setTextColor(Color.parseColor("#F1F1F1"));
+        // 1) visual: big coloured card (urgent = solid colour + white text; soft = white card)
+        String time = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
+        showSoundCard(t, score, time);
         alertCard.announceForAccessibility(t.title);
 
         // 2) touch: a different vibration rhythm for each sound
@@ -289,8 +336,7 @@ public class HearingActivity extends AppCompatActivity {
         if (t.flash) flashTorch();
 
         // 4) history list
-        String time = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
-        history.insert(0, time + "   " + t.icon + "  " + t.title + String.format(Locale.US, "  (%.0f%%)\n", score * 100));
+        history.insert(0, time + "  ·  " + t.title + String.format(Locale.US, "  ·  %.0f%%\n", score * 100));
         if (history.length() > 1500) history.setLength(1500);
         if (mode == Mode.SOUNDS) tvFeed.setText(history.toString());
 
@@ -298,13 +344,97 @@ public class HearingActivity extends AppCompatActivity {
         handler.postDelayed(resetCard, CARD_RESET_MS);
     }
 
+    // ---------- presentation (SoundStyle + Pip) ----------
+
+    /** Applies tokens.color.soundTypes to the deck, then pops the card and wakes Pip up. */
+    private void showSoundCard(SoundType t, float score, String time) {
+        SoundStyle s = SoundStyle.of(t.name());
+        alertCard.setBackgroundTintList(ColorStateList.valueOf(Ui.color(this, s.cardColor())));
+        alertIconTile.setBackgroundTintList(ColorStateList.valueOf(Ui.color(this, s.tileColor())));
+        tvAlertIcon.setImageResource(s.icon);
+        tvAlertIcon.setImageTintList(ColorStateList.valueOf(Ui.color(this, s.strong)));
+        tvAlertTitle.setText(t.title);
+        tvAlertTitle.setTextColor(Ui.color(this, s.titleColor()));
+        tvAlertDetail.setText(t.detail);
+        tvAlertDetail.setTextColor(Ui.color(this, s.detailColor()));
+        tvAlertMeta.setText(String.format(Locale.US, "%s  ——  %.0f%% sure", time, score * 100));
+        tintMeta(s.metaColor());
+        tvAlertMeta.setVisibility(View.VISIBLE);
+
+        alertRings.setRingColor(Ui.color(this, s.strong));
+        alertRings.setActive(s.urgent);
+
+        soundTypeBadge.setImageResource(s.icon);
+        soundTypeBadge.setImageTintList(ColorStateList.valueOf(Ui.color(this, s.strong)));
+        soundTypeBadge.setVisibility(View.VISIBLE);
+
+        handler.removeCallbacks(pipCalm);
+        pip.setLayerVisible(R.drawable.duck_hearing_waves, true);
+        pip.setWavesPulsing(false); // waves at full opacity while a sound is shown
+        pip.setExpression(DuckLooks.Expression.ALERT, true);
+        alertPop();
+    }
+
+    /** motion.patterns.alertPop: scale 0.9 → 1.04 → 1, rotation −2.5° → −4° → −2.5°. */
+    private void alertPop() {
+        if (Ui.isReducedMotion()) return;
+        alertCard.setScaleX(0.9f);
+        alertCard.setScaleY(0.9f);
+        alertCard.animate().scaleX(1f).scaleY(1f).setDuration(360)
+                .setInterpolator(new OvershootInterpolator(1.4f)).start();
+        if (cardRotation != 0f) {
+            ObjectAnimator.ofFloat(alertCard, View.ROTATION, cardRotation, -4f, cardRotation)
+                    .setDuration(360).start();
+        }
+    }
+
+    private void tintMeta(@ColorRes int color) {
+        int c = Ui.color(this, color);
+        tvAlertMeta.setTextColor(c);
+        for (Drawable d : tvAlertMeta.getCompoundDrawablesRelative()) {
+            if (d != null) d.mutate().setTintList(ColorStateList.valueOf(c));
+        }
+    }
+
+    /** Status chip under the deck; errors get the emergency tint and a worried Pip. */
+    private void setListening(String text, boolean error) {
+        tvListening.setText(text);
+        tvListening.setBackgroundResource(error ? R.drawable.bg_listening_chip_error : R.drawable.bg_listening_chip);
+        tvListening.setTextColor(Ui.color(this, error ? R.color.status_emergency_text : R.color.ink_700));
+        Drawable dot = tvListening.getCompoundDrawablesRelative()[0];
+        if (dot != null) {
+            dot.mutate().setTintList(ColorStateList.valueOf(
+                    Ui.color(this, error ? R.color.live_dot_error : R.color.live_dot_on)));
+        }
+        if (error) {
+            handler.removeCallbacks(pipCalm);
+            pip.setWavesPulsing(false);
+            pip.setLayerVisible(R.drawable.duck_hearing_waves, false);
+            pip.setExpression(DuckLooks.Expression.CONCERNED, true);
+        } else if (pip.getExpression() == DuckLooks.Expression.CONCERNED) {
+            pip.setLayerVisible(R.drawable.duck_hearing_waves, true);
+            pip.setWavesPulsing(true);
+            pip.setExpression(DuckLooks.Expression.IDLE, true);
+        }
+    }
+
     private void showIdleCard() {
-        alertCard.setBackgroundTintList(ColorStateList.valueOf(Color.WHITE));
-        tvAlertIcon.setText("👂");
-        tvAlertTitle.setText("Listening for sounds");
-        tvAlertTitle.setTextColor(ContextCompat.getColor(this, R.color.text_dark));
-        tvAlertDetail.setText("Doorbell · alarms · sirens · horns · baby crying");
-        tvAlertDetail.setTextColor(ContextCompat.getColor(this, R.color.text_muted));
+        alertCard.setBackgroundTintList(ColorStateList.valueOf(Ui.color(this, R.color.surface_card)));
+        alertIconTile.setBackgroundTintList(ColorStateList.valueOf(Ui.color(this, R.color.blush_100)));
+        tvAlertIcon.setImageResource(R.drawable.ic_hearing);
+        tvAlertIcon.setImageTintList(ColorStateList.valueOf(Ui.color(this, R.color.blush_700)));
+        tvAlertTitle.setText(R.string.hearing_idle_title);
+        tvAlertTitle.setTextColor(ContextCompat.getColor(this, R.color.ink_900));
+        tvAlertDetail.setText(R.string.hearing_idle_detail);
+        tvAlertDetail.setTextColor(ContextCompat.getColor(this, R.color.ink_700));
+        tvAlertMeta.setVisibility(View.GONE);
+        alertRings.setActive(false);
+        soundTypeBadge.setVisibility(View.GONE);
+        if (pip.getExpression() != DuckLooks.Expression.CONCERNED) {
+            pip.setLayerVisible(R.drawable.duck_hearing_waves, true);
+            pip.setWavesPulsing(true);
+            pip.setExpression(DuckLooks.Expression.IDLE, true);
+        }
     }
 
     private void flashTorch() {
@@ -329,10 +459,10 @@ public class HearingActivity extends AppCompatActivity {
     private void startCaptions() {
         if (captionService != null) return;
         if (voskModel != null) { beginCaptions(); return; }
-        tvListening.setText("Loading speech model…");
+        setListening("Loading speech model…", false);
         StorageService.unpack(this, "model-en-us", "model",
                 model -> { voskModel = model; beginCaptions(); },
-                e -> tvListening.setText("Speech model not found (" + e.getMessage() + ")"));
+                e -> setListening("Speech model not found (" + e.getMessage() + ")", true));
     }
 
     private void beginCaptions() {
@@ -344,12 +474,12 @@ public class HearingActivity extends AppCompatActivity {
                 @Override public void onPartialResult(String h) { showCaption(read(h, "partial")); }
                 @Override public void onResult(String h) { addFinal(read(h, "text")); }
                 @Override public void onFinalResult(String h) { addFinal(read(h, "text")); }
-                @Override public void onError(Exception e) { tvListening.setText("Caption error: " + e.getMessage()); }
+                @Override public void onError(Exception e) { setListening("Caption error: " + e.getMessage(), true); }
                 @Override public void onTimeout() { }
             });
-            tvListening.setText("Live captions ON — speech becomes text on this phone (offline)");
+            setListening("Live captions ON — speech becomes text on this phone (offline)", false);
         } catch (Exception e) {
-            tvListening.setText("Could not start captions (" + e.getMessage() + ")");
+            setListening("Could not start captions (" + e.getMessage() + ")", true);
         }
     }
 
@@ -375,8 +505,14 @@ public class HearingActivity extends AppCompatActivity {
     private void showCaption(String partial) {
         if (mode != Mode.CAPTIONS) return;
         String shown = transcript.toString() + (partial == null || partial.isEmpty() ? "" : partial + " …");
-        tvFeed.setText(shown.isEmpty() ? "Speak near the phone…" : shown);
+        tvFeed.setText(shown.isEmpty() ? getString(R.string.hearing_speak_near) : shown);
         feedScroll.post(() -> feedScroll.fullScroll(View.FOCUS_DOWN));
+        if (partial != null && !partial.isEmpty() && pip.getExpression() != DuckLooks.Expression.CONCERNED) {
+            // speech arriving: Pip listens hard, then relaxes
+            pip.setExpression(DuckLooks.Expression.ALERT, true);
+            handler.removeCallbacks(pipCalm);
+            handler.postDelayed(pipCalm, CAPTION_ALERT_MS);
+        }
     }
 
     // ---------- permissions ----------
@@ -389,7 +525,7 @@ public class HearingActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, results);
         if (requestCode == REQ_MIC) {
             if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) startCurrentMode();
-            else tvListening.setText("Microphone permission is needed. Turn it on in Settings → Apps → SENSE+ → Permissions.");
+            else setListening("Microphone permission is needed. Turn it on in Settings → Apps → SENSE+ → Permissions.", true);
         }
     }
 }
