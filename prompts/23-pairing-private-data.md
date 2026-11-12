@@ -8,6 +8,9 @@ Priority: **must**. Needs 22.
 <!-- PASTE BELOW -->
 TASK — Segment 23: Replace the shared `demoUser` document with per-person data, let a guardian link to a user with a code that the user approves, and lock the database down with real rules
 
+> **Segment 24 is already in the code**, built on the old `demoUser` path: `GuardianAlertDecider`, `BatteryAlertRule`, the `guardian_alarm_v3` insistent alarm, call/map actions, battery in the heartbeat, and low-battery and lost-contact alerts. **Keep all of it working.** In `GuardianService` and `GuardianActivity`, change only *where* they read from (the linked user's `users/{uid}`) and the background polling interval. 24's phone tests must still pass after this segment.
+> New screens (`GuardiansActivity`, `LinkActivity`) follow the design system in the system prompt (rule 8: tokens only, Pip on the screen).
+
 Why: today every install of the app reads and writes the **same** document (`sense_users/demoUser`). So any phone with the app sees everyone's location, and two users would overwrite each other. A guardian also has no way to choose whose alerts they receive.
 
 ## Data model (use exactly these names)
