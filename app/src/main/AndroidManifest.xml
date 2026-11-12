@@ -38,6 +38,8 @@
         <activity android:name=".GuardianActivity" android:exported="false" />
         <activity android:name=".CommunicationActivity" android:exported="false" />
         <activity android:name=".VisualAssistActivity" android:exported="false" />
+        <activity android:name=".NavigationActivity" android:exported="false"
+            android:screenOrientation="portrait" />
         <activity android:name=".SensorInfoActivity" android:exported="false" />
         <activity android:name=".HearingActivity" android:exported="false" />
 
