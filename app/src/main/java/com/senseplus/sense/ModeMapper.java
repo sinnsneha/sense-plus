@@ -9,7 +9,8 @@ import java.util.Set;
  * Home-screen cards that should be visible. No Android imports, so it is unit-tested.
  *
  * A User never sees the guardian card; a Guardian sees only the guardian card,
- * Sensor Info and "Link to a person". Showing everything for a user with no saved profile is the safe default,
+ * Sensor Info and "Link to a person" (and never the Medical ID card, which belongs to the user).
+ * Showing everything for a user with no saved profile is the safe default,
  * so a user is never locked out of a tool.
  */
 public class ModeMapper {
@@ -32,10 +33,15 @@ public class ModeMapper {
     /** Segment 23: "My guardians" (user) and "Link to a person" (guardian). */
     public static final String CARD_GUARDIANS = "guardians";
     public static final String CARD_LINK = "link";
+    /** Segment 26: the Medical ID, for a user only. */
+    public static final String CARD_MEDICAL = "medical";
 
-    /** Safety, Sensor Info and My guardians are never hidden from a User, whatever the profile says. */
+    /**
+     * Safety, Sensor Info, My guardians and Medical ID are never hidden from a User, whatever the
+     * profile says: they are safety tools, not assistance preferences.
+     */
     private static final Set<String> USER_ALWAYS = new LinkedHashSet<>(
-            Arrays.asList(CARD_USER, CARD_SENSOR, CARD_GUARDIANS));
+            Arrays.asList(CARD_USER, CARD_SENSOR, CARD_GUARDIANS, CARD_MEDICAL));
 
     /** A Guardian needs the dashboard, the sensor screen and the screen that links them to a person. */
     private static final Set<String> GUARDIAN_CARDS = new LinkedHashSet<>(
@@ -48,7 +54,7 @@ public class ModeMapper {
         // The guardian card is deliberately absent: that tool belongs to the guardian role.
         return new LinkedHashSet<>(Arrays.asList(
                 CARD_USER, CARD_COMMUNICATION, CARD_VISUAL,
-                CARD_HEARING, CARD_NAVIGATION, CARD_SENSOR, CARD_GUARDIANS));
+                CARD_HEARING, CARD_NAVIGATION, CARD_SENSOR, CARD_GUARDIANS, CARD_MEDICAL));
     }
 
     /** @return every card a Guardian can see. */

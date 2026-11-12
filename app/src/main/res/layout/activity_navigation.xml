@@ -227,8 +227,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginEnd="@dimen/screen_gutter"
             android:contentDescription="Save this place as Home"
-            android:text="@string/nav_save_home"
-            app:icon="@drawable/ic_cta_home" />
+            android:text="@string/nav_save_home" />
 
         <Button
             android:id="@+id/btnTypeAddress"
@@ -280,5 +279,75 @@
             android:paddingStart="20dp"
             android:paddingEnd="16dp"
             android:text="@string/nav_auto_speak" />
+
+        <!-- segment 27: safe zone around Home. Shown only once a Home is saved. -->
+        <LinearLayout
+            android:id="@+id/safeZoneCard"
+            style="@style/Widget.SENSE.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="@dimen/gap_cards"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:text="@string/safezone_title"
+                android:textAppearance="@style/TextAppearance.SENSE.TitleM" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/safezone_user_caption"
+                android:textAppearance="@style/TextAppearance.SENSE.BodyS"
+                android:textColor="@color/ink_700" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swSafeZone"
+                style="@style/Widget.SENSE.Switch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/safezone_user_switch" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:importantForAccessibility="no"
+                android:text="@string/safezone_size"
+                android:textAppearance="@style/TextAppearance.SENSE.TitleS" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_tile_cream_r24"
+                android:minHeight="56dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="8dp">
+
+                <Spinner
+                    android:id="@+id/spSafeZoneRadius"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:contentDescription="@string/safezone_size"
+                    android:spinnerMode="dropdown" />
+            </FrameLayout>
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/swSafeZoneSpeak"
+                style="@style/Widget.SENSE.Switch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/safezone_speak_switch" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

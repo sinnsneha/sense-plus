@@ -100,6 +100,57 @@ public final class GuardianAlertText {
         return whoAtStart(name) + " responded in time — no emergency.";
     }
 
+    // ---------- 🔵 "I'm on my way" (segment 25) ----------
+
+    /** Label of the action on the 🟠 / 🔴 notifications and of the dashboard button. */
+    public static String ackActionLabel() {
+        return "I'm on my way";
+    }
+
+    public static String ackSentTitle() {
+        return "🔵 Reply sent";
+    }
+
+    /** The quiet notification that replaces the alarm once the reply is sent. */
+    public static String ackSentBody(String name) {
+        return "You told " + who(name) + " you're on your way";
+    }
+
+    public static String ackFailedTitle() {
+        return "🟠 Reply not sent";
+    }
+
+    public static String ackFailedBody(String name) {
+        return "Couldn't tell " + who(name) + " you're on your way. Check this phone's connection"
+                + " and tap I'm on my way again.";
+    }
+
+    // ---------- safe zone (segment 27) ----------
+
+    public static String safeZoneExitTitle() {
+        return "🟠 Left the safe zone";
+    }
+
+    /**
+     * "Maya has left the safe zone (450 m from home)". With no distance (a document without a
+     * location yet) the parenthesis is left out rather than guessed.
+     */
+    public static String safeZoneExitBody(String name, Double distanceM) {
+        String text = whoAtStart(name) + " has left the safe zone";
+        if (distanceM != null && distanceM >= 0) {
+            text += " (" + GeoDistance.label(distanceM) + " from home)";
+        }
+        return text;
+    }
+
+    public static String safeZoneReturnTitle() {
+        return "🟢 Back home";
+    }
+
+    public static String safeZoneReturnBody(String name) {
+        return whoAtStart(name) + " is back home";
+    }
+
     // ---------- battery ----------
 
     public static String lowBatteryTitle() {

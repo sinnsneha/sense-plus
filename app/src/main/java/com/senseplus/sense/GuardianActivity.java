@@ -8,17 +8,25 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.InputType;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.DrawableRes;
@@ -29,6 +37,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.materialswitch.MaterialSwitch;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Query;
@@ -44,6 +53,7 @@ import com.senseplus.sense.ui.Ui;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 public class GuardianActivity extends AppCompatActivity {
@@ -54,6 +64,33 @@ public class GuardianActivity extends AppCompatActivity {
     private String currentMapsLink = null;
     private String newestEventId = null;
     private boolean guardianOffline = false;
+
+    // Segment 25: "I'm on my way". The button exists only while the status is an alert.
+    private Button btnAck;
+    private TextView tvGAckError;
+    private String myUid;
+    private String ackUserName = "";     // who the reply tells: the user's name, as last read
+    private boolean ackSending = false;  // a write is waiting for the server
+    private boolean ackSent = false;     // this guardian has answered the CURRENT alert
+
+    // Segment 26: the collapsible Medical ID section.
+    private View medicalHeader, medicalBody, medicalChevron;
+    private LinearLayout medicalRows;
+    private TextView tvMedicalEmpty;
+    private boolean medicalOpen = false;
+    private MedicalId medicalShown = null; // what the rows show now, so a poll that changes nothing rebuilds nothing
+
+    // Segment 27: the safe zone card (chip, switch, radius, "Set home for <name>").
+    /** After the guardian changes a setting, the next polls must not put the old value back before the write lands (ms). */
+    private static final long SAFE_ZONE_EDIT_HOLD_MS = 6_000L;
+    private TextView tvSafeZoneChip, tvSafeZoneHome, tvSafeZoneHint;
+    private MaterialSwitch swGSafeZone;
+    private Spinner spGRadius;
+    private Button btnSetHome;
+    private HomeData safeZoneHome = null;       // the Home block as last read (null = none)
+    private String safeZoneName = "";           // who it is about, for the labels
+    private boolean bindingSafeZone = false;    // true while the controls are filled in, not changed by the guardian
+    private long safeZoneEditUntilMs = 0;
 
     // redesign
     private View statusHeroCard;
@@ -139,6 +176,8 @@ public class GuardianActivity extends AppCompatActivity {
             return;
         }
 
+        myUid = user.getUid();
+
         // Segment 23: the dashboard shows one linked person. Not linked yet → link first.
         linkedUid = AccountStore.linkedUid(this);
         if (linkedUid == null) {
@@ -162,6 +201,8 @@ public class GuardianActivity extends AppCompatActivity {
         eventsContainer = findViewById(R.id.eventsContainer);
         btnOpenMaps = findViewById(R.id.btnOpenMaps);
         btnStop = findViewById(R.id.btnStop);
+        btnAck = findViewById(R.id.btnAck);
+        tvGAckError = findViewById(R.id.tvGAckError);
 
         statusHeroCard = findViewById(R.id.statusHeroCard);
         pipGuardian = findViewById(R.id.pipGuardian);
@@ -183,7 +224,18 @@ public class GuardianActivity extends AppCompatActivity {
             stopService(new Intent(this, GuardianService.class));
             btnStop.setText("Monitoring stopped");
         });
-        Ui.pressFeedback(btnOpenMaps, btnStop);
+        btnAck.setOnClickListener(v -> sendAck());
+        Ui.pressFeedback(btnOpenMaps, btnStop, btnAck);
+
+        medicalHeader = findViewById(R.id.medicalHeader);
+        medicalBody = findViewById(R.id.medicalBody);
+        medicalChevron = findViewById(R.id.medicalChevron);
+        medicalRows = findViewById(R.id.medicalRows);
+        tvMedicalEmpty = findViewById(R.id.tvMedicalEmpty);
+        medicalHeader.setOnClickListener(v -> setMedicalOpen(!medicalOpen));
+        setMedicalOpen(false);
+
+        setUpSafeZoneCard();
 
         db = FirebaseFirestore.getInstance();
 
@@ -223,6 +275,9 @@ public class GuardianActivity extends AppCompatActivity {
 
         if (status == null) status = "UNKNOWN";
         renderStatus(StatusStyle.fromGuardian(status), true);
+        renderAck(StatusStyle.fromGuardian(status), doc);
+        renderMedical(doc);
+        renderSafeZone(doc);
 
         // The tiles already show the labels, so only the values are written.
         tvGAddress.setText(address != null ? address : getString(R.string.dash));
@@ -239,6 +294,293 @@ public class GuardianActivity extends AppCompatActivity {
             String pattern = android.text.format.DateFormat.is24HourFormat(this) ? "HH:mm:ss" : "h:mm:ss a";
             tvGUpdated.setText(new SimpleDateFormat(pattern, Locale.US).format(new Date(updatedAt)));
         }
+    }
+
+    // ---------- safe zone (segment 27) ----------
+
+    private void setUpSafeZoneCard() {
+        tvSafeZoneChip = findViewById(R.id.tvSafeZoneChip);
+        tvSafeZoneHome = findViewById(R.id.tvSafeZoneHome);
+        tvSafeZoneHint = findViewById(R.id.tvSafeZoneHint);
+        swGSafeZone = findViewById(R.id.swGSafeZone);
+        spGRadius = findViewById(R.id.spGRadius);
+        btnSetHome = findViewById(R.id.btnSetHome);
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this, R.array.safezone_radii, R.layout.item_spinner);
+        adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
+        spGRadius.setAdapter(adapter);
+        spGRadius.setSelection(HomeData.radiusIndex(HomeData.DEFAULT_RADIUS_M));
+
+        swGSafeZone.setOnCheckedChangeListener((button, checked) -> {
+            if (!bindingSafeZone) saveSafeZoneSettings(checked, selectedRadius());
+        });
+        spGRadius.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Filling the spinner from the document also arrives here: only a real change counts.
+                if (bindingSafeZone || safeZoneHome == null || !safeZoneHome.hasLocation()) return;
+                int radius = HomeData.RADII_M[position];
+                if (radius != safeZoneHome.radiusM) saveSafeZoneSettings(swGSafeZone.isChecked(), radius);
+            }
+
+            @Override public void onNothingSelected(AdapterView<?> parent) { }
+        });
+        btnSetHome.setOnClickListener(v -> promptHomeAddress());
+        Ui.pressFeedback(btnSetHome);
+        safeZoneName = GuardianAlertText.who(AccountStore.linkedName(this)); // until the first poll names them
+        renderSafeZone(null);
+    }
+
+    private int selectedRadius() {
+        int p = spGRadius.getSelectedItemPosition();
+        return p >= 0 && p < HomeData.RADII_M.length ? HomeData.RADII_M[p] : HomeData.DEFAULT_RADIUS_M;
+    }
+
+    /** Draws the card from the polled document (null = nothing known yet). */
+    private void renderSafeZone(DocumentSnapshot doc) {
+        if (doc != null) {
+            String name = doc.getString("name");
+            if (name == null || name.trim().isEmpty()) name = AccountStore.linkedName(this);
+            safeZoneName = GuardianAlertText.who(name);
+            Object raw = doc.get("home");
+            safeZoneHome = raw instanceof Map ? HomeData.fromMap((Map<?, ?>) raw) : null;
+        }
+        HomeData home = safeZoneHome;
+        boolean hasHome = home != null && home.hasLocation();
+        boolean enabled = hasHome && home.enabled;
+        String zone = doc != null ? doc.getString("safeZone") : null;
+        SafeZoneStatus.State state = SafeZoneStatus.classify(hasHome, enabled, zone);
+
+        // Chip: where the user is, in words and a coloured dot.
+        String chip;
+        @ColorRes int dot;
+        switch (state) {
+            case INSIDE:
+                chip = getString(R.string.safezone_chip_inside);
+                dot = R.color.live_dot_on;
+                break;
+            case OUTSIDE:
+                Double lat = doc.getDouble("latitude");
+                Double lon = doc.getDouble("longitude");
+                chip = lat != null && lon != null
+                        ? getString(R.string.safezone_chip_outside,
+                                GeoDistance.label(GeoDistance.metres(lat, lon, home.lat, home.lon)))
+                        : getString(R.string.safezone_chip_outside_unknown);
+                dot = R.color.status_attention_solid;
+                break;
+            case WAITING:
+                chip = getString(R.string.safezone_chip_on);
+                dot = R.color.sky_500;
+                break;
+            case OFF:
+                chip = getString(R.string.safezone_chip_off);
+                dot = R.color.ink_400;
+                break;
+            case NO_HOME:
+            default:
+                chip = getString(R.string.safezone_chip_no_home);
+                dot = R.color.ink_400;
+                break;
+        }
+        setTextIfChanged(tvSafeZoneChip, chip);
+        Drawable d = tvSafeZoneChip.getCompoundDrawablesRelative()[0];
+        if (d != null) d.mutate().setTintList(ColorStateList.valueOf(Ui.color(this, dot)));
+
+        String homeLine = !hasHome ? getString(R.string.safezone_g_no_home)
+                : getString(R.string.safezone_g_home, !home.address.isEmpty() ? home.address
+                        : String.format(Locale.US, "%.5f, %.5f", home.lat, home.lon));
+        setTextIfChanged(tvSafeZoneHome, homeLine);
+        setTextIfChanged(swGSafeZone, getString(R.string.safezone_g_switch, safeZoneName));
+        setTextIfChanged(btnSetHome, getString(R.string.safezone_g_set_home, safeZoneName));
+        btnSetHome.setContentDescription(getString(R.string.safezone_g_set_home_cd, safeZoneName));
+
+        swGSafeZone.setEnabled(hasHome);
+        spGRadius.setEnabled(hasHome);
+        tvSafeZoneHint.setVisibility(hasHome ? View.GONE : View.VISIBLE);
+
+        // Show the saved values, unless the guardian has just changed one and the write is still landing.
+        if (System.currentTimeMillis() >= safeZoneEditUntilMs) {
+            bindingSafeZone = true;
+            swGSafeZone.setChecked(enabled);
+            spGRadius.setSelection(HomeData.radiusIndex(hasHome ? home.radiusM : HomeData.DEFAULT_RADIUS_M));
+            bindingSafeZone = false;
+        }
+    }
+
+    private static void setTextIfChanged(TextView view, String text) {
+        if (!text.contentEquals(view.getText())) view.setText(text);
+    }
+
+    /** The switch or the radius changed: write only those fields (rules: a guardian may touch only 'home'). */
+    private void saveSafeZoneSettings(boolean enabled, int radiusM) {
+        if (linkedUid == null) return;
+        safeZoneEditUntilMs = System.currentTimeMillis() + SAFE_ZONE_EDIT_HOLD_MS;
+        HomeStore.writeSettingsAsGuardian(linkedUid, enabled, radiusM)
+                .addOnFailureListener(e -> {
+                    safeZoneEditUntilMs = 0; // let the next poll show what is really saved
+                    Toast.makeText(this, R.string.safezone_g_settings_failed, Toast.LENGTH_LONG).show();
+                });
+    }
+
+    /** "Set home for <name>": type an address, look it up (Geocoder), confirm, write users/{uid}.home. */
+    private void promptHomeAddress() {
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        input.setHint(R.string.safezone_g_search_hint);
+        int side = Ui.dp(this, 24);
+        FrameLayout wrapper = new FrameLayout(this);
+        wrapper.setPadding(side, Ui.dp(this, 4), side, 0);
+        wrapper.addView(input, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.safezone_g_search_title, safeZoneName))
+                .setMessage(R.string.safezone_g_search_body)
+                .setView(wrapper)
+                .setNegativeButton(R.string.safezone_g_cancel, null)
+                .setPositiveButton(R.string.safezone_g_search, (dialog, which) -> {
+                    String query = input.getText().toString().trim();
+                    if (query.isEmpty()) {
+                        Toast.makeText(this, R.string.safezone_g_type_first, Toast.LENGTH_SHORT).show();
+                    } else {
+                        searchHome(query);
+                    }
+                })
+                .show();
+    }
+
+    private void searchHome(String query) {
+        Toast.makeText(this, R.string.safezone_g_searching, Toast.LENGTH_SHORT).show();
+        AddressSearch.search(this, query, new AddressSearch.Callback() {
+            @Override public void onFound(double lat, double lon, String label) {
+                if (isFinishing() || isDestroyed()) return;
+                confirmHome(lat, lon, label);
+            }
+
+            @Override public void onNotFound() {
+                if (!isFinishing() && !isDestroyed())
+                    Toast.makeText(GuardianActivity.this, R.string.safezone_g_not_found, Toast.LENGTH_LONG).show();
+            }
+
+            @Override public void onError() {
+                if (!isFinishing() && !isDestroyed())
+                    Toast.makeText(GuardianActivity.this, R.string.safezone_g_search_error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void confirmHome(double lat, double lon, String label) {
+        final String who = safeZoneName;
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.safezone_g_confirm_title, who))
+                .setMessage(label + "\n\n" + String.format(Locale.US, "%.6f, %.6f", lat, lon))
+                .setNegativeButton(R.string.safezone_g_cancel, null)
+                .setPositiveButton(R.string.safezone_g_confirm_yes, (dialog, which) -> {
+                    // Keep the radius and the switch as they are; a first Home starts off at 250 m.
+                    HomeData old = safeZoneHome;
+                    HomeData home = new HomeData(lat, lon, label,
+                            old != null ? old.radiusM : HomeData.DEFAULT_RADIUS_M,
+                            old != null && old.enabled, System.currentTimeMillis());
+                    safeZoneEditUntilMs = System.currentTimeMillis() + SAFE_ZONE_EDIT_HOLD_MS;
+                    HomeStore.writeAsGuardian(linkedUid, home)
+                            .addOnSuccessListener(v -> Toast.makeText(this,
+                                    getString(R.string.safezone_g_saved, who), Toast.LENGTH_LONG).show())
+                            .addOnFailureListener(e -> {
+                                safeZoneEditUntilMs = 0;
+                                Toast.makeText(this, R.string.safezone_g_save_failed, Toast.LENGTH_LONG).show();
+                            });
+                })
+                .show();
+    }
+
+    // ---------- Medical ID (segment 26) ----------
+
+    private void setMedicalOpen(boolean open) {
+        medicalOpen = open;
+        medicalBody.setVisibility(open ? View.VISIBLE : View.GONE);
+        medicalChevron.setRotation(open ? -90f : 90f); // the forward arrow turned: up = open, down = closed
+        Ui.setStateDescription(medicalHeader, getString(open
+                ? R.string.guardian_medical_expanded : R.string.guardian_medical_collapsed));
+    }
+
+    /** users/{uid}.medical rides in the document this poll already read: no extra reads. */
+    private void renderMedical(DocumentSnapshot doc) {
+        Object raw = doc.get("medical");
+        MedicalId id = MedicalId.fromMap(raw instanceof Map ? (Map<?, ?>) raw : null);
+        if (id.equals(medicalShown)) return;
+        medicalShown = id;
+        int rows = MedicalViews.fill(this, medicalRows, id, false);
+        tvMedicalEmpty.setVisibility(rows == 0 ? View.VISIBLE : View.GONE);
+    }
+
+    // ---------- "I'm on my way" (segment 25) ----------
+
+    /**
+     * Shows the button only while the user is in a possible fall or possible emergency. Whether
+     * this guardian has already answered comes from the document itself (ack.by is me), so the
+     * button is right after reopening the dashboard or answering from the notification. The
+     * user's phone clears the old ack when a new alert begins, so "Sent" never carries over.
+     */
+    private void renderAck(StatusStyle style, DocumentSnapshot doc) {
+        String name = doc.getString("name");
+        if (name == null || name.trim().isEmpty()) name = AccountStore.linkedName(this);
+        ackUserName = GuardianAlertText.who(name);
+
+        if (!style.isUrgent()) { // calm again (or no status yet): hide it and forget this alert
+            ackSent = false;
+            ackSending = false;
+            btnAck.setVisibility(View.GONE);
+            tvGAckError.setVisibility(View.GONE);
+            return;
+        }
+
+        btnAck.setVisibility(View.VISIBLE);
+        if (myUid != null && myUid.equals(doc.getString("ack.by"))) ackSent = true;
+
+        // Not setEnabled(false): the Stadium button's disabled look (ink_400 on ink_100) would make
+        // the confirmation hard to read. It stays readable and simply stops taking taps.
+        if (ackSent) {
+            tvGAckError.setVisibility(View.GONE);
+            btnAck.setClickable(false);
+            btnAck.setText(getString(R.string.guardian_ack_sent, ackUserName));
+        } else if (ackSending) {
+            btnAck.setClickable(false);
+            btnAck.setText(R.string.guardian_ack_sending);
+        } else {
+            btnAck.setClickable(true);
+            btnAck.setText(R.string.guardian_ack_button);
+        }
+    }
+
+    private void sendAck() {
+        if (ackSending || ackSent) return;
+        ackSending = true;
+        tvGAckError.setVisibility(View.GONE);
+        btnAck.setClickable(false);
+        btnAck.setText(R.string.guardian_ack_sending);
+
+        final String who = ackUserName;
+        GuardianAck.send(this, new GuardianAck.Callback() {
+            @Override public void onSent() {
+                ackSending = false;
+                // Stops a ringing alarm and leaves "You told <name> you're on your way".
+                AckNotifications.showSent(getApplicationContext(), who);
+                if (isFinishing() || isDestroyed()) return;
+                // A reply confirmed after the alert already ended must not mark the next one.
+                if (shownStyle == null || !shownStyle.isUrgent()) return;
+                ackSent = true;
+                btnAck.setClickable(false);
+                btnAck.setText(getString(R.string.guardian_ack_sent, who));
+            }
+
+            @Override public void onFailed() {
+                ackSending = false;
+                if (isFinishing() || isDestroyed()) return;
+                btnAck.setClickable(true); // keep it usable: the guardian must be able to retry
+                btnAck.setText(R.string.guardian_ack_button);
+                tvGAckError.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     // ---------- presentation (replaces colorFor) ----------
@@ -424,7 +766,7 @@ public class GuardianActivity extends AppCompatActivity {
         }
     }
 
-    /** Icon tile coloured by level: attention amber, help/emergency red, all clear green. */
+    /** Icon tile coloured by level: attention amber, help/emergency red, all clear green, guardian blue. */
     private void styleEventIcon(View row, String type) {
         @ColorRes int tint, iconColor;
         @DrawableRes int icon;
@@ -440,6 +782,18 @@ public class GuardianActivity extends AppCompatActivity {
             tint = R.color.status_normal_tint;
             iconColor = R.color.status_normal_text;
             icon = R.drawable.ic_check_circle;
+        } else if (EventTypes.SAFE_ZONE_EXIT.equals(type)) { // amber: left the safe zone
+            tint = R.color.status_attention_tint;
+            iconColor = R.color.status_attention_text;
+            icon = R.drawable.ic_home;
+        } else if (EventTypes.SAFE_ZONE_RETURN.equals(type)) { // green: back home
+            tint = R.color.status_normal_tint;
+            iconColor = R.color.status_normal_text;
+            icon = R.drawable.ic_home;
+        } else if (EventTypes.GUARDIAN_ACK.equals(type)) { // blue: a guardian is on the way
+            tint = R.color.sky_100;
+            iconColor = R.color.sky_700;
+            icon = R.drawable.ic_person;
         } else if (EventTypes.EMERGENCY.equals(type) || EventTypes.MANUAL_HELP.equals(type)
                 || EventTypes.VOICE_HELP.equals(type) || EventTypes.CODEWORD.equals(type)) {
             tint = R.color.status_emergency_tint;

@@ -41,6 +41,8 @@
         <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.SENSE.Medium</item>
         <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.SENSE.Large</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.SENSE.MaterialAlertDialog</item>
+        <!-- M3 tints elevated white surfaces with colorPrimary (it turned the BACK pill peach). -->
+        <item name="elevationOverlayEnabled">false</item>
         <item name="android:spotShadowAlpha">0.14</item>
         <item name="android:ambientShadowAlpha">0.06</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

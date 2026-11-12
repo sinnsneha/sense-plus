@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segment 26: text for the read-only Medical ID helper view. A stranger reads it, possibly in
+     poor light and in a hurry, so it is the largest, darkest text in the app: ink_900 / ink_800
+     on the white-ish canvas (more than 12:1). -->
+<resources>
+
+    <style name="TextAppearance.SENSE.HelperLabel">
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">@font/lexend_semibold</item>
+        <item name="lineHeight">18sp</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="textAllCaps">true</item>
+        <item name="android:textColor">@color/ink_800</item>
+    </style>
+
+    <style name="TextAppearance.SENSE.HelperValue">
+        <item name="android:textSize">32sp</item>
+        <item name="android:fontFamily">@font/lexend_bold</item>
+        <item name="lineHeight">40sp</item>
+        <item name="android:textColor">@color/ink_900</item>
+    </style>
+</resources>

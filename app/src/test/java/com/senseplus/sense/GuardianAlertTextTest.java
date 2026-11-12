@@ -96,6 +96,36 @@ public class GuardianAlertTextTest {
     }
 
     @Test
+    public void ackNotificationsNameThePersonYouTold() {
+        assertEquals("I'm on my way", GuardianAlertText.ackActionLabel());
+        assertEquals("You told Maya you're on your way", GuardianAlertText.ackSentBody("Maya"));
+        assertEquals("You told the user you're on your way", GuardianAlertText.ackSentBody(null));
+        assertTrue(GuardianAlertText.ackFailedBody("Maya").startsWith("Couldn't tell Maya you're on your way."));
+    }
+
+    @Test
+    public void safeZoneExitNamesThePersonAndTheDistance() {
+        assertEquals("Maya has left the safe zone (450 m from home)",
+                GuardianAlertText.safeZoneExitBody("Maya", 450.0));
+        assertEquals("Maya has left the safe zone (1.2 km from home)",
+                GuardianAlertText.safeZoneExitBody("Maya", 1234.0));
+        assertEquals("🟠 Left the safe zone", GuardianAlertText.safeZoneExitTitle());
+    }
+
+    @Test
+    public void safeZoneExitWithoutADistanceLeavesTheBracketOut() {
+        assertEquals("Maya has left the safe zone", GuardianAlertText.safeZoneExitBody("Maya", null));
+        assertEquals("The user has left the safe zone", GuardianAlertText.safeZoneExitBody(" ", null));
+    }
+
+    @Test
+    public void safeZoneReturnNamesThePerson() {
+        assertEquals("Maya is back home", GuardianAlertText.safeZoneReturnBody("Maya"));
+        assertEquals("The user is back home", GuardianAlertText.safeZoneReturnBody(null));
+        assertEquals("🟢 Back home", GuardianAlertText.safeZoneReturnTitle());
+    }
+
+    @Test
     public void mapsLinkPrefersTheStoredLink() {
         assertEquals("https://www.google.com/maps?q=1.5,2.5",
                 GuardianAlertText.mapsLink("https://www.google.com/maps?q=1.5,2.5", 9.0, 9.0));

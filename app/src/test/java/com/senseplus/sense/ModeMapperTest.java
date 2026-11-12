@@ -38,37 +38,37 @@ public class ModeMapperTest {
 
     @Test
     public void unknownModeIsIgnoredNextToKnownOne() {
-        assertEquals(set("user", "sensor", "guardians", "hearing"),
+        assertEquals(set("user", "sensor", "guardians", "medical", "hearing"),
                 ModeMapper.visibleCards(set("hearing", "telepathy")));
     }
 
     @Test
     public void hearingOnlyAddsHearingToTheAlwaysShownCards() {
-        assertEquals(set("user", "sensor", "guardians", "hearing"),
+        assertEquals(set("user", "sensor", "guardians", "medical", "hearing"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_HEARING)));
     }
 
     @Test
     public void visualAddsVisualAndNavigation() {
-        assertEquals(set("user", "sensor", "guardians", "visual", "navigation"),
+        assertEquals(set("user", "sensor", "guardians", "medical", "visual", "navigation"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_VISUAL)));
     }
 
     @Test
     public void communicationAddsCommunicationOnly() {
-        assertEquals(set("user", "sensor", "guardians", "communication"),
+        assertEquals(set("user", "sensor", "guardians", "medical", "communication"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_COMMUNICATION)));
     }
 
     @Test
     public void mobilityAddsNavigationOnly() {
-        assertEquals(set("user", "sensor", "guardians", "navigation"),
+        assertEquals(set("user", "sensor", "guardians", "medical", "navigation"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_MOBILITY)));
     }
 
     @Test
     public void cognitiveAddsCommunicationAndNavigation() {
-        assertEquals(set("user", "sensor", "guardians", "communication", "navigation"),
+        assertEquals(set("user", "sensor", "guardians", "medical", "communication", "navigation"),
                 ModeMapper.visibleCards(set(ModeMapper.MODE_COGNITIVE)));
     }
 
@@ -77,8 +77,8 @@ public class ModeMapperTest {
         Set<String> cards = ModeMapper.visibleCards(
                 set(ModeMapper.MODE_VISUAL, ModeMapper.MODE_COGNITIVE));
         // navigation comes from both modes but must appear once; hearing stays hidden
-        assertEquals(set("user", "sensor", "guardians", "visual", "communication", "navigation"), cards);
-        assertEquals(6, cards.size());
+        assertEquals(set("user", "sensor", "guardians", "medical", "visual", "communication", "navigation"), cards);
+        assertEquals(7, cards.size());
         assertFalse(cards.contains("hearing"));
     }
 
@@ -137,7 +137,7 @@ public class ModeMapperTest {
     @Test
     public void userWithNoModesSeesAllCardsExceptGuardian() {
         Set<String> cards = ModeMapper.visibleCards(Roles.USER, Collections.<String>emptySet());
-        assertEquals(set("user", "communication", "visual", "hearing", "navigation", "sensor", "guardians"),
+        assertEquals(set("user", "communication", "visual", "hearing", "navigation", "sensor", "guardians", "medical"),
                 cards);
         assertFalse(cards.contains(ModeMapper.CARD_GUARDIAN));
     }
@@ -167,5 +167,43 @@ public class ModeMapperTest {
         Set<String> cards = ModeMapper.visibleCards(Roles.USER, set(ModeMapper.MODE_HEARING));
         assertTrue(cards.contains(ModeMapper.CARD_GUARDIANS));
         assertFalse(cards.contains(ModeMapper.CARD_LINK));
+    }
+
+    // ---------- Medical ID card (segment 26) ----------
+
+    @Test
+    public void medicalCardIsTheCardKeyMedical() {
+        assertEquals("medical", ModeMapper.CARD_MEDICAL);
+    }
+
+    @Test
+    public void userAlwaysSeesTheMedicalCardWhateverTheModes() {
+        for (int mask = 0; mask < (1 << ALL_MODES.length); mask++) {
+            Set<String> modes = new HashSet<>();
+            for (int i = 0; i < ALL_MODES.length; i++) {
+                if ((mask & (1 << i)) != 0) modes.add(ALL_MODES[i]);
+            }
+            assertTrue("medical hidden from a user for " + modes,
+                    ModeMapper.visibleCards(Roles.USER, modes).contains(ModeMapper.CARD_MEDICAL));
+        }
+        assertTrue(ModeMapper.visibleCards(Roles.USER, Collections.<String>emptySet())
+                .contains(ModeMapper.CARD_MEDICAL));
+        assertTrue(ModeMapper.visibleCards((Set<String>) null).contains(ModeMapper.CARD_MEDICAL));
+        assertTrue(ModeMapper.allCards().contains(ModeMapper.CARD_MEDICAL));
+    }
+
+    @Test
+    public void guardianNeverSeesTheMedicalCard() {
+        assertFalse(ModeMapper.visibleCards(Roles.GUARDIAN, Collections.<String>emptySet())
+                .contains(ModeMapper.CARD_MEDICAL));
+        assertFalse(ModeMapper.visibleCards(Roles.GUARDIAN, set(ALL_MODES))
+                .contains(ModeMapper.CARD_MEDICAL));
+        assertFalse(ModeMapper.guardianCards().contains(ModeMapper.CARD_MEDICAL));
+    }
+
+    @Test
+    public void anUnreadRoleIsTreatedAsUserSoItStillGetsTheMedicalCard() {
+        assertTrue(ModeMapper.visibleCards("someday", Collections.<String>emptySet())
+                .contains(ModeMapper.CARD_MEDICAL));
     }
 }

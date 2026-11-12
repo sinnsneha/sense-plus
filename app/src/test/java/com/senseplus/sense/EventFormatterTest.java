@@ -22,6 +22,9 @@ public class EventFormatterTest {
         assertEquals("🔴", EventFormatter.emoji(EventTypes.CODEWORD));
         assertEquals("🟢", EventFormatter.emoji(EventTypes.ALL_CLEAR));
         assertEquals("🟠", EventFormatter.emoji(EventTypes.LOW_BATTERY));
+        assertEquals("🔵", EventFormatter.emoji(EventTypes.GUARDIAN_ACK));
+        assertEquals("🟠", EventFormatter.emoji(EventTypes.SAFE_ZONE_EXIT));
+        assertEquals("🟢", EventFormatter.emoji(EventTypes.SAFE_ZONE_RETURN));
         assertEquals("⚪", EventFormatter.emoji("SOMETHING_ELSE"));
     }
 
@@ -34,7 +37,29 @@ public class EventFormatterTest {
         assertEquals("Codeword", EventFormatter.label(EventTypes.CODEWORD));
         assertEquals("All clear", EventFormatter.label(EventTypes.ALL_CLEAR));
         assertEquals("Low battery", EventFormatter.label(EventTypes.LOW_BATTERY));
+        assertEquals("Guardian responding", EventFormatter.label(EventTypes.GUARDIAN_ACK));
+        assertEquals("SMS sent", EventFormatter.label(EventTypes.SMS_SENT));
+        assertEquals("Left safe zone", EventFormatter.label(EventTypes.SAFE_ZONE_EXIT));
+        assertEquals("Back home", EventFormatter.label(EventTypes.SAFE_ZONE_RETURN));
         assertEquals("Event", EventFormatter.label(null));
+    }
+
+    @Test
+    public void safeZoneRowsShowTheOrangeExitAndTheGreenReturn() {
+        long t = Instant.parse("2026-11-12T14:32:07Z").toEpochMilli();
+        assertEquals("🟠  Left safe zone · 14:32:07\nLeft the safe zone (450 m from home)",
+                EventFormatter.row(EventTypes.SAFE_ZONE_EXIT, "Left the safe zone (450 m from home)",
+                        t, null, NOW, UTC));
+        assertEquals("🟢  Back home · 14:40:00",
+                EventFormatter.row(EventTypes.SAFE_ZONE_RETURN, null,
+                        Instant.parse("2026-11-12T14:40:00Z").toEpochMilli(), null, NOW, UTC));
+    }
+
+    @Test
+    public void guardianAckRowShowsBlueLabelTimeAndDetail() {
+        long t = Instant.parse("2026-11-12T14:32:07Z").toEpochMilli();
+        String row = EventFormatter.row(EventTypes.GUARDIAN_ACK, "Ravi is on the way", t, null, NOW, UTC);
+        assertEquals("🔵  Guardian responding · 14:32:07\nRavi is on the way", row);
     }
 
     @Test

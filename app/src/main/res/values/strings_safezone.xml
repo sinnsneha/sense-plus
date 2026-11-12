@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segment 27: the safe zone around Home. Kept in its own file so it never collides with edits to
+     strings.xml; Android merges every values/*.xml file. The guardian's notification wording
+     lives in GuardianAlertText (tested), not here. -->
+<resources>
+
+    <!-- The sizes both screens offer. Order must match HomeData.RADII_M: 100, 250, 500, 1000. -->
+    <string-array name="safezone_radii">
+        <item>100 m</item>
+        <item>250 m</item>
+        <item>500 m</item>
+        <item>1000 m</item>
+    </string-array>
+
+    <!-- Navigate Home (user phone) -->
+    <string name="safezone_title">Safe zone</string>
+    <string name="safezone_user_caption">Tells your guardian if you go far from Home, and when you are back. Monitoring must be on.</string>
+    <string name="safezone_user_switch">Tell my guardian if I leave home</string>
+    <string name="safezone_size">Safe zone size</string>
+    <string name="safezone_speak_switch">Speak help when I leave home</string>
+
+    <!-- Guardian dashboard -->
+    <string name="safezone_g_title">Safe zone</string>
+    <string name="safezone_g_home">Home: %1$s</string>
+    <string name="safezone_g_no_home">No home set yet. Set it below.</string>
+    <string name="safezone_g_switch">Alert me when %1$s leaves home</string>
+    <string name="safezone_g_set_home">Set home for %1$s</string>
+    <string name="safezone_g_set_home_cd">Set home for %1$s by searching for an address</string>
+    <string name="safezone_g_need_home">Set a home first to turn the safe zone on.</string>
+    <string name="safezone_g_search_title">Set home for %1$s</string>
+    <string name="safezone_g_search_body">Type their home address, then tap Search.</string>
+    <string name="safezone_g_search_hint">House number, street, city</string>
+    <string name="safezone_g_search">Search</string>
+    <string name="safezone_g_cancel">Cancel</string>
+    <string name="safezone_g_type_first">Type an address first</string>
+    <string name="safezone_g_searching">Searching…</string>
+    <string name="safezone_g_not_found">No address found. Try adding the city or PIN code.</string>
+    <string name="safezone_g_search_error">Could not search the address. Check this phone\'s internet connection.</string>
+    <string name="safezone_g_confirm_title">Set this as %1$s\'s home?</string>
+    <string name="safezone_g_confirm_yes">Set home</string>
+    <string name="safezone_g_saved">Home set for %1$s. Their phone picks it up within 10 minutes.</string>
+    <string name="safezone_g_save_failed">Could not save the home. Check your connection and try again.</string>
+    <string name="safezone_g_settings_failed">Could not save the change. Check your connection and try again.</string>
+
+    <!-- The chip -->
+    <string name="safezone_chip_no_home">No home set</string>
+    <string name="safezone_chip_off">Safe zone off</string>
+    <string name="safezone_chip_on">Safe zone on</string>
+    <string name="safezone_chip_inside">Inside safe zone</string>
+    <string name="safezone_chip_outside">Outside, %1$s from home</string>
+    <string name="safezone_chip_outside_unknown">Outside safe zone</string>
+</resources>

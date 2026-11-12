@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segment 26: Medical ID, Call my guardian, SMS fallback. Kept in its own file so it never
+     collides with edits to strings.xml; Android merges every values/*.xml file. Notification
+     and SMS wording lives in the tested pure classes (EmergencyText), not here. -->
+<resources>
+
+    <!-- Home tile -->
+    <string name="home_tile_medical_title">Medical ID</string>
+    <string name="home_tile_medical_sub">Facts for helpers</string>
+
+    <!-- Medical ID screen (editable; never shown over the lock screen) -->
+    <string name="medical_title">Medical ID</string>
+    <string name="medical_sub">What a helper or paramedic needs to know. Guardians you approved can read it too.</string>
+    <string name="medical_show_helper">Show to a helper</string>
+    <string name="medical_show_helper_cd">Show to a helper. Opens a large read-only view that can be read without unlocking the phone.</string>
+    <string name="medical_hint_name">Name</string>
+    <string name="medical_hint_age">Age</string>
+    <string name="medical_hint_blood">Blood group</string>
+    <string name="medical_hint_allergies">Allergies</string>
+    <string name="medical_hint_conditions">Medical conditions</string>
+    <string name="medical_hint_medications">Medications</string>
+    <string name="medical_hint_notes">Notes for a helper</string>
+    <string name="medical_hint_contact_name">Emergency contact name</string>
+    <string name="medical_hint_contact_phone">Emergency contact phone</string>
+    <string name="medical_save">Save</string>
+    <string name="medical_saved">Medical ID saved</string>
+    <string name="medical_error_phone">Enter the full number, at least 7 digits.</string>
+    <string name="medical_unsaved_title">Save your changes?</string>
+    <string name="medical_unsaved_body">You changed your Medical ID but did not save it.</string>
+    <string name="medical_unsaved_save">Save</string>
+    <string name="medical_unsaved_discard">Discard</string>
+
+    <string-array name="medical_blood_groups">
+        <item>Unknown</item>
+        <item>A+</item>
+        <item>A−</item>
+        <item>B+</item>
+        <item>B−</item>
+        <item>AB+</item>
+        <item>AB−</item>
+        <item>O+</item>
+        <item>O−</item>
+    </string-array>
+
+    <!-- SMS fallback (opt-in) -->
+    <string name="medical_sms_title">Also send an SMS to my guardians in an emergency</string>
+    <string name="medical_sms_caption">Works without internet. In a possible emergency it texts your name, the reason and your location link to your guardians\' phones and your emergency contact, once per emergency. Your mobile plan may charge for texts.</string>
+    <string name="medical_sms_denied">SMS permission was not allowed, so the SMS fallback stays off.</string>
+
+    <!-- Row labels, shared by the helper view and the guardian dashboard -->
+    <string name="medical_row_name">Name</string>
+    <string name="medical_row_age">Age</string>
+    <string name="medical_row_blood">Blood group</string>
+    <string name="medical_row_allergies">Allergies</string>
+    <string name="medical_row_conditions">Medical conditions</string>
+    <string name="medical_row_medications">Medications</string>
+    <string name="medical_row_notes">Notes</string>
+    <string name="medical_row_contact">Emergency contact</string>
+    <string name="medical_row_cd">%1$s: %2$s</string>
+
+    <!-- Helper view (read-only, shown over the lock screen) -->
+    <string name="medical_helper_title">Medical ID</string>
+    <string name="medical_helper_sub">For someone helping this person</string>
+    <string name="medical_helper_empty">No medical information has been saved on this phone.</string>
+    <string name="medical_read_aloud">Read aloud</string>
+    <string name="medical_read_aloud_cd">Read the Medical ID aloud</string>
+    <string name="medical_tts_unavailable">Read aloud is not available on this phone.</string>
+
+    <!-- Guardian dashboard section -->
+    <string name="guardian_medical_title">Medical ID</string>
+    <string name="guardian_medical_empty">They have not shared a Medical ID yet.</string>
+    <string name="guardian_medical_expanded">Expanded</string>
+    <string name="guardian_medical_collapsed">Collapsed</string>
+
+    <!-- Call my guardian (Safety screen) -->
+    <string name="call_guardian">Call my guardian</string>
+    <string name="call_guardian_cd">Call my guardian. Starts a phone call to your first guardian.</string>
+    <string name="call_no_number_title">No number to call</string>
+    <string name="call_no_number_body">Add your guardian\'s phone number in Medical ID.</string>
+    <string name="call_open_medical">Open Medical ID</string>
+    <string name="call_permission_title">Allow calls from SENSE+?</string>
+    <string name="call_permission_body">With this permission, Call my guardian starts the call at once. Without it, the phone app opens with the number filled in and you press call.</string>
+    <string name="call_permission_allow">Allow</string>
+    <string name="call_permission_not_now">Not now</string>
+    <string name="call_failed">Could not start the call.</string>
+</resources>

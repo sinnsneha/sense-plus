@@ -62,6 +62,32 @@ public class CloudHelper {
     }
 
     /**
+     * The status write that begins a NEW alert (NORMAL to ATTENTION or POSSIBLE EMERGENCY). It
+     * also deletes the previous alert's guardian reply in the same write, so a guardian who sees
+     * the new alert never sees an old "I'm on my way" with it (segment 25). Not used when an
+     * ATTENTION escalates to an emergency: that is the same alert and keeps its reply.
+     */
+    public void startAlert(String status, String lastEvent, int battery) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("status", status);
+        data.put("lastEvent", lastEvent);
+        putBattery(data, battery);
+        data.put("updatedAt", System.currentTimeMillis());
+        data.put("ack", FieldValue.delete());
+        push(data);
+    }
+
+    /**
+     * Safe zone state for the guardian (segment 27): "outside" or "inside". Null removes the
+     * field, so a switched-off zone never leaves a stale "outside" behind.
+     */
+    public void updateSafeZone(String state) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("safeZone", state == null ? FieldValue.delete() : state);
+        push(data);
+    }
+
+    /**
      * Appends one safety event to users/{uid}/events.
      * lat/lon are the last fix cached by updateLocation, or null if unknown.
      */

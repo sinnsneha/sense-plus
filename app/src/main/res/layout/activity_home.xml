@@ -344,6 +344,13 @@
                 layout="@layout/item_tool_tile"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
+
+            <!-- Segment 26: Medical ID (user only; ModeMapper never offers it to a guardian). -->
+            <include
+                android:id="@+id/cardMedical"
+                layout="@layout/item_tool_tile"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </com.senseplus.sense.ui.TileGridLayout>
     </LinearLayout>
 </ScrollView>

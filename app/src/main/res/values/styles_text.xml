@@ -99,10 +99,11 @@
         <item name="textAllCaps">false</item>
     </style>
 
-    <!-- HELP: label_button at 22sp (components.emergencyButton) -->
+    <!-- HELP: label_button at 22sp, letter-spaced (components.emergencyButton) -->
     <style name="TextAppearance.SENSE.LabelButton.Emergency">
         <item name="android:textSize">22sp</item>
         <item name="lineHeight">26sp</item>
+        <item name="android:letterSpacing">0.1</item>
     </style>
 
     <style name="TextAppearance.SENSE.LabelButtonSmall">

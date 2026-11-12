@@ -2,6 +2,7 @@ package com.senseplus.sense;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
+import android.content.ActivityNotFoundException;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.content.BroadcastReceiver;
@@ -31,6 +32,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -56,11 +59,21 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     public static final String STATUS_ACTION = "com.senseplus.sense.STATUS";
+    /** Segment 25: a guardian answered. Extra "message" = the sentence; empty = hide it. */
+    public static final String ACK_ACTION = "com.senseplus.sense.ACK";
+    /**
+     * Segment 28: the "protection is off after a restart" reminder opens this screen with this
+     * extra set, and the screen starts monitoring. Starting the service is allowed here because
+     * the app is in the foreground; a boot receiver could not do it.
+     */
+    public static final String EXTRA_AUTO_START = "auto_start";
 
     /** How long Pip stays happy after "All clear" before going back to idle (ms). */
     private static final long ALL_CLEAR_HAPPY_MS = 2000;
 
     private TextView tvStatus;
+    private View ackCard;
+    private TextView tvAck;
     private MaterialButton btnToggle;
     private Button btnCodeword;
     private Button btnLocationSettings;
@@ -130,8 +143,23 @@ public class MainActivity extends AppCompatActivity {
     }
     private boolean monitoring = false;
 
+    // Segment 26: "Call my guardian". CALL_PHONE is asked for once, with an explanation; a "no"
+    // (or a number already asked about) falls back to the dialer, which needs no permission.
+    private static final String KEY_CALL_PERMISSION_ASKED = "call_permission_asked";
+    private String pendingCallNumber;
+    private final ActivityResultLauncher<String> callPermission = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), granted -> {
+                String number = pendingCallNumber;
+                pendingCallNumber = null;
+                if (number != null) placeCall(number, granted);
+            });
+
     private final BroadcastReceiver statusReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
+            if (ACK_ACTION.equals(intent.getAction())) {
+                showAck(intent.getStringExtra("message"));
+                return;
+            }
             updateStatusUi(intent.getStringExtra("status"), intent.getStringExtra("info"));
         }
     };
@@ -155,6 +183,8 @@ public class MainActivity extends AppCompatActivity {
         Ui.bindBack(this);
 
         tvStatus = findViewById(R.id.tvStatus);
+        ackCard = findViewById(R.id.ackCard);
+        tvAck = findViewById(R.id.tvAck);
         btnToggle = findViewById(R.id.btnToggle);
         btnLocationSettings = findViewById(R.id.btnLocationSettings);
         Button btnHelp = findViewById(R.id.btnHelp);
@@ -181,25 +211,97 @@ public class MainActivity extends AppCompatActivity {
         btnHelp.setOnClickListener(v -> sendAction(UserMonitorService.ACTION_HELP));
         btnOk.setOnClickListener(v -> sendAction(UserMonitorService.ACTION_IM_OK));
         Ui.pressFeedback(btnHelp, btnOk, btnToggle);
+        Button btnCall = findViewById(R.id.btnCallGuardian);
+        btnCall.setOnClickListener(v -> onCallGuardian());
+        Ui.pressFeedback(btnCall);
+        // Keep the local copy of the guardians' phones current (one read); it works offline later.
+        EmergencyContacts.refresh(this);
         // initialize codeword UI
         initCodewordButton();
+
+        // Segment 28: opened from the restart reminder. Only on a fresh launch, so turning the
+        // phone (which recreates the screen with the same intent) does not start it again.
+        if (savedInstanceState == null && getIntent().getBooleanExtra(EXTRA_AUTO_START, false)) {
+            startMonitoring();
+        }
+    }
+
+    // ---------- Call my guardian (segment 26) ----------
+
+    /**
+     * Number: the first guardian with a phone, otherwise the Medical ID emergency contact. With
+     * CALL_PHONE the call starts at once (ACTION_CALL); without it the dialer opens with the
+     * number filled in (ACTION_DIAL). The permission is asked for once, with a reason.
+     */
+    private void onCallGuardian() {
+        final String number = EmergencyContacts.callNumber(this);
+        if (number == null) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.call_no_number_title)
+                    .setMessage(R.string.call_no_number_body)
+                    .setNegativeButton(R.string.link_cancel, null)
+                    .setPositiveButton(R.string.call_open_medical, (d, w) ->
+                            startActivity(new Intent(this, MedicalIdActivity.class)))
+                    .show();
+            return;
+        }
+
+        boolean granted = ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
+                == PackageManager.PERMISSION_GRANTED;
+        if (granted) {
+            placeCall(number, true);
+        } else if (!prefs.getBoolean(KEY_CALL_PERMISSION_ASKED, false)) {
+            prefs.edit().putBoolean(KEY_CALL_PERMISSION_ASKED, true).apply();
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.call_permission_title)
+                    .setMessage(R.string.call_permission_body)
+                    .setNegativeButton(R.string.call_permission_not_now, (d, w) -> placeCall(number, false))
+                    .setPositiveButton(R.string.call_permission_allow, (d, w) -> {
+                        pendingCallNumber = number;
+                        callPermission.launch(Manifest.permission.CALL_PHONE);
+                    })
+                    .setOnCancelListener(d -> placeCall(number, false))
+                    .show();
+        } else {
+            placeCall(number, false); // asked before and not granted: the dialer still gets them there
+        }
+    }
+
+    private void placeCall(String number, boolean canCallDirectly) {
+        Uri uri = Uri.fromParts("tel", number, null);
+        try {
+            startActivity(new Intent(canCallDirectly ? Intent.ACTION_CALL : Intent.ACTION_DIAL, uri));
+        } catch (SecurityException e) { // permission revoked between the check and the call
+            try {
+                startActivity(new Intent(Intent.ACTION_DIAL, uri));
+            } catch (ActivityNotFoundException ignored) {
+                Toast.makeText(this, R.string.call_failed, Toast.LENGTH_LONG).show();
+            }
+        } catch (ActivityNotFoundException e) { // a phone with no dialer, such as a tablet
+            Toast.makeText(this, R.string.call_failed, Toast.LENGTH_LONG).show();
+        }
     }
 
     private void startMonitoring() {
+        // Segment 28: remember that the person wants protection, so a restart can remind them,
+        // and drop the reminder if it is showing: protection is back.
+        AccountStore.setMonitoringWanted(this, true);
+        ReminderNotifications.cancel(this);
         ContextCompat.startForegroundService(this,
                 new Intent(this, UserMonitorService.class).setAction(UserMonitorService.ACTION_START));
         monitoring = true;
-        btnToggle.setText("STOP MONITORING");
-        btnToggle.setIconResource(R.drawable.ic_cta_stop);
+        btnToggle.setText(R.string.stop_monitoring);
+        btnToggle.setActivated(true); // calm light-lavender "stop" tile while running
         updateStatusUi("NORMAL", "Monitoring (normal)");
     }
 
     private void stopMonitoring() {
+        AccountStore.setMonitoringWanted(this, false); // on purpose: no reminder after a restart
         stopService(new Intent(this, UserMonitorService.class));
         monitoring = false;
-        btnToggle.setText("START MONITORING");
-        btnToggle.setIconResource(R.drawable.ic_cta_play);
-        tvStatus.setText("Status: monitoring OFF");
+        btnToggle.setText(R.string.start_monitoring);
+        btnToggle.setActivated(false);
+        tvStatus.setText(R.string.status_off);
         applyStyle(StatusStyle.OFF, true);
     }
 
@@ -213,7 +315,8 @@ public class MainActivity extends AppCompatActivity {
         if (status == null) status = "";
         StatusStyle style = StatusStyle.from(status);
         applyStyle(style, true);
-        tvStatus.setText("Status: " + (info != null ? info : status));
+        // The card already carries a "STATUS" label, so only the message is written.
+        tvStatus.setText(info != null ? info : status);
         if (style == StatusStyle.NORMAL && info != null && info.contains("All clear")) allClearFlourish();
     }
 
@@ -298,6 +401,18 @@ public class MainActivity extends AppCompatActivity {
             badgeWrap.setScaleX(1f);
             badgeWrap.setScaleY(1f);
         }
+    }
+
+    /**
+     * Segment 25: shows "<name> has seen your alert and is on the way." in large text, or hides
+     * the card for an empty message. It is an extra card: the status card, Pip and the level
+     * indicator keep showing the alert, because a reply never hides or cancels it.
+     */
+    private void showAck(String message) {
+        if (ackCard == null) return; // redirected to login before the layout was set
+        boolean has = message != null && !message.trim().isEmpty();
+        ackCard.setVisibility(has ? View.VISIBLE : View.GONE);
+        tvAck.setText(has ? message : "");
     }
 
     /** "All clear": Pip smiles for 2 s, plus a snackbar with Pip's head (celebrate look). */
@@ -399,7 +514,10 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         refreshLocationPermissionUi();
         IntentFilter filter = new IntentFilter(STATUS_ACTION);
+        filter.addAction(ACK_ACTION);
         ContextCompat.registerReceiver(this, statusReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        // A reply that arrived while this screen was closed is still shown on return.
+        showAck(UserMonitorService.ackMessage);
     }
 
     @Override

@@ -17,12 +17,15 @@ public final class EventFormatter {
 
     public static String emoji(String type) {
         if (EventTypes.ATTENTION.equals(type)
-                || EventTypes.LOW_BATTERY.equals(type)) return "🟠";
+                || EventTypes.LOW_BATTERY.equals(type)
+                || EventTypes.SAFE_ZONE_EXIT.equals(type)) return "🟠";
         if (EventTypes.EMERGENCY.equals(type)
                 || EventTypes.MANUAL_HELP.equals(type)
                 || EventTypes.VOICE_HELP.equals(type)
                 || EventTypes.CODEWORD.equals(type)) return "🔴";
-        if (EventTypes.ALL_CLEAR.equals(type)) return "🟢";
+        if (EventTypes.ALL_CLEAR.equals(type)
+                || EventTypes.SAFE_ZONE_RETURN.equals(type)) return "🟢";
+        if (EventTypes.GUARDIAN_ACK.equals(type)) return "🔵";
         return "⚪";
     }
 
@@ -34,6 +37,10 @@ public final class EventFormatter {
         if (EventTypes.CODEWORD.equals(type)) return "Codeword";
         if (EventTypes.ALL_CLEAR.equals(type)) return "All clear";
         if (EventTypes.LOW_BATTERY.equals(type)) return "Low battery";
+        if (EventTypes.GUARDIAN_ACK.equals(type)) return "Guardian responding";
+        if (EventTypes.SMS_SENT.equals(type)) return "SMS sent";
+        if (EventTypes.SAFE_ZONE_EXIT.equals(type)) return "Left safe zone";
+        if (EventTypes.SAFE_ZONE_RETURN.equals(type)) return "Back home";
         return "Event";
     }
 

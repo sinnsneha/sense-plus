@@ -158,7 +158,6 @@
             style="@style/Widget.SENSE.Button.Stadium"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/profile_save"
-            app:icon="@drawable/ic_cta_check" />
+            android:text="@string/profile_save" />
     </LinearLayout>
 </LinearLayout>

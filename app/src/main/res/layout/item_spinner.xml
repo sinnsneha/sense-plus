@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The selected blood group in the Medical ID spinner. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_min"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp"
+    android:textAppearance="@style/TextAppearance.SENSE.BodyL"
+    android:textColor="@color/ink_900" />

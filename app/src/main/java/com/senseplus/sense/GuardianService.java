@@ -28,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.Source;
 
+import java.util.Map;
 import java.util.TimeZone;
 
 public class GuardianService extends Service {
@@ -42,17 +43,24 @@ public class GuardianService extends Service {
     public static final String ALARM_CHANNEL = "guardian_alarm_v3";
 
     private static final int ONGOING_ID = 1;
-    /** Attention, emergency, all clear and false alarm share this id: each replaces the last. */
-    private static final int ALERT_ID = 2;
+    /**
+     * Attention, emergency, all clear and false alarm share this id: each replaces the last.
+     * Package-private: AckNotifications replaces the alarm under this id once a reply is sent.
+     */
+    static final int ALERT_ID = 2;
     private static final int SIGNIN_ID = 4;
     private static final int BATTERY_ID = 5;
     private static final int CONTACT_ID = 6;
     private static final int LINK_ID = 7;
+    /** Safe zone exit / return (segment 27): its own id, so it never replaces a ringing alarm. */
+    private static final int SAFE_ZONE_ID = 9;
 
     private static final int REQUEST_OPEN_DASHBOARD = 20;
     private static final int REQUEST_OPEN_MAP = 21;
     private static final int REQUEST_CALL = 22;
     private static final int REQUEST_OPEN_LINK = 23;
+    // 24 is AckNotifications' "I'm on my way" button.
+    private static final int REQUEST_SAFE_ZONE_MAP = 25;
 
     // Milliseconds: buzz, pause, buzz ... Long pulses so it is felt in a pocket or on a table.
     private static final long[] ALARM_VIBRATION = {0, 1000, 400, 1000, 400, 1000, 400, 1000};
@@ -63,6 +71,8 @@ public class GuardianService extends Service {
     private String lastStatus = null;
     private ConnectivityStatus.State lastContact = null;
     private final BatteryAlertRule batteryRule = new BatteryAlertRule();
+    // Segment 27: "inside" / "outside" as of the previous poll; null until known, or while the zone is off.
+    private String lastSafeZone = null;
 
     // Refused polls in a row. A few mean the user removed this guardian (segment 23).
     private int deniedStreak = 0;
@@ -227,6 +237,56 @@ public class GuardianService extends Service {
         handleStatus(doc, name, now);
         handleBattery(doc, name);
         handleContact(doc, name, now);
+        handleSafeZone(doc, name);
+    }
+
+    // ---------- safe zone: 🟠 left, 🟢 back (segment 27) ----------
+
+    /**
+     * Reads the same document the poll already fetched: no extra reads. The user's phone writes
+     * "safeZone" once per transition; SafeZoneAlertDecider turns a change of it into one alert.
+     * While the zone is off (or there is no Home) nothing is alerted and the memory is cleared, so
+     * switching it back on starts clean.
+     */
+    private void handleSafeZone(DocumentSnapshot doc, String name) {
+        Object raw = doc.get("home");
+        HomeData home = raw instanceof Map ? HomeData.fromMap((Map<?, ?>) raw) : null;
+        if (home == null || !home.enabled || !home.hasLocation()) {
+            lastSafeZone = null;
+            return;
+        }
+        String zone = doc.getString("safeZone");
+        if (zone == null) return; // on, but the user's phone has not reported yet: keep what we knew
+
+        SafeZoneAlertDecider.Alert alert = SafeZoneAlertDecider.decide(lastSafeZone, zone);
+        lastSafeZone = zone;
+
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm == null) return;
+        if (alert == SafeZoneAlertDecider.Alert.LEFT) {
+            Double lat = doc.getDouble("latitude");
+            Double lon = doc.getDouble("longitude");
+            Double distanceM = lat != null && lon != null
+                    ? GeoDistance.metres(lat, lon, home.lat, home.lon) : null;
+
+            NotificationCompat.Builder b = simpleBuilder(ALERT_CHANNEL,
+                    GuardianAlertText.safeZoneExitTitle(),
+                    GuardianAlertText.safeZoneExitBody(name, distanceM),
+                    "#E65100", NotificationCompat.CATEGORY_STATUS);
+            String mapsLink = GuardianAlertText.mapsLink(doc.getString("mapsLink"), lat, lon);
+            if (mapsLink != null) {
+                Intent map = new Intent(Intent.ACTION_VIEW, Uri.parse(mapsLink))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                b.addAction(android.R.drawable.ic_menu_mapmode, "Open map",
+                        PendingIntent.getActivity(this, REQUEST_SAFE_ZONE_MAP, map, pendingFlags()));
+            }
+            nm.notify(SAFE_ZONE_ID, b.build());
+        } else if (alert == SafeZoneAlertDecider.Alert.RETURNED) {
+            nm.notify(SAFE_ZONE_ID, simpleNotification(ALERT_CHANNEL,
+                    GuardianAlertText.safeZoneReturnTitle(),
+                    GuardianAlertText.safeZoneReturnBody(name),
+                    "#2E7D32", NotificationCompat.CATEGORY_STATUS));
+        }
     }
 
     // ---------- status: 🟠 attention, 🔴 emergency, 🟢 all clear ----------
@@ -240,10 +300,13 @@ public class GuardianService extends Service {
 
         switch (alert) {
             case ATTENTION:
-                postStatusAlert(simpleNotification(ALERT_CHANNEL,
+                // Segment 25: the 🟠 notice carries the "I'm on my way" button too.
+                postStatusAlert(simpleBuilder(ALERT_CHANNEL,
                         GuardianAlertText.attentionTitle(),
                         GuardianAlertText.attentionBody(name, UserMonitorService.ATTENTION_SECONDS),
-                        "#E65100", NotificationCompat.CATEGORY_STATUS));
+                        "#E65100", NotificationCompat.CATEGORY_STATUS)
+                        .addAction(AckNotifications.ackAction(this, name))
+                        .build());
                 break;
             case EMERGENCY:
                 postStatusAlert(emergencyNotification(doc, name, now));
@@ -303,7 +366,10 @@ public class GuardianService extends Service {
                 .setWhen(now)
                 .setShowWhen(true)
                 .setContentIntent(openDashboardIntent())
-                .setAutoCancel(true);
+                .setAutoCancel(true)
+                // Segment 25: first, so it is still visible when the notification shows only
+                // some of its actions. Handled by AckReceiver; stops this alarm once sent.
+                .addAction(AckNotifications.ackAction(this, name));
 
         String mapsLink = GuardianAlertText.mapsLink(
                 doc.getString("mapsLink"), doc.getDouble("latitude"), doc.getDouble("longitude"));
@@ -374,6 +440,12 @@ public class GuardianService extends Service {
     /** A tappable notification (opens the dashboard) with a one-line text and a colour. */
     private Notification simpleNotification(String channel, String title, String text,
                                             String colorHex, String category) {
+        return simpleBuilder(channel, title, text, colorHex, category).build();
+    }
+
+    /** The same notification as a builder, for the ones that need an action added. */
+    private NotificationCompat.Builder simpleBuilder(String channel, String title, String text,
+                                                     String colorHex, String category) {
         return new NotificationCompat.Builder(this, channel)
                 .setContentTitle(title)
                 .setContentText(text)
@@ -383,17 +455,23 @@ public class GuardianService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT) // the channel sets the real behaviour
                 .setCategory(category)
                 .setContentIntent(openDashboardIntent())
-                .setAutoCancel(true)
-                .build();
+                .setAutoCancel(true);
     }
 
-    /** Opens the guardian dashboard directly. The biometric check belongs to the Home card only. */
     private PendingIntent openDashboardIntent() {
-        Intent open = new Intent(this, GuardianActivity.class)
+        return openDashboardIntent(this);
+    }
+
+    /**
+     * Opens the guardian dashboard directly. The biometric check belongs to the Home card only.
+     * Static so AckNotifications can build the same tap target for its notices.
+     */
+    static PendingIntent openDashboardIntent(Context context) {
+        Intent open = new Intent(context, GuardianActivity.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                         | Intent.FLAG_ACTIVITY_CLEAR_TOP
                         | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        return PendingIntent.getActivity(this, REQUEST_OPEN_DASHBOARD, open, pendingFlags());
+        return PendingIntent.getActivity(context, REQUEST_OPEN_DASHBOARD, open, pendingFlags());
     }
 
     private static int pendingFlags() {

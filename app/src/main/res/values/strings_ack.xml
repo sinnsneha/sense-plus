@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Segment 25: the guardian answers "I'm on my way"; the user's phone says so out loud.
+     Kept in its own file so it never collides with edits to strings.xml; Android merges every
+     values/*.xml file. Notification texts live in GuardianAlertText (tested), not here. -->
+<resources>
+
+    <!-- Guardian dashboard: shown only while the status is possible fall / possible emergency -->
+    <string name="guardian_ack_button">I\'m on my way</string>
+    <string name="guardian_ack_sending">Sending…</string>
+    <string name="guardian_ack_sent">Sent: %1$s has been told</string>
+    <string name="guardian_ack_failed">Not sent. Check this phone\'s connection, then tap I\'m on my way again.</string>
+
+    <!-- Safety screen (user phone): large text while a guardian is responding -->
+    <string name="ack_card_label">Guardian responding</string>
+</resources>

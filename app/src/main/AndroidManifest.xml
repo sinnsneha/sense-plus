@@ -14,8 +14,16 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- Segment 26: "Call my guardian" (asked once, with a reason; the dialer is the fallback)
+         and the opt-in emergency SMS (asked when the user turns the switch on). -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.SEND_SMS" />
+    <!-- Segment 28: lets BootReceiver run after a restart, to remind the person that protection is off. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <!-- Both permissions above would otherwise hide the app from phones without a SIM, such as tablets. -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -50,6 +58,13 @@
         <activity android:name=".GuardiansActivity" android:exported="false" />
         <activity android:name=".LinkActivity" android:exported="false"
             android:windowSoftInputMode="adjustResize" />
+        <!-- Segment 26: Medical ID. The form is not shown over the lock screen; the read-only helper
+             view is (showWhenLocked in the manifest too, so a notification button can open it
+             without the unlock prompt). -->
+        <activity android:name=".MedicalIdActivity" android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".MedicalHelperActivity" android:exported="false"
+            android:showWhenLocked="true" />
         <!-- Debug-only Pip gallery (finishes itself in non-debuggable builds) -->
         <activity android:name=".CharacterGalleryActivity" android:exported="false" />
 
@@ -58,6 +73,20 @@
 
         <service android:name=".UserMonitorService" android:exported="false"
             android:foregroundServiceType="location|microphone|dataSync" />
+
+        <!-- Segment 25: the "I'm on my way" button on the guardian's alert notifications.
+             Not exported: only this app's own PendingIntent can reach it. -->
+        <receiver android:name=".AckReceiver" android:exported="false" />
+
+        <!-- Segment 28: after a restart or an app update, remind the person that protection is off.
+             exported=false still receives these two system broadcasts; no other app can send to it.
+             It posts a notification and starts no service (Android refuses that from a boot receiver). -->
+        <receiver android:name=".BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

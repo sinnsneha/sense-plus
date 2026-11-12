@@ -162,6 +162,8 @@ public class HomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, GuardiansActivity.class)));
         findViewById(R.id.cardLink).setOnClickListener(v ->
                 startActivity(new Intent(this, LinkActivity.class)));
+        findViewById(R.id.cardMedical).setOnClickListener(v ->
+                startActivity(new Intent(this, MedicalIdActivity.class)));
     }
 
     /** Shows or hides each card according to the role and the saved profile. */
@@ -195,6 +197,7 @@ public class HomeActivity extends AppCompatActivity {
         setCardVisible(R.id.cardSensor, ModeMapper.CARD_SENSOR, visible);
         setCardVisible(R.id.cardGuardians, ModeMapper.CARD_GUARDIANS, visible);
         setCardVisible(R.id.cardLink, ModeMapper.CARD_LINK, visible);
+        setCardVisible(R.id.cardMedical, ModeMapper.CARD_MEDICAL, visible);
         fitLayoutToVisibleCards(visible);
     }
 
@@ -222,6 +225,9 @@ public class HomeActivity extends AppCompatActivity {
                 R.string.home_tile_guardians_title, R.string.home_tile_guardians_sub);
         styleTile(R.id.cardLink, Gradients.Family.MINT, DuckLooks.Look.GUARDIAN,
                 R.string.home_tile_link_title, R.string.home_tile_link_sub);
+        // Segment 26: Medical ID, on the sky family with Pip's profile look.
+        styleTile(R.id.cardMedical, Gradients.Family.SKY, DuckLooks.Look.PROFILE,
+                R.string.home_tile_medical_title, R.string.home_tile_medical_sub);
 
         Ui.pressFeedback(findViewById(R.id.cardUser), findViewById(R.id.cardGuardian),
                 findViewById(R.id.cardSensor), findViewById(R.id.btnAccount),
@@ -264,7 +270,8 @@ public class HomeActivity extends AppCompatActivity {
 
         boolean anyTool = visible.contains(ModeMapper.CARD_COMMUNICATION) || visible.contains(ModeMapper.CARD_VISUAL)
                 || visible.contains(ModeMapper.CARD_HEARING) || visible.contains(ModeMapper.CARD_NAVIGATION)
-                || visible.contains(ModeMapper.CARD_GUARDIANS) || visible.contains(ModeMapper.CARD_LINK);
+                || visible.contains(ModeMapper.CARD_GUARDIANS) || visible.contains(ModeMapper.CARD_LINK)
+                || visible.contains(ModeMapper.CARD_MEDICAL);
         findViewById(R.id.toolsHeader).setVisibility(anyTool ? View.VISIBLE : View.GONE);
         findViewById(R.id.toolGrid).setVisibility(anyTool ? View.VISIBLE : View.GONE);
     }
@@ -281,6 +288,7 @@ public class HomeActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQUEST_NOTIFICATIONS);
         }
         ContextCompat.startForegroundService(this, new Intent(this, GuardianService.class));
+        ReminderNotifications.cancel(this); // segment 28: alerts are back, so a restart reminder is stale
     }
 
     private void openLogin() {
@@ -322,7 +330,8 @@ public class HomeActivity extends AppCompatActivity {
         stopService(new Intent(this, UserMonitorService.class));
         stopService(new Intent(this, GuardianService.class));
         FirebaseAuth.getInstance().signOut();
-        AccountStore.clear(this);
+        AccountStore.clear(this); // also sets monitoring_wanted to false (segment 28)
+        ReminderNotifications.cancel(this);
 
         Intent intent = new Intent(this, LoginActivity.class);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);

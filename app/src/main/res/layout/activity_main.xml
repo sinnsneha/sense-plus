@@ -132,9 +132,41 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:accessibilityLiveRegion="polite"
-                android:text="Status: monitoring OFF"
+                android:text="@string/status_off"
                 android:textAppearance="@style/TextAppearance.SENSE.TitleL"
                 android:textColor="@color/status_off_text" />
+        </LinearLayout>
+
+        <!-- segment 25: a guardian answered "I'm on my way". Large text, hidden until then and
+             again when the alert ends. It sits beside the status card: it never replaces it. -->
+        <LinearLayout
+            android:id="@+id/ackCard"
+            style="@style/Widget.SENSE.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:backgroundTint="@color/sky_100"
+            android:focusable="true"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:importantForAccessibility="no"
+                android:text="@string/ack_card_label"
+                android:textAppearance="@style/TextAppearance.SENSE.CaptionCaps"
+                android:textColor="@color/sky_800" />
+
+            <TextView
+                android:id="@+id/tvAck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:accessibilityLiveRegion="polite"
+                android:textAppearance="@style/TextAppearance.SENSE.HeadlineM"
+                android:textColor="@color/ink_900" />
         </LinearLayout>
 
         <!-- shown only when location is missing / not precise (segment 21) -->
@@ -179,28 +211,40 @@
                 android:text="@string/im_ok" />
         </LinearLayout>
 
-        <!-- THE primary action -->
+        <!-- segment 26: one tap to call the first guardian (or the Medical ID emergency contact) -->
         <Button
-            android:id="@+id/btnToggle"
-            style="@style/Widget.SENSE.Button.Stadium.Guard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/screen_gutter"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="@dimen/screen_gutter"
-            android:text="@string/start_monitoring"
-            app:icon="@drawable/ic_cta_play" />
-
-        <Button
-            android:id="@+id/btnCodeword"
+            android:id="@+id/btnCallGuardian"
             style="@style/Widget.SENSE.Button.Outline"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/screen_gutter"
             android:layout_marginTop="12dp"
             android:layout_marginEnd="@dimen/screen_gutter"
-            android:text="@string/set_codeword"
-            app:icon="@drawable/ic_password" />
+            android:contentDescription="@string/call_guardian_cd"
+            android:minHeight="@dimen/touch_primary"
+            android:text="@string/call_guardian"
+            app:icon="@drawable/ic_call" />
+
+        <!-- THE primary action: start / stop (MainActivity sets activated while running) -->
+        <Button
+            android:id="@+id/btnToggle"
+            style="@style/Widget.SENSE.Button.Guard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/screen_gutter"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="@dimen/screen_gutter"
+            android:text="@string/start_monitoring" />
+
+        <!-- a setting, not an action: a quiet text link -->
+        <Button
+            android:id="@+id/btnCodeword"
+            style="@style/Widget.SENSE.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="@string/set_codeword" />
 
         <TextView
             android:id="@+id/tvFootnote"

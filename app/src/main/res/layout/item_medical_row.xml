@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One Medical ID fact: small caps label over the value. The same row serves the helper view
+     (MedicalViews sets the large text appearances) and the guardian dashboard (normal size).
+     One TalkBack node per row ("Allergies: penicillin"). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <TextView
+        android:id="@+id/rowLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:importantForAccessibility="no"
+        android:textAppearance="@style/TextAppearance.SENSE.CaptionCaps" />
+
+    <TextView
+        android:id="@+id/rowValue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:importantForAccessibility="no"
+        android:textAppearance="@style/TextAppearance.SENSE.BodyL" />
+</LinearLayout>

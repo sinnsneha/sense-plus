@@ -49,27 +49,18 @@
         <item name="android:outlineSpotShadowColor">@color/ink_900</item>
     </style>
 
-    <!-- components.stadiumCta: THE primary action. Gradient pill + white icon circle. -->
+    <!-- components.stadiumCta: THE primary action. Gradient pill, text only (no icon chip:
+         the white icon circle read as clip-art). Soft neutral shadow, no coloured glow. -->
     <style name="Widget.SENSE.Button.Stadium">
         <item name="android:minHeight">@dimen/touch_primary</item>
-        <item name="android:paddingLeft">12dp</item>
-        <item name="android:paddingRight">28dp</item>
+        <item name="android:paddingLeft">24dp</item>
+        <item name="android:paddingRight">24dp</item>
         <item name="backgroundTint">@null</item>
         <item name="android:background">@drawable/bg_cta_tangerine</item>
         <item name="android:textColor">@color/sel_cta_text</item>
-        <item name="iconTint">@null</item>
-        <item name="iconSize">@dimen/cta_icon_circle</item>
-        <item name="iconPadding">12dp</item>
-        <item name="iconGravity">start</item>
-        <item name="elevation">@dimen/shadow_glow</item>
-        <item name="android:elevation">@dimen/shadow_glow</item>
-        <item name="android:outlineSpotShadowColor">@color/tangerine_600</item>
-        <item name="android:outlineAmbientShadowColor">@color/tangerine_500</item>
-    </style>
-
-    <!-- SENSE GUARD's CTA is 72dp -->
-    <style name="Widget.SENSE.Button.Stadium.Guard">
-        <item name="android:minHeight">@dimen/touch_primary_guard</item>
+        <item name="elevation">@dimen/shadow_sm</item>
+        <item name="android:elevation">@dimen/shadow_sm</item>
+        <item name="android:outlineSpotShadowColor">@color/ink_900</item>
     </style>
 
     <!-- Visual Assist: butter_300 → tangerine_400 -->
@@ -79,7 +70,8 @@
         <item name="android:outlineAmbientShadowColor">@color/butter_500</item>
     </style>
 
-    <!-- components.emergencyButton: never pastel, never grain, always the tallest. -->
+    <!-- components.emergencyButton: a flat solid-red tile, text only, letter-spaced.
+         Never pastel, never grain, always the tallest and the strongest colour. -->
     <style name="Widget.SENSE.Button.Emergency">
         <item name="android:minHeight">@dimen/touch_emergency</item>
         <item name="android:paddingLeft">16dp</item>
@@ -88,27 +80,31 @@
         <item name="android:textColor">@color/white</item>
         <item name="backgroundTint">@color/status_emergency_solid</item>
         <item name="cornerRadius">@dimen/radius_xl</item>
-        <item name="icon">@drawable/ic_emergency</item>
-        <item name="iconSize">28dp</item>
-        <item name="iconTint">@color/white</item>
         <item name="rippleColor">@color/ripple_white</item>
-        <item name="elevation">@dimen/shadow_glow</item>
-        <item name="android:elevation">@dimen/shadow_glow</item>
-        <item name="android:outlineSpotShadowColor">@color/status_emergency_solid</item>
-        <item name="android:outlineAmbientShadowColor">@color/status_emergency_solid</item>
     </style>
 
-    <!-- components.tonalButton: positive secondary action (I'M OK). -->
+    <!-- components.tonalButton: positive secondary action (I'M OK). Soft mint tile, dark
+         green letter-spaced text (mint_800 on mint_100 = 7.6:1), no border, no icon. -->
     <style name="Widget.SENSE.Button.Tonal">
         <item name="android:minHeight">@dimen/touch_emergency</item>
         <item name="android:paddingLeft">14dp</item>
         <item name="android:paddingRight">14dp</item>
+        <item name="android:textColor">@color/mint_800</item>
+        <item name="android:letterSpacing">0.06</item>
         <item name="backgroundTint">@color/status_normal_tint</item>
-        <item name="strokeColor">@color/status_normal_solid</item>
-        <item name="strokeWidth">2dp</item>
         <item name="cornerRadius">@dimen/radius_xl</item>
-        <item name="icon">@drawable/ic_check_circle</item>
-        <item name="iconTint">@color/status_normal_solid</item>
+    </style>
+
+    <!-- SENSE GUARD start/stop: a rounded tile in the hero's lavender. Off = deep lavender with
+         white text (6.9:1) and a soft shadow; while monitoring (setActivated(true)) it turns
+         calm light lavender (8.3:1) so HELP stays the loudest thing on screen. -->
+    <style name="Widget.SENSE.Button.Guard">
+        <item name="android:minHeight">@dimen/touch_primary_guard</item>
+        <item name="android:textColor">@color/sel_guard_toggle_text</item>
+        <item name="backgroundTint">@color/sel_guard_toggle_bg</item>
+        <item name="cornerRadius">@dimen/radius_xl</item>
+        <item name="android:stateListAnimator">@animator/sla_guard_toggle</item>
+        <item name="android:outlineSpotShadowColor">@color/lavender_800</item>
     </style>
 
     <!-- components.outlineButton: low emphasis. -->

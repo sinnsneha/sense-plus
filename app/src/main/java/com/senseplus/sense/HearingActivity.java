@@ -2,6 +2,7 @@ package com.senseplus.sense;
 
 import android.Manifest;
 import android.animation.ObjectAnimator;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
@@ -62,8 +63,22 @@ import java.util.concurrent.TimeUnit;
  *                        a distinct vibration pattern and a flashlight blink.
  *  Mode 2 LIVE CAPTIONS: Vosk (offline speech recognition) turns nearby speech into large text.
  * Only one mode uses the microphone at a time.
+ *
+ * Segment 28: while this screen is open, the voice keywords of SENSE GUARD step aside (the
+ * activity sends PAUSE / RESUME to UserMonitorService); fall detection, location and the
+ * heartbeat keep running, so using captions does not switch off protection.
  */
 public class HearingActivity extends AppCompatActivity {
+
+    /**
+     * True while this screen is in the foreground (onResume to onPause). UserMonitorService reads
+     * it when monitoring starts, so keywords started while Hearing Assist is open wait for it to close.
+     */
+    private static volatile boolean open = false;
+
+    public static boolean isOpen() {
+        return open;
+    }
 
     private static final int REQ_MIC = 301;
     private static final float MIN_SCORE = 0.30f;              // ignore weak guesses
@@ -180,6 +195,9 @@ public class HearingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        open = true;
+        // Ask the voice keywords to let go of the microphone BEFORE this screen takes it.
+        sendVoiceAction(UserMonitorService.ACTION_PAUSE_VOICE);
         startCurrentMode();
     }
 
@@ -188,6 +206,25 @@ public class HearingActivity extends AppCompatActivity {
         super.onPause();
         stopSoundAlerts();
         stopCaptions();
+        open = false;
+        // The microphone is free again: the keywords may listen.
+        sendVoiceAction(UserMonitorService.ACTION_RESUME_VOICE);
+    }
+
+    /**
+     * Tells the monitoring service to pause or resume its voice keywords, but only if it is
+     * running. Plain startService, not the foreground-service start: this screen is in the
+     * foreground, so it is allowed, and a service started the foreground way must call
+     * startForeground even when there is nothing to do, which crashed in segment 16. With
+     * monitoring off, nothing is started and nothing happens.
+     */
+    private void sendVoiceAction(String action) {
+        if (!UserMonitorService.isRunning()) return;
+        try {
+            startService(new Intent(this, UserMonitorService.class).setAction(action));
+        } catch (RuntimeException e) {
+            // The service was stopped between the check and the call; there is nothing to pause.
+        }
     }
 
     @Override

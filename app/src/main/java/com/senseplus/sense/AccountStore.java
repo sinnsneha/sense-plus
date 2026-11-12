@@ -29,6 +29,12 @@ public final class AccountStore {
     static final String KEY_PHONE = "account_phone";
     static final String KEY_LINKED_UID = "linked_user_uid";     // guardians only
     static final String KEY_LINKED_NAME = "linked_user_name";   // guardians only
+    /**
+     * Segment 28: the user turned monitoring on and has not turned it off since. It survives a
+     * restart, so BootReceiver can tell "protection stopped because the phone restarted" from
+     * "the person switched it off". Cleared on sign-out.
+     */
+    static final String KEY_MONITORING_WANTED = "monitoring_wanted";
 
     // Field names inside accounts/{uid}.
     static final String FIELD_LINKED_USER = "linkedUser";
@@ -62,6 +68,15 @@ public final class AccountStore {
 
     public static boolean isLinked(Context c) { return linkedUid(c) != null; }
 
+    /** True from "Start monitoring" until "Stop monitoring" or sign-out (segment 28). */
+    public static boolean monitoringWanted(Context c) {
+        return prefs(c).getBoolean(KEY_MONITORING_WANTED, false);
+    }
+
+    public static void setMonitoringWanted(Context c, boolean wanted) {
+        prefs(c).edit().putBoolean(KEY_MONITORING_WANTED, wanted).apply();
+    }
+
     /**
      * True only when the cache belongs to the currently signed-in, non-anonymous Firebase user
      * and contains a role we understand. Anonymous users from older installs fail this test.
@@ -91,6 +106,7 @@ public final class AccountStore {
                 .remove(KEY_PHONE)
                 .remove(KEY_LINKED_UID)
                 .remove(KEY_LINKED_NAME)
+                .putBoolean(KEY_MONITORING_WANTED, false) // signing out is a deliberate stop (segment 28)
                 .apply();
     }
 

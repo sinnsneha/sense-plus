@@ -196,7 +196,6 @@
             android:layout_marginStart="@dimen/screen_gutter"
             android:layout_marginTop="14dp"
             android:layout_marginEnd="@dimen/screen_gutter"
-            android:text="@string/visual_read_aloud"
-            app:icon="@drawable/ic_cta_volume" />
+            android:text="@string/visual_read_aloud" />
     </LinearLayout>
 </ScrollView>

@@ -26,9 +26,12 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.RelativeSizeSpan;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -108,6 +111,12 @@ public class NavigationActivity extends AppCompatActivity implements SensorEvent
     private double lastDistanceM = -1;
     private View navCard;
 
+    // Segment 27: safe zone settings (shown once a Home is saved)
+    private View safeZoneCard;
+    private MaterialSwitch swSafeZone, swSafeZoneSpeak;
+    private Spinner spSafeZoneRadius;
+    private boolean bindingSafeZone = false; // true while the controls are being filled in, not changed by the user
+
     private boolean hasHome;
     private double homeLat, homeLon;
     private String homeAddress;
@@ -178,6 +187,10 @@ public class NavigationActivity extends AppCompatActivity implements SensorEvent
         navCard = findViewById(R.id.navCard);
         tvDistance = findViewById(R.id.tvDistance);
         pip = findViewById(R.id.pipNav);
+        safeZoneCard = findViewById(R.id.safeZoneCard);
+        swSafeZone = findViewById(R.id.swSafeZone);
+        swSafeZoneSpeak = findViewById(R.id.swSafeZoneSpeak);
+        spSafeZoneRadius = findViewById(R.id.spSafeZoneRadius);
         Ui.pressFeedback(btnSaveHome, btnSpeak, btnTypeAddress, btnWalkingDirections,
                 btnOpenSettings, btnRetryLocation);
 
@@ -210,6 +223,7 @@ public class NavigationActivity extends AppCompatActivity implements SensorEvent
             autoSpeak = checked;
             if (checked) lastAutoSpeakMs = System.currentTimeMillis();
         });
+        setUpSafeZoneControls();
 
         refreshPermissions();
         ensureLocationPermission();
@@ -284,6 +298,7 @@ public class NavigationActivity extends AppCompatActivity implements SensorEvent
             homeAddress = null;
         }
         editor.apply();
+        HomeStore.onHomeSaved(this); // segment 27: stamp it and write it to users/{uid}.home
 
         homeLat = lat;
         homeLon = lon;
@@ -292,6 +307,44 @@ public class NavigationActivity extends AppCompatActivity implements SensorEvent
         updateHomeState();
         tvStatus.setText("Home saved");
         speak("Home saved.");
+    }
+
+    // ---------- Safe zone settings (segment 27) ----------
+
+    /** The adapter and listeners, set up once. Every change goes through HomeStore (phone + cloud). */
+    private void setUpSafeZoneControls() {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this, R.array.safezone_radii, R.layout.item_spinner);
+        adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
+        spSafeZoneRadius.setAdapter(adapter);
+
+        swSafeZone.setOnCheckedChangeListener((button, checked) -> {
+            if (!bindingSafeZone) HomeStore.setEnabled(this, checked);
+        });
+        spSafeZoneRadius.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                // Setting the selection from the saved value also arrives here: only a real change counts.
+                int radius = HomeData.RADII_M[position];
+                if (!bindingSafeZone && radius != HomeStore.load(NavigationActivity.this).radiusM) {
+                    HomeStore.setRadius(NavigationActivity.this, radius);
+                }
+            }
+
+            @Override public void onNothingSelected(AdapterView<?> parent) { }
+        });
+        swSafeZoneSpeak.setOnCheckedChangeListener((button, checked) -> {
+            if (!bindingSafeZone) HomeStore.setSpeakHelp(this, checked);
+        });
+    }
+
+    /** Fills the controls from the saved settings (and the profile, for the spoken-help default). */
+    private void bindSafeZone() {
+        HomeData saved = HomeStore.load(this);
+        bindingSafeZone = true;
+        swSafeZone.setChecked(saved.enabled);
+        spSafeZoneRadius.setSelection(HomeData.radiusIndex(saved.radiusM));
+        swSafeZoneSpeak.setChecked(HomeStore.speakHelp(this));
+        bindingSafeZone = false;
     }
 
     // ---------- Saving Home ----------
@@ -629,6 +682,8 @@ public class NavigationActivity extends AppCompatActivity implements SensorEvent
 
     private void updateHomeState() {
         if (hasHome) {
+            safeZoneCard.setVisibility(View.VISIBLE);
+            bindSafeZone();
             tvNoHome.setVisibility(View.GONE);
             navCard.setVisibility(View.VISIBLE);
             btnSpeak.setVisibility(View.VISIBLE);
@@ -641,6 +696,7 @@ public class NavigationActivity extends AppCompatActivity implements SensorEvent
                         "Home saved at %.6f, %.6f", homeLat, homeLon));
             }
         } else {
+            safeZoneCard.setVisibility(View.GONE);
             tvNoHome.setVisibility(View.VISIBLE);
             navCard.setVisibility(View.GONE);
             btnSpeak.setVisibility(View.GONE);

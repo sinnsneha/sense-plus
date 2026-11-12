@@ -159,6 +159,9 @@ public class GuardiansActivity extends AppCompatActivity {
 
     @SuppressWarnings("unchecked")
     private void renderGuardians(DocumentSnapshot doc) {
+        // Segment 26: keep the local copy of the guardians' phones in step with this list. The SMS
+        // fallback reads that copy because it has to work with no internet.
+        EmergencyContacts.cacheFrom(this, doc);
         guardiansContainer.removeAllViews();
         List<Object> guardians = doc != null && doc.exists() && doc.get("guardians") instanceof List
                 ? (List<Object>) doc.get("guardians") : null;

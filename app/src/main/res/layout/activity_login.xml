@@ -188,8 +188,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="@string/login_sign_in"
-                        app:icon="@drawable/ic_cta_play" />
+                        android:text="@string/login_sign_in" />
                 </LinearLayout>
 
                 <!-- Create account -->
@@ -317,8 +316,7 @@
                         style="@style/Widget.SENSE.Button.Stadium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/login_create"
-                        app:icon="@drawable/ic_cta_check" />
+                        android:text="@string/login_create" />
                 </LinearLayout>
 
                 <!-- Shown only when a signed-in account has no role we can load. -->
@@ -353,8 +351,7 @@
                         style="@style/Widget.SENSE.Button.Stadium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/login_retry"
-                        app:icon="@drawable/ic_cta_play" />
+                        android:text="@string/login_retry" />
 
                     <Button
                         android:id="@+id/btnUseAnotherAccount"

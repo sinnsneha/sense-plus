@@ -32,8 +32,11 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.Source;
 
 import android.content.SharedPreferences;
 import org.json.JSONArray;
@@ -44,8 +47,11 @@ import org.vosk.android.RecognitionListener;
 import org.vosk.android.SpeechService;
 import org.vosk.android.StorageService;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class UserMonitorService extends Service implements SensorEventListener {
 
@@ -53,6 +59,28 @@ public class UserMonitorService extends Service implements SensorEventListener {
     public static final String ACTION_HELP = "HELP";
     public static final String ACTION_IM_OK = "IM_OK";
     public static final String ACTION_RELOAD_VOICE = "RELOAD_VOICE"; // used by the codeword screen (segment 16)
+    /**
+     * Segment 28, sent by Hearing Assist: give it the microphone / take it back. Only the Vosk
+     * keyword listener stops and restarts; fall detection, location and the heartbeat carry on.
+     */
+    public static final String ACTION_PAUSE_VOICE = "PAUSE_VOICE";
+    public static final String ACTION_RESUME_VOICE = "RESUME_VOICE";
+
+    private static final String VOICE_PAUSED_TEXT =
+            "Voice keywords paused while Hearing Assist is open (fall detection still on)";
+
+    /**
+     * True from the moment monitoring is running until the service is destroyed. Hearing Assist
+     * checks it before sending PAUSE / RESUME, so it never starts this service just to pause
+     * something that is not there (that pattern crashed in segment 16: a foreground service
+     * started with startForegroundService must call startForeground, even when there is
+     * nothing to do). Static: both live in the same process.
+     */
+    private static volatile boolean running = false;
+
+    public static boolean isRunning() {
+        return running;
+    }
 
     private static final String CHANNEL_ONGOING = "user_monitor";
     private static final String CHANNEL_ALERT = "user_alert_v2";
@@ -73,6 +101,8 @@ public class UserMonitorService extends Service implements SensorEventListener {
     // Vosk voice (offline, continuous keyword listening)
     private Model voskModel;
     private SpeechService speechService;
+    private boolean voiceLoading = false;                 // the model is being unpacked (segment 28)
+    private final MicArbiter mic = new MicArbiter();      // may the keywords use the microphone right now?
 
     private enum Level { NORMAL, ATTENTION, EMERGENCY }
     private Level level = Level.NORMAL;
@@ -104,6 +134,65 @@ public class UserMonitorService extends Service implements SensorEventListener {
     private boolean ttsSpeaking = false;
     private long lastSpokeEnd = 0;
 
+    // Last location fix, for the emergency SMS (segment 26). Updated on the main thread.
+    private long lastFixMs = 0;            // when the fix arrived; 0 = none yet
+    private double lastLat, lastLon;
+    private float lastAccuracyM = 0f;
+
+    /**
+     * A fix older than this is not put in the SMS (ms). Updates arrive about every 5 s, so a gap
+     * of 10 minutes means GPS has been lost for a long time; a guardian sent to an old spot
+     * would be misled, so the text says the location is unknown instead.
+     */
+    private static final long SMS_FIX_MAX_AGE_MS = 10 * 60_000L;
+
+    // ---------- safe zone around Home (segment 27) ----------
+    // The checks ride on the location updates the service already receives (about every 5 s):
+    // there is no extra location request. The only extra network use is ONE read of this user's
+    // own document at start and then every HOME_REFRESH_MS, to pick up a Home or settings the
+    // guardian changed (and to keep segment 26's copy of the guardians' phones fresh).
+
+    /** How often the user's own document is read for a guardian-set Home (ms): 10 min = 144 reads a day. */
+    private static final long HOME_REFRESH_MS = 10 * 60_000L;
+
+    private final SafeZoneRule safeZoneRule = new SafeZoneRule();
+    private boolean safeZoneSeeded = false; // the rule starts from the cloud's last "safeZone" once
+    private final Handler homeHandler = new Handler(Looper.getMainLooper());
+    private final Runnable homeTask = new Runnable() {
+        @Override public void run() {
+            refreshHome();
+            homeHandler.postDelayed(this, HOME_REFRESH_MS);
+        }
+    };
+
+    // ---------- guardian reply: "I'm on my way" (segment 25) ----------
+    // While the level is ATTENTION or EMERGENCY the service reads its own users/{uid} document
+    // every AckRule.POLL_MS (Source.SERVER) to see whether a guardian answered. Nothing is read
+    // while the level is NORMAL. AckRule decides what counts; this block only does the I/O.
+
+    /** One long buzz when a guardian answers (ms): clearly longer than the alert's 800 / 1200. */
+    private static final long ACK_VIBRATION_MS = 1500;
+
+    /**
+     * The latest reply shown on the Safety screen, so it is there when the screen is opened after
+     * the reply arrived (the broadcast only reaches a screen that is open). Null when none.
+     */
+    static volatile String ackMessage = null;
+
+    private String myUid;                  // this user's account id; null when signed out
+    private long alertStartMs = 0;         // when the current alert began (phone clock); 0 = none
+    private final Set<String> acknowledgedBy = new HashSet<>(); // guardians already announced
+    private String ackNote = null;         // "Ravi is on the way", shown in the ongoing notification
+    private String ongoingText = "Monitoring (normal)"; // the ongoing notification without the note
+    private String repeatMessage = null;   // the one announcement to repeat after 30 s
+    private final Handler ackHandler = new Handler(Looper.getMainLooper());
+    private final Runnable ackPollTask = this::pollAck;
+    private final Runnable ackRepeatTask = () -> {
+        String message = repeatMessage;
+        repeatMessage = null;
+        if (message != null && level != Level.NORMAL) speak(message); // still in an alert
+    };
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -129,10 +218,10 @@ public class UserMonitorService extends Service implements SensorEventListener {
         // Segment 23: write to this user's own document. With no signed-in account the helper
         // skips every write; onStartCommand then stops the service with a sign-in notice.
         FirebaseUser signedIn = FirebaseAuth.getInstance().getCurrentUser();
-        cloudHelper = new CloudHelper(signedIn != null && !signedIn.isAnonymous()
-                ? signedIn.getUid() : null);
+        myUid = signedIn != null && !signedIn.isAnonymous() ? signedIn.getUid() : null;
+        cloudHelper = new CloudHelper(myUid);
 
-        locationHelper = new LocationHelper(this, (lat, lon, acc) -> handleLocation(lat, lon));
+        locationHelper = new LocationHelper(this, (lat, lon, acc) -> handleLocation(lat, lon, acc));
 
         fallDetector = new FallDetector(new FallDetector.Listener() {
             @Override public void onFallDetected(FusionResult result) { enterAttention(result); }
@@ -162,6 +251,19 @@ public class UserMonitorService extends Service implements SensorEventListener {
             return START_NOT_STICKY;
         }
 
+        // Segment 28: Hearing Assist pauses / resumes the voice keywords. It sends these with
+        // plain startService and only while isRunning(), so monitoring is already on. They return
+        // before ensureForeground() so the ongoing notification text is left as it is.
+        if (ACTION_PAUSE_VOICE.equals(action) || ACTION_RESUME_VOICE.equals(action)) {
+            if (!started) { // should not happen; do not leave a service behind
+                stopSelf();
+                return START_NOT_STICKY;
+            }
+            if (ACTION_PAUSE_VOICE.equals(action)) pauseVoice(); else resumeVoice();
+            return START_STICKY;
+        }
+
+        running = true;
         ensureForeground("Monitoring (normal)");
         if (!started) {
             started = true;
@@ -174,14 +276,23 @@ public class UserMonitorService extends Service implements SensorEventListener {
             // Name and phone first, so a linked guardian sees who this is and can call them.
             cloudHelper.updateProfile(AccountStore.name(this), AccountStore.phone(this));
             cloudHelper.updateStatus("NORMAL", "Monitoring", battery());
+            // Segments 26 + 27: one read of this user's document now, then every 10 minutes. It
+            // copies the guardians' phones to this phone (the SMS fallback needs them with no
+            // network) and picks up a Home the guardian set.
+            homeHandler.removeCallbacks(homeTask);
+            homeHandler.post(homeTask);
             startHeartbeat();
+            // Segment 28: if Hearing Assist is already open (monitoring was started from the restart
+            // reminder, say), the keywords wait until it closes.
+            mic.monitoringStarted();
+            if (HearingActivity.isOpen()) mic.hearingOpened();
             startVoice();
         }
         if (ACTION_HELP.equals(action)) triggerEmergency(EventTypes.MANUAL_HELP, "Manual HELP pressed");
         else if (ACTION_IM_OK.equals(action)) cancelToNormal("You pressed I'm OK");
         else if (ACTION_RELOAD_VOICE.equals(action)) {
             stopVoice();
-            if (voskModel != null) startRecognition();
+            if (voskModel != null && mic.shouldListen()) startRecognition(true);
         }
         return START_STICKY;
     }
@@ -191,6 +302,7 @@ public class UserMonitorService extends Service implements SensorEventListener {
         if (level != Level.NORMAL) return;
         level = Level.ATTENTION;
         attentionStart = System.currentTimeMillis();
+        beginAlertWatch();
 
         String summary = result != null ? result.summary() : "fusion data missing";
         String detail = "Possible fall (" + summary + ")";
@@ -198,7 +310,7 @@ public class UserMonitorService extends Service implements SensorEventListener {
         speak("Possible fall detected. Are you okay? Say I am okay, or I will alert your guardian.");
         vibrate(800);
         broadcast("ATTENTION", detail);
-        cloudHelper.updateStatus("ATTENTION", detail, battery());
+        cloudHelper.startAlert("ATTENTION", detail, battery()); // also clears any old guardian reply
         cloudHelper.logEvent(EventTypes.ATTENTION, detail);
         showAlert("Possible fall — Are you okay?", "Say \"I'm okay\" or tap I'M OK if you are fine.", false);
 
@@ -213,21 +325,54 @@ public class UserMonitorService extends Service implements SensorEventListener {
         // Already an emergency: do not re-announce, re-notify or duplicate the event.
         if (level == Level.EMERGENCY) return;
 
+        // From NORMAL this is a new alert; from ATTENTION it is the same alert escalating, which
+        // keeps its start time and any guardian reply it already has.
+        boolean newAlert = level == Level.NORMAL;
         if (attentionTimer != null) attentionTimer.cancel();
         level = Level.EMERGENCY;
+        if (newAlert) beginAlertWatch();
         speak("Possible emergency. Alerting your guardian.");
         vibrate(1200);
         broadcast("EMERGENCY", "POSSIBLE EMERGENCY — " + reason);
-        cloudHelper.updateStatus("POSSIBLE EMERGENCY", reason, battery());
+        if (newAlert) cloudHelper.startAlert("POSSIBLE EMERGENCY", reason, battery());
+        else cloudHelper.updateStatus("POSSIBLE EMERGENCY", reason, battery());
         cloudHelper.logEvent(eventType, reason);
         showAlert("POSSIBLE EMERGENCY", "Guardian notified. Tap I'M OK to cancel.", true);
         ensureForeground("EMERGENCY — guardian notified");
+        // Only reached when the level was not already EMERGENCY (see the return above), so a
+        // second HELP in the same emergency sends nothing.
+        sendEmergencySms(reason);
+    }
+
+    /**
+     * Segment 26, opt-in: texts every guardian's phone and the Medical ID emergency contact once
+     * per emergency. Goes over the cellular network, so it works with no internet. The numbers
+     * come from the local copy (EmergencyContacts), never from Firestore. The event records only
+     * HOW MANY were texted, never who.
+     */
+    private void sendEmergencySms(String reason) {
+        if (!MedicalStore.smsEnabled(this)) return;
+        List<String> recipients = EmergencyContacts.smsRecipients(this);
+        if (recipients.isEmpty()) return;
+
+        String name = AccountStore.name(this);
+        if (name == null || name.trim().isEmpty()) name = MedicalStore.load(this).name;
+        boolean fixIsRecent = lastFixMs > 0 && System.currentTimeMillis() - lastFixMs <= SMS_FIX_MAX_AGE_MS;
+        String link = fixIsRecent ? EmergencyText.mapsLink(lastLat, lastLon) : null;
+        String text = EmergencyText.sms(name, reason, link, lastAccuracyM);
+
+        int sent = EmergencySms.send(this, recipients, text);
+        if (sent > 0) {
+            cloudHelper.logEvent(EventTypes.SMS_SENT,
+                    "SMS sent to " + sent + (sent == 1 ? " contact" : " contacts"));
+        }
     }
 
     private void cancelToNormal(String reason) {
         if (attentionTimer != null) attentionTimer.cancel();
         boolean wasActive = level != Level.NORMAL;
         level = Level.NORMAL;
+        endAlertWatch(); // back to NORMAL: stop reading the document, drop the reply note
         if (wasActive) {
             speak("Okay. Alert canceled.");
             cloudHelper.logEvent(EventTypes.ALL_CLEAR, "All clear (" + reason + ")");
@@ -236,6 +381,160 @@ public class UserMonitorService extends Service implements SensorEventListener {
         cloudHelper.updateStatus("NORMAL", "All clear (" + reason + ")", battery());
         cancelAlert();
         ensureForeground("Monitoring (normal)");
+    }
+
+    // ---------- safe zone (segment 27) ----------
+
+    /**
+     * Feeds one location fix to the rule and acts on the transition. Home and the settings are
+     * read from the phone's own copy (HomeStore) every time, so a change made on Navigate Home
+     * takes effect at once, with no extra network use. Exactly one event and one "safeZone"
+     * write per transition, because SafeZoneRule reports each LEFT / RETURNED only once.
+     */
+    private void checkSafeZone(double lat, double lon, float accuracyM) {
+        HomeData home = HomeStore.load(this);
+        boolean on = home.enabled && home.hasLocation();
+        double distanceM = on ? GeoDistance.metres(lat, lon, home.lat, home.lon) : 0;
+
+        boolean wasOutside = safeZoneRule.isOutside();
+        SafeZoneRule.Result result = safeZoneRule.onFix(distanceM, accuracyM, home.radiusM, on);
+        if (result != SafeZoneRule.Result.NO_CHANGE) safeZoneSeeded = true; // a late seed must not undo this
+        if (!on && wasOutside) cloudHelper.updateSafeZone(null); // switched off while outside: clear it now
+        if (result == SafeZoneRule.Result.LEFT) {
+            cloudHelper.updateSafeZone(SafeZoneAlertDecider.OUTSIDE);
+            cloudHelper.logEvent(EventTypes.SAFE_ZONE_EXIT,
+                    "Left the safe zone (" + GeoDistance.label(distanceM) + " from home)");
+            // Spoken help, but never over a fall prompt or an emergency announcement.
+            if (HomeStore.speakHelp(this) && level == Level.NORMAL) {
+                speak("You are leaving home. If you need help, open Navigate Home.");
+            }
+        } else if (result == SafeZoneRule.Result.RETURNED) {
+            cloudHelper.updateSafeZone(SafeZoneAlertDecider.INSIDE);
+            cloudHelper.logEvent(EventTypes.SAFE_ZONE_RETURN, "Back inside the safe zone");
+        }
+    }
+
+    /** One read of this user's own document: guardian-set Home, safe zone state, guardians' phones. */
+    private void refreshHome() {
+        if (myUid == null) return;
+        FirestorePaths.userDoc(myUid).get(Source.SERVER)
+                .addOnSuccessListener(this::onHomeDoc)
+                .addOnFailureListener(e ->
+                        Log.w("SenseCloud", "Home read failed: " + e.getClass().getSimpleName()));
+    }
+
+    private void onHomeDoc(DocumentSnapshot doc) {
+        HomeData local = HomeStore.load(this);
+        if (doc == null || !doc.exists()) {
+            if (local.hasLocation()) HomeStore.push(this); // a Home saved before segment 27
+            return;
+        }
+        EmergencyContacts.cacheFrom(this, doc); // segment 26: same read, no extra one
+
+        Object raw = doc.get("home");
+        HomeData cloud = raw instanceof Map ? HomeData.fromMap((Map<?, ?>) raw) : null;
+        if (HomeData.localShouldBePushed(cloud, local.hasLocation())) {
+            HomeStore.push(this);
+        } else {
+            HomeStore.applyCloud(this, cloud); // only if the cloud copy is newer (HomeData decides)
+        }
+
+        // Start the rule from what the guardian was last told, so restarting monitoring while the
+        // user is already outside does not log a second exit.
+        String cloudZone = doc.getString("safeZone");
+        if (!safeZoneSeeded) {
+            safeZoneRule.restore(SafeZoneAlertDecider.OUTSIDE.equals(cloudZone));
+            safeZoneSeeded = true;
+        }
+        // The zone is off (or there is no Home): remove a stale "outside" so the guardian's chip
+        // and alerts do not carry on from before.
+        HomeData now = HomeStore.load(this);
+        if (cloudZone != null && !(now.enabled && now.hasLocation())) {
+            cloudHelper.updateSafeZone(null);
+        }
+    }
+
+    // ---------- guardian reply (segment 25) ----------
+
+    /** A new alert began (NORMAL to ATTENTION / EMERGENCY): remember when, start reading. */
+    private void beginAlertWatch() {
+        ackHandler.removeCallbacksAndMessages(null);
+        alertStartMs = System.currentTimeMillis();
+        acknowledgedBy.clear();
+        ackNote = null;
+        repeatMessage = null;
+        if (myUid != null) ackHandler.postDelayed(ackPollTask, AckRule.POLL_MS);
+    }
+
+    /** The level is back to NORMAL: no more reads, and the reply note goes away. */
+    private void endAlertWatch() {
+        ackHandler.removeCallbacksAndMessages(null);
+        alertStartMs = 0;
+        acknowledgedBy.clear();
+        repeatMessage = null;
+        boolean hadReply = ackNote != null;
+        ackNote = null;
+        if (hadReply) {
+            ackMessage = null;
+            broadcastAck(""); // an empty message tells the Safety screen to hide the reply
+        }
+    }
+
+    /**
+     * One read of this user's own document. Runs only while the level is ATTENTION or EMERGENCY;
+     * the next read is scheduled here, so there is no read at all once the level is NORMAL.
+     */
+    private void pollAck() {
+        if (level == Level.NORMAL || myUid == null) return;
+        FirestorePaths.userDoc(myUid).get(Source.SERVER)
+                .addOnSuccessListener(this::handleAckDoc)
+                .addOnFailureListener(e ->
+                        Log.w("SenseCloud", "Ack read failed: " + e.getMessage()));
+        long next = AckRule.nextPollDelayMs(!acknowledgedBy.isEmpty());
+        if (next > 0) ackHandler.postDelayed(ackPollTask, next);
+    }
+
+    private void handleAckDoc(DocumentSnapshot doc) {
+        if (level == Level.NORMAL || doc == null || !doc.exists()) return; // the alert ended meanwhile
+        Timestamp time = doc.getTimestamp("ack.time");
+        String by = doc.getString("ack.by");
+        AckRule.Outcome outcome = AckRule.classify(
+                time != null ? time.toDate().getTime() : null, by, alertStartMs, acknowledgedBy);
+        if (outcome == AckRule.Outcome.NONE) return; // no ack, an old one, or already announced
+        acknowledgedBy.add(by);
+        onGuardianAck(outcome, doc.getString("ack.name"));
+    }
+
+    /**
+     * A guardian answered. Tell the user in every channel they might use (voice, a long buzz, the
+     * ongoing notification, large text on the Safety screen) and log it for the timeline. The
+     * alert itself is untouched: during ATTENTION the user must still answer or the timer runs
+     * out, and a reply never hides or cancels anything.
+     */
+    private void onGuardianAck(AckRule.Outcome outcome, String guardianName) {
+        String message = AckRule.spoken(outcome, guardianName);
+        String detail = AckRule.eventDetail(outcome, guardianName);
+
+        speak(message);
+        vibrate(ACK_VIBRATION_MS);
+
+        ackNote = detail;
+        ensureForeground(ongoingText); // rebuilds the ongoing notification with the note in front
+        ackMessage = message;
+        broadcastAck(message);
+        cloudHelper.logEvent(EventTypes.GUARDIAN_ACK, detail);
+
+        if (outcome == AckRule.Outcome.FIRST) { // say it once more in case the first was missed
+            repeatMessage = message;
+            ackHandler.removeCallbacks(ackRepeatTask);
+            ackHandler.postDelayed(ackRepeatTask, AckRule.REPEAT_AFTER_MS);
+        }
+    }
+
+    private void broadcastAck(String message) {
+        Intent i = new Intent(MainActivity.ACK_ACTION).setPackage(getPackageName());
+        i.putExtra("message", message);
+        sendBroadcast(i);
     }
 
     // ---------- sensors ----------
@@ -280,10 +579,18 @@ public class UserMonitorService extends Service implements SensorEventListener {
             return;
         }
         broadcast("NORMAL", "Loading voice model...");
+        voiceLoading = true;
         // Unpack the model from assets/model-en-us into internal storage, then start listening
+        // (unless Hearing Assist opened meanwhile: then the keywords wait for it to close).
         StorageService.unpack(this, "model-en-us", "model",
-            (model) -> { voskModel = model; startRecognition(); },
+            (model) -> {
+                voiceLoading = false;
+                voskModel = model;
+                if (mic.shouldListen()) startRecognition(true);
+                else showVoicePaused();
+            },
             (exception) -> {
+                voiceLoading = false;
                 String msg = exception != null ? exception.getMessage() : "unknown";
                 broadcast("NORMAL", "VOICE OFF — model not found (" + msg + ")");
                 speak("Voice model not found.");
@@ -299,7 +606,44 @@ public class UserMonitorService extends Service implements SensorEventListener {
         return cw.isEmpty() ? null : cw;
     }
 
-    private void startRecognition() {
+    // ---------- microphone sharing with Hearing Assist (segment 28) ----------
+
+    /**
+     * Hearing Assist opened and wants the microphone: stop ONLY the Vosk keyword listener. The
+     * sensors, the fall detector, location, the heartbeat and every alert are not touched, so a
+     * deaf user can use captions without losing fall detection. The loaded model is kept, so
+     * resuming is quick.
+     */
+    private void pauseVoice() {
+        mic.hearingOpened();
+        stopVoice();
+        showVoicePaused();
+    }
+
+    /**
+     * Hearing Assist closed. Restarts recognition with the CURRENT grammar and codeword
+     * (startRecognition reads the codeword each time), if monitoring is on.
+     */
+    private void resumeVoice() {
+        mic.hearingClosed();
+        if (!mic.shouldListen()) return;
+        if (voskModel != null) startRecognition(level == Level.NORMAL);
+        else if (!voiceLoading) startVoice(); // no model yet (an earlier load failed): try again
+        // else the model is still unpacking: its callback starts listening now that the arbiter allows it
+    }
+
+    /** Tells the Safety screen why the keywords are quiet. Not while an alert is showing: that must not be repainted. */
+    private void showVoicePaused() {
+        if (level == Level.NORMAL) broadcast("NORMAL", VOICE_PAUSED_TEXT);
+    }
+
+    /**
+     * @param announce say "Voice ready" and update the status line. False when resuming during an
+     *                 alert, so the announcement does not cut across the alert's own speech.
+     */
+    private void startRecognition(boolean announce) {
+        if (voskModel == null) return;
+        stopVoice(); // never leave a second listener behind if this is called twice
         try {
             // Restricted grammar keeps Vosk on the keywords we care about.
             // org.json escapes any codeword safely; "not"/"no" must stay so
@@ -330,8 +674,10 @@ public class UserMonitorService extends Service implements SensorEventListener {
                 }
                 @Override public void onTimeout() { }
             });
-            broadcast("NORMAL", "Voice ready: say help or your codeword");
-            speak("Voice ready.");
+            if (announce) {
+                broadcast("NORMAL", "Voice ready: say help or your codeword");
+                speak("Voice ready.");
+            }
         } catch (Exception e) {
             broadcast("NORMAL", "VOICE OFF — recognizer failed (" + e.getMessage() + ")");
         }
@@ -378,7 +724,13 @@ public class UserMonitorService extends Service implements SensorEventListener {
     }
 
     // ---------- location -> cloud ----------
-    private void handleLocation(double lat, double lon) {
+    private void handleLocation(double lat, double lon, float accuracyMeters) {
+        // Kept for the emergency SMS, which must not wait for a fix or for the network.
+        lastLat = lat;
+        lastLon = lon;
+        lastAccuracyM = accuracyMeters;
+        lastFixMs = System.currentTimeMillis();
+        checkSafeZone(lat, lon, accuracyMeters);
         String maps = "https://www.google.com/maps?q=" + lat + "," + lon;
         new Thread(() -> {
             String addr = reverseGeocode(lat, lon);
@@ -446,9 +798,12 @@ public class UserMonitorService extends Service implements SensorEventListener {
     }
 
     private void ensureForeground(String text) {
+        ongoingText = text;
+        // A guardian's reply goes in front of the state, so the state is never hidden by it.
+        String shown = ackNote != null ? ackNote + " · " + text : text;
         Notification n = new NotificationCompat.Builder(this, CHANNEL_ONGOING)
             .setContentTitle("SENSE+ is protecting you")
-            .setContentText(text)
+            .setContentText(shown)
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setOngoing(true)
             .build();
@@ -474,7 +829,7 @@ public class UserMonitorService extends Service implements SensorEventListener {
             new Intent(this, UserMonitorService.class).setAction(ACTION_IM_OK),
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Notification notif = new NotificationCompat.Builder(this, CHANNEL_ALERT)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ALERT)
             .setContentTitle((emergency ? "🔴 " : "🟠 ") + title)
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
@@ -482,8 +837,19 @@ public class UserMonitorService extends Service implements SensorEventListener {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "I'M OK", okPi)
-            .build();
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "I'M OK", okPi);
+
+        if (emergency) {
+            // Segment 26: "Medical ID" opens the read-only helper view, which is shown over the
+            // lock screen. PUBLIC visibility so the notification and its buttons are not hidden
+            // on a locked screen set to "hide sensitive content": a bystander has to see it.
+            PendingIntent medicalPi = PendingIntent.getActivity(this, 2,
+                new Intent(this, MedicalHelperActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            builder.addAction(android.R.drawable.ic_menu_info_details, "Medical ID", medicalPi)
+                   .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+        }
+        Notification notif = builder.build();
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.notify(ALERT_ID, notif);
     }
@@ -532,8 +898,13 @@ public class UserMonitorService extends Service implements SensorEventListener {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        running = false;            // Hearing Assist must not send anything to a service that is gone
+        mic.monitoringStopped();
         // Best effort: tell the guardian monitoring was turned off rather than lost.
         heartbeatHandler.removeCallbacks(heartbeatTask);
+        ackHandler.removeCallbacksAndMessages(null);
+        homeHandler.removeCallbacksAndMessages(null);
+        ackMessage = null;
         if (cloudHelper != null) cloudHelper.updateMonitoring(false);
         if (attentionTimer != null) attentionTimer.cancel();
         if (sensorManager != null) sensorManager.unregisterListener(this); // removes accel + gyro
